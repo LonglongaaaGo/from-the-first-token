@@ -15,21 +15,21 @@
   "exercise_count": 70,
   "assigned_function_count": 76,
   "reader_version": "0.2.4",
-  "source_candidate_manifest_sha256": "12c3e49cd8e11e90de24ae650bcec188cf2d4798ce57e9d04f54a55ccf3bdd72",
+  "source_candidate_manifest_sha256": "c28fcf489bb918c02e0be61227e922268f1de7af567e4689bbf507c4f8fb13a6",
   "public_project_url": "https://github.com/LonglongaaaGo/from-the-first-token",
   "runnable_example": "examples/train_bigram.py",
   "teaching_data_manifest": "examples/data/manifest.json",
   "teaching_data_license": "PolyForm-Noncommercial-1.0.0",
   "distribution": "github-source",
-  "release_package_manifest_sha256": "3803dc982211df287af7c4d87c701eec423839631051e2b2b84947c8d3717eb6",
+  "release_package_manifest_sha256": "0b64a978129166e7f604da0497f3eef0dd097e20b6c43e5db42508f01c5effe5",
   "pdf_release_assets": {
     "book/en/book.pdf": {
-      "sha256": "a1db0b51624ecbde12841556012879281f221103da81515e03c92d739cca5c6f",
-      "bytes": 18101386
+      "sha256": "9b1018bfab2bf15f1f5e10f3477e79df17e337845cf6ee5436fba83e29483bed",
+      "bytes": 18103771
     },
     "book/zh-CN/book.pdf": {
-      "sha256": "eb00cafda31895990dbc585579d3a7bd3a6e80eb86c5589332e0a235008d3fb7",
-      "bytes": 37167867
+      "sha256": "46d68368f15ae71c70a7e321133594215dc37fa1941e15024bcb9daa37969107",
+      "bytes": 37170270
     }
   },
   "files": {
@@ -1426,8 +1426,8 @@
       "bytes": 136951
     },
     "book/en/manuscript.md": {
-      "sha256": "d9660fe01044139b1de7535cc82afd63a8fa7e588b69e678cb2fc863ac179083",
-      "bytes": 1112453
+      "sha256": "c15fa146faf6657c7e0ae9758eee5f6cabe36309bb41e33dc5d41e5dd0505dfe",
+      "bytes": 1114539
     },
     "book/zh-CN/assets/01-01-eight-bit-range.zh-CN.png": {
       "sha256": "a2bb380db955db194ff579f2fdba55c3028b7a604558046ed1f3340f72dada26",
@@ -2798,8 +2798,8 @@
       "bytes": 313085
     },
     "book/zh-CN/manuscript.md": {
-      "sha256": "b069a4c12082603b31ce46e8f36f12e2c134aff5c71a27e1bc57b3b7962913f3",
-      "bytes": 986174
+      "sha256": "6359bfdfa6bfcedda282b6863cc89301d8d4dbafe0855f5d765e6cc5d5d1fdda",
+      "bytes": 988286
     },
     "examples/README.md": {
       "sha256": "ef8a92a1afabb466ea1f7811c40281cabb0c6e346e9bf13f6e267b592a0c7aa0",

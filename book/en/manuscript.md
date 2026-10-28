@@ -12,6 +12,18 @@ The author retains the ability to grant separate commercial permissions for mate
 
 # A note to the reader
 
+Near the end of 2023, I gave GPT a serious try for the first time. I had heard about it, but the descriptions had not made much of an impression on me. Then I asked it to write some PyTorch code. I remember being surprised by what appeared on the screen. I did not even run that first snippet. Seeing it write familiar code from a short conversation was enough to make me stop and pay attention.
+
+I already had experience with machine learning and PyTorch, and Transformer-based methods were part of my research and practical work. As I followed later model releases and papers, and built agent workflows in my day-to-day work, I kept returning to a question: how did all the pieces inside a language model actually work together? Using a model, reading its architecture and tracing an implementation each reveal different parts of the answer. I wanted to connect them.
+
+That led me back through the whole pipeline. I took each step apart, worked through a small example, wrote and ran the code, and checked the intermediate results. Then I put the pieces together and trained a small model from scratch. Each run gave me something concrete to examine: a shape I had misunderstood, a loss that needed explaining, or a result that did not support the conclusion I had expected. Writing those explanations down became this book.
+
+For me, learning by doing means giving an idea a calculation and an implementation that I can inspect. The small examples matter because they make it possible to follow every value. Connecting those examples matters because a working system creates questions that isolated formulas leave open. I hope the route in these pages gives you room to try things, make mistakes, and work out why a correction helps.
+
+You may be building your first language model, or revisiting methods you already use. Either way, take your time with the examples. Change a value, predict what should happen, and then run the code. I hope you enjoy the process, and that the next model or paper you encounter becomes a little easier to reason about.
+
+## The route through the book
+
 A language model is easier to understand when one prediction can be followed all the way through. A piece of text becomes a sequence of IDs. Those IDs select vectors. The model transforms the vectors, assigns a score to each possible next token, and turns those scores into a distribution. A training example tells us which token actually followed. The difference between prediction and observation becomes a loss; differentiation tells us how to change the parameters.
 
 This book builds that chain without asking you to accept its middle steps on trust. We begin with bytes and short lists, then use small tensors whose entries can be checked by hand. Attention appears when a model needs context. Position information appears when order matters. Checkpoints appear when a training run must survive interruption. Evaluation appears when a plausible answer is no longer enough to establish an improvement. Each addition answers a problem created by the implementation that came before it.
