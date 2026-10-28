@@ -12,7 +12,7 @@
   "source": "Original synthetic English and Simplified Chinese sentence templates",
   "external_data_used": false,
   "generator": "examples/generate_teaching_data.py",
-  "generator_sha256": "e3467759bac1ca511e2cc16869c1a4313d31a23899571cb52689c783f620e3ee",
+  "generator_sha256": "e71fca9c535a467d2f4acf897d11acaf7ee1463a85eb5433043c3ccdb2ba181a",
   "generation_seed": 20261028,
   "split_policy": "Shuffle unique documents with the recorded seed; first 48 train, remaining 16 validation; form token pairs only after splitting",
   "record_fields": {
@@ -22,6 +22,6 @@
   },
   "license": "PolyForm-Noncommercial-1.0.0",
   "required_notice": "Copyright 2026 Wanglong Lu (卢望龙).",
-  "license_scope": "Only this generated fixture; no rights to external or private datasets",
+  "license_scope": "Only the bundled synthetic teaching fixture",
   "purpose": "Small, deliberately repetitive CPU integration demonstration; not a language-quality benchmark"
 }

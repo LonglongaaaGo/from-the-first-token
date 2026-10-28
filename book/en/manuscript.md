@@ -4,11 +4,11 @@
 
 Author: **Wanglong Lu (卢望龙)**. Copyright 2026.
 
-This working reader preview is shared under **Creative Commons Attribution–NonCommercial–NoDerivatives 4.0 International (CC BY-NC-ND 4.0)**, except for separately identified software and third-party material. You may copy and share the unchanged book noncommercially while retaining the author, title, version and license notice. Sharing an altered or translated edition requires separate permission. Private annotations, permitted format changes and applicable statutory rights are not removed by this notice. [Full license](https://creativecommons.org/licenses/by-nc-nd/4.0/legalcode.en).
+The book is shared under **Creative Commons Attribution–NonCommercial–NoDerivatives 4.0 International (CC BY-NC-ND 4.0)**, except for separately identified software and third-party material. You may copy and share the unchanged book noncommercially while retaining the author, title, version and license notice. Sharing an altered or translated edition requires separate permission. Private annotations, permitted format changes and applicable statutory rights are not removed by this notice. [Full license](https://creativecommons.org/licenses/by-nc-nd/4.0/legalcode.en).
 
-The separately supplied teaching exercises and author-owned executable code examples are available under **PolyForm Noncommercial 1.0.0**. That software license permits changes and sharing for its defined permitted purposes, with its required notices. Commercial uses outside those permissions require separate authorization. It does not license any private research repository, dataset or model weights. [Software terms](https://polyformproject.org/licenses/noncommercial/1.0.0).
+The separately supplied teaching exercises and author-owned executable code examples are available under **PolyForm Noncommercial 1.0.0**. That software license permits changes and sharing for its defined permitted purposes, with its required notices. Commercial uses outside those permissions require separate authorization. [Software terms](https://polyformproject.org/licenses/noncommercial/1.0.0).
 
-The author retains the ability to grant separate commercial permissions for material the author has the right to license. Third-party software, fonts and cited works retain their own rights and terms. This is a teaching preview; independent technical review remains ongoing. It is not a claim that an experimental model has passed normal-chat acceptance.
+The author retains the ability to grant separate commercial permissions for material the author has the right to license. Third-party software, fonts and cited works retain their own rights and terms.
 
 # A note to the reader
 
@@ -35,8 +35,6 @@ The chapters have a practical rhythm. Read the idea and its notation, trace a co
 The later chapters extend the model to instruction tuning, efficient execution and reproducible experiments. Each exercise develops one part of the system; the chapter summaries show how those parts fit into a training or inference run. For an experiment, record the data, budget and evaluation method alongside its result so the calculation can be reconstructed.
 
 The ten chapters follow this route from text representation to a complete model and its experiments. Read them in order when the material is new. When reviewing a familiar topic, begin with its worked example: explain the shapes, reproduce the values, then compare your reasoning with the implementation guidance.
-
-AI tools assisted with drafting, revision, bilingual translation and language polishing. This remains a working teaching preview; the human author is responsible for the released material, and independent technical review is ongoing.
 
 ## How to read the figures
 
@@ -15924,7 +15922,7 @@ Definitions follow the conventions used in this book. Method attributions appear
 
 # Appendix B Companion exercises
 
-The reader edition assembles the shared lesson manuscripts, not a separate abridgment. Its71 sections cover ten chapters and 70 companion exercises. Section 03.04 develops the chain rule conceptually without adding a separate assignment. The chapter/section filenames are stable so a printed section can be matched to the code.
+The reader edition assembles the shared lesson manuscripts, not a separate abridgment. Its 71 sections cover ten chapters and 70 companion exercises. Section 03.04 develops the chain rule conceptually without adding a separate assignment. The chapter/section filenames are stable so a printed section can be matched to the code.
 
 | Chapter | Sections | Companion exercises | Main subject |
 | --- | --- | --- | --- |
@@ -15943,9 +15941,9 @@ Each assignment contains a function contract, a marked implementation region and
 
 The larger laboratories connect the functions to data preparation, model training and evaluation. Keep a record of the code revision, data and tokenizer identities, configuration, budget and scoring protocol for each run. Compare experiments under a matching evaluation protocol.
 
-A content manifest records the public files and checksums associated with each release. Use the version and section number when reporting a correction, together with a small example that reproduces the issue. The companion release contains fresh assignment scaffolds, not a learner's submitted solutions or progress records.
+The companion code provides marked exercises for you to implement. Use the book version and section number when reporting a correction, together with a small example that reproduces the issue.
 
-For the code, begin with the repository README and the numbered file named in the section. Keep the code revision associated with the book, use the declared software baseline, and read an unfinished-prerequisite message as an assignment dependency rather than a package-installation error. Corrections should update both language manuscripts before a new edition is exported.
+For the code, begin with the repository README and the numbered file named in the section. Keep the code revision associated with the book, use the declared software baseline, and read an unfinished-prerequisite message as an assignment dependency rather than a package-installation error.
 
 # References
 
@@ -16040,3 +16038,5 @@ Author: Wanglong Lu (卢望龙).
 The chapter numbers match the companion exercise files. The appendix lists the assignments and explains how to use their supplied checks. Each edition includes a source manifest identifying its chapter text, illustration assets and code revision.
 
 Illustrations are prepared with reproducible vector drawing and numerical plotting. PNG files support ordinary reading; SVG sources preserve the diagrams for print and revision. Third-party assets retain their respective licenses.
+
+AI tools assisted with drafting, revision, bilingual translation and language polishing.

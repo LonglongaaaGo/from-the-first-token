@@ -63,7 +63,7 @@ def generated_files():
         "record_fields": {"id": "unique string document identifier", "text": "original string sentence", "split": "train or validation"},
         "license": "PolyForm-Noncommercial-1.0.0",
         "required_notice": "Copyright 2026 Wanglong Lu (卢望龙).",
-        "license_scope": "Only this generated fixture; no rights to external or private datasets",
+        "license_scope": "Only the bundled synthetic teaching fixture",
         "purpose": "Small, deliberately repetitive CPU integration demonstration; not a language-quality benchmark",
     }
     return {"toy_sentences.jsonl": payload,

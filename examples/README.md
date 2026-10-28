@@ -2,13 +2,13 @@
 
 [简体中文](README.zh-CN.md)
 
-This supplied demonstration pairs a tiny original dataset with a complete CPU run. It is separate from the numbered exercises: their learner functions remain TODOs. It uses no private research modules, pretrained weights or downloaded corpus. The code and the explicitly identified synthetic fixture follow [PolyForm Noncommercial 1.0.0](../licenses/teaching-code-PolyForm-Noncommercial-1.0.0.md); see [data/DATA_LICENSE.md](data/DATA_LICENSE.md) for the precise data scope.
+This supplied demonstration pairs a tiny original dataset with a complete CPU run. It is separate from the numbered exercises: their learner functions remain TODOs. All example inputs are supplied in `data/`. The code and the explicitly identified synthetic fixture follow [PolyForm Noncommercial 1.0.0](../licenses/teaching-code-PolyForm-Noncommercial-1.0.0.md); see [data/DATA_LICENSE.md](data/DATA_LICENSE.md) for the precise data scope.
 
 ## Read first
 
 The [English reader](../book/en/manuscript.md#section-03-19) explains shifted next-token pairs in Lesson 03.19; [Lesson 03.20](../book/en/manuscript.md#section-03-20) connects scores to loss, and [Lesson 06.02](../book/en/manuscript.md#section-06-02) explains document-level splitting. The [Chinese reader](../book/zh-CN/manuscript.md#section-03-19) presents the same prerequisites. Familiarity with Python lists, dictionaries and a PyTorch tensor is sufficient to run this example.
 
-The model is a trainable table `logits[current_id, next_id]`. A row contains one score for every possible next ID; softmax turns that row into probabilities. Cross entropy compares those probabilities with the observed next ID. Adam updates the table to reduce that loss. The table sees **one preceding character**, so it cannot remember a whole word or a sentence. This is a small baseline, not a Transformer, a trained large language model, or a chatbot.
+The model is a trainable table `logits[current_id, next_id]`. A row contains one score for every possible next ID; softmax turns that row into probabilities. Cross entropy compares those probabilities with the observed next ID. Adam updates the table to reduce that loss. The table sees **one preceding character**, so it cannot remember a whole word or a sentence. This small baseline makes the one-character prediction rule easy to inspect.
 
 ## Data and a complete small trace
 
@@ -45,15 +45,15 @@ The second command checks the dataset hash, disjoint documents, frozen vocabular
 Teaching bigram check passed.
 ```
 
-A verified 120-step run reduced mean training loss from about `3.6889` to `0.8390` and validation loss from about `3.6889` to `0.9054`. Exact final decimals and generated text may differ between supported numerical-library versions. Samples can contain malformed words or mixed languages: loss reduction here verifies the small data/training/generation connection, not language understanding. Passing the check does not establish a learner's independent understanding.
+A verified 120-step run reduced mean training loss from about `3.6889` to `0.8390` and validation loss from about `3.6889` to `0.9054`. Exact final decimals and generated text may differ between supported numerical-library versions. Generated samples can contain malformed words or mixed languages because each new character depends only on the preceding character.
 
-To retain a portable result without saving any model weights:
+To save a portable result report:
 
 ```sh
 python examples/train_bigram.py --check --report outputs/teaching-bigram.json
 ```
 
-The optional JSON includes data and code hashes, vocabulary policy, step budget, optimizer, seed, environment versions, train/validation losses and interpretation. Reports under `outputs/` remain local. `--steps` changes the default budget of 120 full-training-batch updates; very small budgets can intentionally fail `--check`.
+The optional JSON includes data and code hashes, vocabulary policy, step budget, optimizer, seed, environment versions, train/validation losses and interpretation. `--steps` changes the default budget of 120 full-training-batch updates; very small budgets can intentionally fail `--check`.
 
 ## Script interfaces
 

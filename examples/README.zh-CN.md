@@ -2,13 +2,13 @@
 
 [English](README.md)
 
-本配套演示把微型原创数据与完整的 CPU 运行流程放在一起。它独立于编号练习；练习中由学习者完成的函数仍保留 TODO。本示例不使用私有研究模块、预训练权重或下载语料。代码与明确列出的合成数据采用 [PolyForm Noncommercial 1.0.0](../licenses/teaching-code-PolyForm-Noncommercial-1.0.0.md)；数据授权范围见 [data/DATA_LICENSE.md](data/DATA_LICENSE.md)。
+本配套演示把微型原创数据与完整的 CPU 运行流程放在一起。它独立于编号练习；练习中由学习者完成的函数仍保留 TODO。示例所需输入均随附在 `data/` 中。代码与明确列出的合成数据采用 [PolyForm Noncommercial 1.0.0](../licenses/teaching-code-PolyForm-Noncommercial-1.0.0.md)；数据授权范围见 [data/DATA_LICENSE.md](data/DATA_LICENSE.md)。
 
 ## 先读哪些内容
 
 [英文读者版](../book/en/manuscript.md#section-03-19)的 Lesson 03.19 解释错位的下一个词元配对；[Lesson 03.20](../book/en/manuscript.md#section-03-20)把分数接到损失，[Lesson 06.02](../book/en/manuscript.md#section-06-02)解释按文档划分数据。[中文读者版](../book/zh-CN/manuscript.md#section-03-19)提供相同的前置知识。运行本示例只需熟悉 Python 列表、字典和 PyTorch 张量（tensor）。
 
-模型是一张可训练的表 `logits[current_id, next_id]`。每行包含所有候选下一个编号的分数，softmax 把这一行转成概率。交叉熵（cross entropy）将这些概率与真实的下一个编号进行比较，Adam 更新表中的数值以降低损失。这张表只能看到**前一个字符**，不能记住整个单词或句子。它是微型基线（baseline），不是 Transformer、训练完成的大语言模型或聊天机器人。
+模型是一张可训练的表 `logits[current_id, next_id]`。每行包含所有候选下一个编号的分数，softmax 把这一行转成概率。交叉熵（cross entropy）将这些概率与真实的下一个编号进行比较，Adam 更新表中的数值以降低损失。这张表只能看到**前一个字符**，不能记住整个单词或句子。这个微型基线（baseline）便于直接检查只依赖前一个字符的预测规则。
 
 ## 数据与完整微型轨迹
 
@@ -45,15 +45,15 @@ Teaching data reproducibility check passed.
 Teaching bigram check passed.
 ```
 
-一次已验证的 120 步运行将平均训练损失从约 `3.6889` 降至 `0.8390`，验证损失从约 `3.6889` 降至 `0.9054`。不同受支持数值库版本的最后小数位和生成文本可能不同。样例可能包含拼错的词或混合语言：这里的损失下降只验证微型数据、训练、生成各环节已经连接，不代表语言理解。检查通过也不等于学习者独立理解。
+一次已验证的 120 步运行将平均训练损失从约 `3.6889` 降至 `0.8390`，验证损失从约 `3.6889` 降至 `0.9054`。不同受支持数值库版本的最后小数位和生成文本可能不同。生成样例可能包含拼错的词或混合语言，因为每个新字符的预测只依赖前一个字符。
 
-若需保存可移植的结果而不保存模型权重：
+若需保存可移植的结果报告：
 
 ```sh
 python examples/train_bigram.py --check --report outputs/teaching-bigram.json
 ```
 
-可选 JSON 包含数据与代码哈希、词表策略、训练步数预算、优化器、种子、环境版本、训练／验证损失及解释。`outputs/` 中的报告保留在本地。`--steps` 可调整默认 120 次全训练批次更新的预算；极小预算可能故意导致 `--check` 失败。
+可选 JSON 包含数据与代码哈希、词表策略、训练步数预算、优化器、种子、环境版本、训练／验证损失及解释。`--steps` 可调整默认 120 次全训练批次更新的预算；极小预算可能故意导致 `--check` 失败。
 
 ## 脚本接口
 
