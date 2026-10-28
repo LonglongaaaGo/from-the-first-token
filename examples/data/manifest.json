@@ -1,0 +1,27 @@
+{
+  "format": "teaching-data-provenance-v1",
+  "dataset_version": "synthetic-bilingual-bigram-v1",
+  "file": "toy_sentences.jsonl",
+  "sha256": "631882100238a2531304e5cc68bb8877e7fa5e3bd99f8e2c9e0a977edd52721a",
+  "bytes": 4472,
+  "records": 64,
+  "split_counts": {
+    "train": 48,
+    "validation": 16
+  },
+  "source": "Original synthetic English and Simplified Chinese sentence templates",
+  "external_data_used": false,
+  "generator": "examples/generate_teaching_data.py",
+  "generator_sha256": "e3467759bac1ca511e2cc16869c1a4313d31a23899571cb52689c783f620e3ee",
+  "generation_seed": 20261028,
+  "split_policy": "Shuffle unique documents with the recorded seed; first 48 train, remaining 16 validation; form token pairs only after splitting",
+  "record_fields": {
+    "id": "unique string document identifier",
+    "text": "original string sentence",
+    "split": "train or validation"
+  },
+  "license": "PolyForm-Noncommercial-1.0.0",
+  "required_notice": "Copyright 2026 Wanglong Lu (卢望龙).",
+  "license_scope": "Only this generated fixture; no rights to external or private datasets",
+  "purpose": "Small, deliberately repetitive CPU integration demonstration; not a language-quality benchmark"
+}

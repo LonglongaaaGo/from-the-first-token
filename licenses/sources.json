@@ -1,0 +1,15 @@
+{
+  "scope": "Official legal text copies. No blanket license is applied to the private research repository. Candidate scope is stated in its notices.",
+  "texts": [
+    {
+      "file": "book-CC-BY-NC-ND-4.0.txt",
+      "source": "https://creativecommons.org/licenses/by-nc-nd/4.0/legalcode.txt",
+      "sha256": "38762e3777f4ec00a6f769062a7c3f704fb78ce08303ecff88558da4c49cf9ea"
+    },
+    {
+      "file": "teaching-code-PolyForm-Noncommercial-1.0.0.md",
+      "source": "https://raw.githubusercontent.com/polyformproject/polyform-licenses/1.0.0/PolyForm-Noncommercial-1.0.0.md",
+      "sha256": "c0ea4a896d2c8c394b29f9427589996db826cd501c512279ff0ed3ef48fabbe5"
+    }
+  ]
+}

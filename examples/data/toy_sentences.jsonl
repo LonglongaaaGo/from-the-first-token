@@ -1,0 +1,64 @@
+{"id": "toy-000", "text": "a hen likes the rain.", "split": "train"}
+{"id": "toy-001", "text": "小猫看见花朵。", "split": "train"}
+{"id": "toy-002", "text": "a hen likes the sun.", "split": "train"}
+{"id": "toy-003", "text": "a fox sees the pond.", "split": "train"}
+{"id": "toy-004", "text": "a dog sees the sun.", "split": "train"}
+{"id": "toy-005", "text": "小鸟喜欢小河。", "split": "train"}
+{"id": "toy-006", "text": "小狗喜欢月亮。", "split": "train"}
+{"id": "toy-007", "text": "小鸟看见花朵。", "split": "train"}
+{"id": "toy-008", "text": "a cat sees the pond.", "split": "train"}
+{"id": "toy-009", "text": "小鹿看见太阳。", "split": "train"}
+{"id": "toy-010", "text": "a fox sees the rain.", "split": "train"}
+{"id": "toy-011", "text": "a hen sees the pond.", "split": "train"}
+{"id": "toy-012", "text": "a fox likes the pond.", "split": "train"}
+{"id": "toy-013", "text": "a cat likes the rain.", "split": "train"}
+{"id": "toy-014", "text": "a dog sees the rain.", "split": "train"}
+{"id": "toy-015", "text": "小狗看见月亮。", "split": "train"}
+{"id": "toy-016", "text": "小鹿看见月亮。", "split": "train"}
+{"id": "toy-017", "text": "小狗喜欢太阳。", "split": "train"}
+{"id": "toy-018", "text": "a fox likes the moon.", "split": "train"}
+{"id": "toy-019", "text": "a dog likes the pond.", "split": "train"}
+{"id": "toy-020", "text": "a cat likes the pond.", "split": "train"}
+{"id": "toy-021", "text": "小猫看见太阳。", "split": "train"}
+{"id": "toy-022", "text": "小猫看见月亮。", "split": "train"}
+{"id": "toy-023", "text": "a hen sees the moon.", "split": "train"}
+{"id": "toy-024", "text": "a hen sees the sun.", "split": "train"}
+{"id": "toy-025", "text": "小狗看见太阳。", "split": "train"}
+{"id": "toy-026", "text": "a cat likes the sun.", "split": "train"}
+{"id": "toy-027", "text": "a dog sees the pond.", "split": "train"}
+{"id": "toy-028", "text": "a fox sees the moon.", "split": "train"}
+{"id": "toy-029", "text": "a fox likes the sun.", "split": "train"}
+{"id": "toy-030", "text": "a cat sees the moon.", "split": "train"}
+{"id": "toy-031", "text": "小鹿看见小河。", "split": "train"}
+{"id": "toy-032", "text": "a dog likes the sun.", "split": "train"}
+{"id": "toy-033", "text": "小猫喜欢月亮。", "split": "train"}
+{"id": "toy-034", "text": "小狗喜欢小河。", "split": "train"}
+{"id": "toy-035", "text": "小鸟看见小河。", "split": "train"}
+{"id": "toy-036", "text": "小鹿喜欢花朵。", "split": "train"}
+{"id": "toy-037", "text": "小狗喜欢花朵。", "split": "train"}
+{"id": "toy-038", "text": "小猫喜欢花朵。", "split": "train"}
+{"id": "toy-039", "text": "小鹿喜欢太阳。", "split": "train"}
+{"id": "toy-040", "text": "a fox likes the rain.", "split": "train"}
+{"id": "toy-041", "text": "a hen sees the rain.", "split": "train"}
+{"id": "toy-042", "text": "小鸟喜欢花朵。", "split": "train"}
+{"id": "toy-043", "text": "小鸟看见太阳。", "split": "train"}
+{"id": "toy-044", "text": "小鸟喜欢太阳。", "split": "train"}
+{"id": "toy-045", "text": "小鸟看见月亮。", "split": "train"}
+{"id": "toy-046", "text": "小鹿看见花朵。", "split": "train"}
+{"id": "toy-047", "text": "小狗看见小河。", "split": "train"}
+{"id": "toy-048", "text": "小鹿喜欢小河。", "split": "validation"}
+{"id": "toy-049", "text": "小鹿喜欢月亮。", "split": "validation"}
+{"id": "toy-050", "text": "小猫喜欢小河。", "split": "validation"}
+{"id": "toy-051", "text": "a dog likes the rain.", "split": "validation"}
+{"id": "toy-052", "text": "a hen likes the moon.", "split": "validation"}
+{"id": "toy-053", "text": "a cat sees the sun.", "split": "validation"}
+{"id": "toy-054", "text": "a fox sees the sun.", "split": "validation"}
+{"id": "toy-055", "text": "小鸟喜欢月亮。", "split": "validation"}
+{"id": "toy-056", "text": "a dog sees the moon.", "split": "validation"}
+{"id": "toy-057", "text": "小猫看见小河。", "split": "validation"}
+{"id": "toy-058", "text": "a hen likes the pond.", "split": "validation"}
+{"id": "toy-059", "text": "a cat sees the rain.", "split": "validation"}
+{"id": "toy-060", "text": "a dog likes the moon.", "split": "validation"}
+{"id": "toy-061", "text": "小狗看见花朵。", "split": "validation"}
+{"id": "toy-062", "text": "小猫喜欢太阳。", "split": "validation"}
+{"id": "toy-063", "text": "a cat likes the moon.", "split": "validation"}
