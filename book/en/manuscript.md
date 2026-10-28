@@ -12,9 +12,9 @@ The author retains the ability to grant separate commercial permissions for mate
 
 # A note to the reader
 
-Near the end of 2023, I gave GPT a serious try for the first time. I had heard about it, but the descriptions had not made much of an impression on me. Then I asked it to write some PyTorch code. I remember being surprised by what appeared on the screen. I did not even run that first snippet. Seeing it write familiar code from a short conversation was enough to make me stop and pay attention.
+In early 2023, I gave GPT a serious try for the first time. I had heard about it, but the descriptions had not made much of an impression on me. Then I asked it to write some PyTorch code. I remember being surprised by what appeared on the screen. I did not even run that first snippet. Seeing it write familiar code from a short conversation was enough to make me stop and pay attention.
 
-I already had experience with machine learning and PyTorch, and Transformer-based methods were part of my research and practical work. As I followed later model releases and papers, and built agent workflows in my day-to-day work, I kept returning to a question: how did all the pieces inside a language model actually work together? Using a model, reading its architecture and tracing an implementation each reveal different parts of the answer. I wanted to connect them.
+By then, I had been researching deep learning algorithms for four or five years, often working with PyTorch and Transformer-based methods. I continued to follow new models and papers, and later built agent workflows in my day-to-day work. Those experiences kept bringing me back to one question: how did all the pieces inside a language model actually work together? Using a model, reading its architecture and tracing an implementation each reveal different parts of the answer. I wanted to connect them.
 
 That led me back through the whole pipeline. I took each step apart, worked through a small example, wrote and ran the code, and checked the intermediate results. Then I put the pieces together and trained a small model from scratch. Each run gave me something concrete to examine: a shape I had misunderstood, a loss that needed explaining, or a result that did not support the conclusion I had expected. Writing those explanations down became this book.
 

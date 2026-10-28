@@ -15,21 +15,21 @@
   "exercise_count": 70,
   "assigned_function_count": 76,
   "reader_version": "0.2.4",
-  "source_candidate_manifest_sha256": "c28fcf489bb918c02e0be61227e922268f1de7af567e4689bbf507c4f8fb13a6",
+  "source_candidate_manifest_sha256": "5a1e21a1d5355bdc3d105a315f988f6c3807e28e1d19d72370ff7217b7985c01",
   "public_project_url": "https://github.com/LonglongaaaGo/from-the-first-token",
   "runnable_example": "examples/train_bigram.py",
   "teaching_data_manifest": "examples/data/manifest.json",
   "teaching_data_license": "PolyForm-Noncommercial-1.0.0",
   "distribution": "github-source",
-  "release_package_manifest_sha256": "0b64a978129166e7f604da0497f3eef0dd097e20b6c43e5db42508f01c5effe5",
+  "release_package_manifest_sha256": "6bb0110c3d747e6a80004800c75bab4a03e37c3ebfc433e74139f2a6d062a054",
   "pdf_release_assets": {
     "book/en/book.pdf": {
-      "sha256": "9b1018bfab2bf15f1f5e10f3477e79df17e337845cf6ee5436fba83e29483bed",
-      "bytes": 18103771
+      "sha256": "decfc5f239a1f8d35f38d18ffbf2dfaf416d957b85d6005086d2b098e90fd6d9",
+      "bytes": 18103833
     },
     "book/zh-CN/book.pdf": {
-      "sha256": "46d68368f15ae71c70a7e321133594215dc37fa1941e15024bcb9daa37969107",
-      "bytes": 37170270
+      "sha256": "9dc064e34b9257014b551160ef65594fff200d4b1e93cf8562e067a6eb03acbc",
+      "bytes": 37170301
     }
   },
   "files": {
@@ -1426,8 +1426,8 @@
       "bytes": 136951
     },
     "book/en/manuscript.md": {
-      "sha256": "c15fa146faf6657c7e0ae9758eee5f6cabe36309bb41e33dc5d41e5dd0505dfe",
-      "bytes": 1114539
+      "sha256": "83b2e77c1b7566a4851c54f833ed6ec1eca172389078ea92a670c5d93c7cd995",
+      "bytes": 1114565
     },
     "book/zh-CN/assets/01-01-eight-bit-range.zh-CN.png": {
       "sha256": "a2bb380db955db194ff579f2fdba55c3028b7a604558046ed1f3340f72dada26",
@@ -2798,7 +2798,7 @@
       "bytes": 313085
     },
     "book/zh-CN/manuscript.md": {
-      "sha256": "6359bfdfa6bfcedda282b6863cc89301d8d4dbafe0855f5d765e6cc5d5d1fdda",
+      "sha256": "df8cc1b155f1da2a0e980d73a70843f1c351b15ac530694eb36884faca4ac021",
       "bytes": 988286
     },
     "examples/README.md": {
