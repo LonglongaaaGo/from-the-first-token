@@ -2,7 +2,6 @@
   "format": "onelong-public-teaching-candidate-v2",
   "version": "0.2.4-teaching.1",
   "author": "Wanglong Lu (卢望龙)",
-  "public_upload_performed": false,
   "languages": [
     "en",
     "zh-CN"
@@ -50,12 +49,12 @@
       "bytes": 1663
     },
     "README.md": {
-      "sha256": "b0d6e51e96924fa1e6b784f100e03aeed22aca4a7a0b481cf8f28e0399127afc",
-      "bytes": 4784
+      "sha256": "8e4dfeb0b1c5050baed172b6306bd82c8f2746ea4ce81551d6d20c293fb97020",
+      "bytes": 2978
     },
     "README.zh-CN.md": {
-      "sha256": "1b0c58d7a84e727ebcf3906adc4e18b85e0701d746ec2f13f94339c78b19222b",
-      "bytes": 4281
+      "sha256": "1b3f9165845654a900a6fdc6e5819716da509b2c9a7dbd03b38c7b575f2623b8",
+      "bytes": 2669
     },
     "book/en/assets/01-01-eight-bit-range.en.png": {
       "sha256": "bbe21a9bc79057979e7839ab0b9f420419890e08f4385f878d7b5d222dd1d34b",
