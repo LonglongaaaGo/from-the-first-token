@@ -82,7 +82,7 @@ The first two chapters establish text representation. We distinguish Unicode, UT
 
 Chapter 03 connects those IDs to training. Embeddings, loss, gradients, output projection, generation, and evaluation first appear as small components, then form a baseline pipeline. Chapters 04 and 05 build a causal Transformer that can use earlier context, followed by modern components and reliable optimization, saving, and recovery.
 
-![The learning route moves from text representation to baseline training, contextual models, data workflows, systems, and experiments.](assets/book-learning-route.en.png)
+![The learning route moves from text representation to baseline training, contextual models, data workflows, systems, and experiments.](assets/book-learning-route.en.png){width=100%}
 
 Read the rows from top to bottom. Each chapter range names a stage that adds a capability or a way to verify the preceding implementation. The course route and book contents give the section order and current edition's scope.
 
@@ -126,15 +126,15 @@ The same letter can have a local meaning in different derivations. Each section 
 
 | Symbol | Meaning | Typical example |
 | --- | --- | --- |
-| B | Number of sequences in a batch |2 independent sequences |
-| T | Number of token positions in one input window |8 positions per sequence |
-| V | Number of vocabulary candidates |259 entries in one teaching vocabulary |
-| D | Width of a model representation |An8-component vector per position |
-| H | Number of attention heads when used as a count |4 heads |
-| d | Matching width of a query and key in one head |D/H in the standard equal-width layout |
-| dv | Width of a value vector in one head |May differ from d in an attention fixture |
-| K | Number of selected targets when defined as a loss denominator |Count of True mask entries |
-| P | Parameter count or cached-prefix length as locally defined |Never infer its meaning from the letter alone |
+| $B$ | Number of sequences in a batch |2 independent sequences |
+| $T$ | Number of token positions in one input window |8 positions per sequence |
+| $V$ | Number of vocabulary candidates |259 entries in one teaching vocabulary |
+| $D$ | Width of a model representation |An 8-component vector per position |
+| $H$ | Number of attention heads when used as a count |4 heads |
+| $d$ | Matching width of a query and key in one head |$D/H$ in the standard equal-width layout |
+| $d_v$ | Width of a value vector in one head |May differ from $d$ in an attention fixture |
+| $K$ | Number of selected targets when defined as a loss denominator |Count of True mask entries |
+| $P$ | Parameter count or cached-prefix length as locally defined |Never infer its meaning from the letter alone |
 
 `[B,T,D]` is a shape, not a vector's values. `[[1,2],[3,4]]` is an explicit matrix with shape `[2,2]`. An embedding table `[V,D]` maps an ID tensor `[B,T]` to selected vectors `[B,T,D]`; it does not change its number of stored rows when the batch changes.
 
@@ -146,17 +146,13 @@ Logarithms are natural unless explicitly marked base2. Cross-entropy is then mea
 
 Approximate equality in numerical tests uses a stated tolerance. Exact arithmetic examples explain a relationship; they are not measurements of trained-model quality. A formula estimating FLOPs or state bytes is not a measurement of elapsed time or peak allocation.
 
-<a id="chapter-01"></a>
-
-# 01 Text becomes data
+# 01 Text becomes data {#chapter-01}
 
 Before a model can learn from a sentence, the sentence must have a computational representation. That requirement sounds simple until the same visible character occupies several bytes, an unfinished sequence cannot yet decode, or a number is mistaken for the meaning of a word. This chapter fixes the distinctions we will rely on throughout the book.
 
 We begin with UTF-8 bytes because every step can be inspected without an external vocabulary. The point is not to claim that a useful language model should always predict one byte at a time. It is to establish exactly what an ID represents and how the same sequence yields an input and a next-token target. Once that contract is clear, a more economical tokenizer can change the units without changing the learning problem.
 
-<a id="section-01-01"></a>
-
-## 01.01 Text, Tokens, and Next-Token Targets
+## 01.01 Text, Tokens, and Next-Token Targets {#section-01-01}
 
 ### Method sources
 
@@ -168,7 +164,7 @@ Work through the example before editing 01_01_text_to_tokens.py. The numbered st
 
 ### 1. Encode text into token IDs
 
-![Follow each code point down to its bytes. The four middle byte cells belong to one code point; six cells still mean six byte tokens, not six characters.](assets/01-01-text-bytes-ids.en.png)
+![Follow each code point down to its bytes. The four middle byte cells belong to one code point; six cells still mean six byte tokens, not six characters.](assets/01-01-text-bytes-ids.en.png){width=100%}
 
 Follow each code point down to its bytes. The four middle byte cells belong to one code point; six cells still mean six byte tokens, not six characters.
 
@@ -215,7 +211,7 @@ python3 exercises/01_01_text_to_tokens.py --check decode
 
 ### 3. Construct next-token training examples
 
-![Compare the two rows by column: each target comes from exactly one source position after its input. T=3 therefore needs four source IDs from the starting point.](assets/01-01-shifted-window.en.png)
+![Compare the two rows by column: each target comes from exactly one source position after its input. T=3 therefore needs four source IDs from the starting point.](assets/01-01-shifted-window.en.png){width=100%}
 
 Compare the two rows by column: each target comes from exactly one source position after its input. T=3 therefore needs four source IDs from the starting point.
 
@@ -286,13 +282,13 @@ For `make_example`, check the allowed start and length before slicing. An `if` r
 
 #### Why is the byte vocabulary size 256, and the largest value 255?
 
-A byte in this representation has eight bits. Each bit has two possible states, so there are `2**8 = 256` distinct bit patterns. Zero-based values run from 0 to 255; `11111111` is 255. Thus 256 counts possible values, not bits, stored bytes, or the sum of the values. The choice of an eight-bit byte determines this limit; it is not an arbitrary homework constant.
+A byte in this representation has eight bits. Each bit has two possible states, so there are $2^{8}=256$ distinct bit patterns. Zero-based values run from 0 to 255; `11111111` is 255. Thus 256 counts possible values, not bits, stored bytes, or the sum of the values. The choice of an eight-bit byte determines this limit; it is not an arbitrary homework constant.
 
-![Eight binary choices give 256 patterns. The place values add to 255 for the all-ones pattern.](assets/01-01-eight-bit-range.en.png)
+![Eight binary choices give 256 patterns. The place values add to 255 for the all-ones pattern.](assets/01-01-eight-bit-range.en.png){width=100%}
 
 Read the eight columns as place values: a bit contributes its column's value when it is one, and zero otherwise. The all-zero row represents zero; the all-one row represents 128 + 64 + 32 + 16 + 8 + 4 + 2 + 1 = 255. There are 256 distinct rows including zero.
 
-This limit belongs to one raw byte. A token ID is an integer vocabulary index. BPE adds IDs such as 256 and 257 without changing the raw-byte range. With `k` learned merges and no special tokens, our contiguous vocabulary has `256 + k` entries and largest ID `255 + k`. Any later special tokens must be counted separately.
+This limit belongs to one raw byte. A token ID is an integer vocabulary index. BPE adds IDs such as 256 and 257 without changing the raw-byte range. With $k$ learned merges and no special tokens, our contiguous vocabulary has $256+k$ entries and largest ID $255+k$. Any later special tokens must be counted separately.
 
 #### How do Unicode and UTF-8 relate?
 
@@ -331,17 +327,13 @@ Learn byte-level BPE: count adjacent token pairs, merge the most frequent pair, 
 
 The first training pairs are now explicit, but bytes can make common fragments unnecessarily long. The next chapter learns larger units while preserving a reversible route back to the original bytes.
 
-<a id="chapter-02"></a>
-
-# 02 Learn a vocabulary
+# 02 Learn a vocabulary {#chapter-02}
 
 A tokenizer is a learned data-processing rule that becomes fixed before the language model uses its IDs. Byte-pair encoding gives us a compact example of this distinction. During tokenizer training, frequent adjacent pairs may create new vocabulary entries. During encoding, the learned rules are applied in their learned order; an unfamiliar input does not authorize a new ID.
 
 The functions in this chapter are deliberately separate. Counting tells us which pairs exist. Selection chooses a rule. Merging changes one sequence. Training repeats those operations, whereas encoding consults a frozen rule set. Decoding reconstructs bytes before asking UTF-8 to interpret them. Keeping these responsibilities distinct prevents a tokenizer from changing the meaning of an embedding row halfway through training.
 
-<a id="section-02-01"></a>
-
-## 02.01 BPE and Adjacent Pair Counts
+## 02.01 BPE and Adjacent Pair Counts {#section-02-01}
 
 ### Method sources
 
@@ -361,7 +353,7 @@ Tokenizer training here means learning merge rules from frequency counts. It doe
 
 Start with `"ababab"`:
 
-![Each bracket marks an adjacent start. Three brackets have the ordered pair (97,98), and two have (98,97); sharing an endpoint does not remove a count.](assets/02-01-adjacent-pairs.en.png)
+![Each bracket marks an adjacent start. Three brackets have the ordered pair (97,98), and two have (98,97); sharing an endpoint does not remove a count.](assets/02-01-adjacent-pairs.en.png){width=100%}
 
 Each bracket marks an adjacent start. Three brackets have the ordered pair (97,98), and two have (98,97); sharing an endpoint does not remove a count.
 
@@ -414,7 +406,7 @@ def count_pairs(token_ids: list[int]) -> dict[tuple[int, int], int]:
 
 The keys are ordered two-token tuples; the values are occurrence counts. At each valid index `i`, inspect the tokens at `i` and `i + 1` and increment that pair's count.
 
-- Visit every adjacent position. A sequence of length `n` has `n - 1` adjacent positions when `n >= 1`.
+- Visit every adjacent position. A sequence of length $n$ has $n-1$ adjacent positions when $n\ge1$.
 - Preserve order: `(97, 98)` and `(98, 97)` are different pairs.
 - Include overlaps: `[42, 42, 42]` contains two occurrences of `(42, 42)`.
 - Return `{}` for empty or one-token input.
@@ -464,9 +456,7 @@ Continue with [Lesson 02.02: non-overlapping BPE merges](#section-02-02) after t
 
 [minbpe's pair-counting and merge helpers](https://github.com/karpathy/minbpe/blob/master/minbpe/base.py) are a reference for later review. The exercise checks specify the behavior; write your version before comparing implementations.
 
-<a id="section-02-02"></a>
-
-## 02.02 Non-Overlapping BPE Merges
+## 02.02 Non-Overlapping BPE Merges {#section-02-02}
 
 Counting a pair does not yet tell us how to replace it. Two counted occurrences may share a token, and using that token twice would change the underlying text. We will walk from left to right, consuming each source token once and preserving its bytes.
 
@@ -474,7 +464,7 @@ Work through the example before editing 02_02_bpe_merge.py. The numbered steps b
 
 ### Byte values and token IDs
 
-One byte contains eight bits, so it has `2**8 = 256` possible values, numbered `0` through `255`. This is a count of possible values, not a quantity of stored bytes.
+One byte contains eight bits, so it has $2^{8}=256$ possible values, numbered `0` through `255`. This is a count of possible values, not a quantity of stored bytes.
 
 Our initial tokenizer uses those byte values as its token IDs. BPE adds vocabulary entries: token ID `256` can represent the two bytes `b"ab"`. A token ID is an integer lookup index and is not restricted to a single byte. In binary, integer `256` is `100000000`, which requires nine bits in an unsigned representation; that does not change what its vocabulary entry represents. Actual token-array storage uses a chosen integer dtype, which we will consider when preparing data.
 
@@ -491,7 +481,7 @@ The caller chooses the pair and its new ID. This helper performs the replacement
 
 ### Why counting and merging handle overlap differently
 
-![Track which source positions have been consumed. The valid result keeps three original bytes; the rejected overlapping replacement would produce four.](assets/02-02-nonoverlapping-merge.en.png)
+![Track which source positions have been consumed. The valid result keeps three original bytes; the rejected overlapping replacement would produce four.](assets/02-02-nonoverlapping-merge.en.png){width=100%}
 
 Track which source positions have been consumed. The valid result keeps three original bytes; the rejected overlapping replacement would produce four.
 
@@ -544,9 +534,7 @@ Continue with [Lesson 02.03: the BPE training loop](#section-02-03). Select a mo
 
 [minbpe's helper functions](https://github.com/karpathy/minbpe/blob/master/minbpe/base.py) provide a reference for review after implementing your version.
 
-<a id="section-02-03"></a>
-
-## 02.03 The BPE Training Loop
+## 02.03 The BPE Training Loop {#section-02-03}
 
 ### Method sources
 
@@ -584,7 +572,7 @@ For example, `vocab[97]` is `b"a"` and `vocab[98]` is `b"b"`. A vocabulary entry
 
 Use `text="ababab"` and `vocab_size=258`:
 
-![Read downward through the three sequence states. A new vocabulary entry appears each round, while joining its byte contents always recovers the same six bytes.](assets/02-03-training-rounds.en.png)
+![Read downward through the three sequence states. A new vocabulary entry appears each round, while joining its byte contents always recovers the same six bytes.](assets/02-03-training-rounds.en.png){width=100%}
 
 Read downward through the three sequence states. A new vocabulary entry appears each round, while joining its byte contents always recovers the same six bytes.
 
@@ -683,9 +671,7 @@ Continue with [Lesson 02.04: selecting a learned rule](#section-02-04), then [Le
 
 [minbpe's basic tokenizer](https://github.com/karpathy/minbpe/blob/master/minbpe/basic.py) illustrates the count/merge/vocabulary loop. Our exercise specifies its own numeric tie rule and early-stopping behavior.
 
-<a id="section-02-04"></a>
-
-## 02.04 Select a Learned BPE Rule
+## 02.04 Select a Learned BPE Rule {#section-02-04}
 
 A trained tokenizer must give the same rules to every new input. Encoding therefore asks a different question from training: among the learned rules that apply right now, which was learned first? This small selector makes that distinction explicit before we build the full encoder.
 
@@ -738,7 +724,7 @@ This remains tokenizer processing. Predicting the next token with a neural langu
 
 Our trainer allocates IDs 256, 257, and so on in learning order. For this implementation, the smallest new ID identifies the earliest learned rule. This is a property of our allocation scheme; other tokenizer formats can store rule ranks separately.
 
-![In the first two rows, the less frequent pair wins because ID 256 records an earlier learned rule. The last row is the separate no-rule example: presence alone does not make a pair eligible.](assets/02-04-learned-rule-priority.en.png)
+![In the first two rows, the less frequent pair wins because ID 256 records an earlier learned rule. The last row is the separate no-rule example: presence alone does not make a pair eligible.](assets/02-04-learned-rule-priority.en.png){width=100%}
 
 In the first two rows, the less frequent pair wins because ID 256 records an earlier learned rule. The last row is the separate no-rule example: presence alone does not make a pair eligible.
 
@@ -809,9 +795,7 @@ Our IDs encode learning order only because the trainer assigns them consecutivel
 
 Continue with [Lesson 02.05: encode new text](#section-02-05), connecting this selector with `count_pairs` and `merge_pair`.
 
-<a id="section-02-05"></a>
-
-## 02.05 Encode New Text with Frozen BPE Rules
+## 02.05 Encode New Text with Frozen BPE Rules {#section-02-05}
 
 ### Method sources
 
@@ -838,7 +822,7 @@ This remains tokenizer processing. Predicting the next token with a neural langu
 
 Training on `"ababab"` with a vocabulary budget of 258 learned:
 
-![After each merge, read the newly formed sequence before choosing again. The final three IDs still contain pairs, but none has an applicable learned rule.](assets/02-05-frozen-encoding.en.png)
+![After each merge, read the newly formed sequence before choosing again. The final three IDs still contain pairs, but none has an applicable learned rule.](assets/02-05-frozen-encoding.en.png){width=100%}
 
 After each merge, read the newly formed sequence before choosing again. The final three IDs still contain pairs, but none has an applicable learned rule.
 
@@ -908,7 +892,7 @@ The [Lesson 02.04 selector](#section-02-04) remains available as a review refere
 
 ### Classroom question: can `"abac"` create an `ac` token?
 
-Suppose the frozen rules contain only `(97, 98) -> 256`. New text `"abac"` starts as `[97, 98, 97, 99]`; applying the learned `ab` rule produces `[256, 97, 99]`. The current pairs are `(256, 97)` and `(97, 99)`, neither of which has a rule. Return those three IDs. The final `ac` stays as two byte tokens.
+Suppose the frozen rules contain only $(97, 98) \to  256$. New text `"abac"` starts as `[97, 98, 97, 99]`; applying the learned `ab` rule produces `[256, 97, 99]`. The current pairs are `(256, 97)` and `(97, 99)`, neither of which has a rule. Return those three IDs. The final `ac` stays as two byte tokens.
 
 During BPE training, a present `ac` pair could be selected and assigned a new ID within the vocabulary budget. During encoding, the vocabulary is frozen, so no such allocation is allowed. Byte coverage lets the new text remain representable without a rule for every possible pair. Adjacent pairs can still exist at stopping time; absence of an applicable learned rule is the stopping condition.
 
@@ -920,9 +904,7 @@ Continue with [Lesson 02.06: BPE decoding](#section-02-06) and its decoding exer
 
 Segmentation, special-token handling, and tokenizer versioning remain separate topics before corpus preparation.
 
-<a id="section-02-06"></a>
-
-## 02.06 Decode BPE Tokens Back to Text
+## 02.06 Decode BPE Tokens Back to Text {#section-02-06}
 
 An ID is a label, so recovering text requires the vocabulary that gives the label meaning. We will look up each byte fragment, join the fragments in order, and decode the complete stream. That order matters whenever a token ends in the middle of a UTF-8 character.
 
@@ -968,7 +950,7 @@ ID 257 is a label for four bytes. It is not a raw byte whose numeric value is 25
 
 ### Why decoding belongs after the loop
 
-![The upper path recovers an ASCII example. The lower path uses a different vocabulary trained on “你”: neither byte fragment is text by itself, but their ordered concatenation is valid UTF-8.](assets/02-06-join-before-decode.en.png)
+![The upper path recovers an ASCII example. The lower path uses a different vocabulary trained on “你”: neither byte fragment is text by itself, but their ordered concatenation is valid UTF-8.](assets/02-06-join-before-decode.en.png){width=100%}
 
 The upper path recovers an ASCII example. The lower path uses a different vocabulary trained on “你”: neither byte fragment is text by itself, but their ordered concatenation is valid UTF-8.
 
@@ -1031,9 +1013,7 @@ The decoder must use the vocabulary belonging to the encoder or model. The same 
 
 Continue with [Lesson 02.07](#section-02-07) and exercises/02_07_bpe_save_load.py. Stage A prepares JSON-compatible records; stage B restores the exact vocabulary and rules. Then continue to the prepared embedding lookup lesson, which maps IDs to learned numeric vectors rather than byte contents.
 
-<a id="section-02-07"></a>
-
-## 02.07 Save and Reload a Tokenizer
+## 02.07 Save and Reload a Tokenizer {#section-02-07}
 
 A tokenizer should survive the end of a Python process. Saving it means preserving more than a vocabulary size: every ID must retain its byte contents and every merge must retain its priority. We will translate those Python objects into JSON records and restore them without relearning anything.
 
@@ -1041,7 +1021,7 @@ Work through the example before editing 02_07_bpe_save_load.py. The numbered ste
 
 ### JSON and the representation problem
 
-![Compare the left and right objects: Python types change during serialization, but the child IDs, replacement ID, and byte values must return unchanged.](assets/02-07-tokenizer-roundtrip.en.png)
+![Compare the left and right objects: Python types change during serialization, but the child IDs, replacement ID, and byte values must return unchanged.](assets/02-07-tokenizer-roundtrip.en.png){width=100%}
 
 Compare the left and right objects: Python types change during serialization, but the child IDs, replacement ID, and byte values must return unchanged.
 
@@ -1083,8 +1063,8 @@ Assume valid matching dictionaries from our trainer. Leave both input dictionari
 
 Train on `"ababab"` with budget 258. Start with the provided payload containing metadata and two empty lists.
 
-1. The first rule `(97, 98) -> 256` becomes `[97, 98, 256]`. After appending it, `out_merges` is `[[97, 98, 256]]`.
-2. The second rule `(256, 256) -> 257` becomes `[256, 256, 257]`. The list is now `[[97, 98, 256], [256, 256, 257]]`.
+1. The first rule $(97, 98) \to  256$ becomes `[97, 98, 256]`. After appending it, `out_merges` is `[[97, 98, 256]]`.
+2. The second rule $(256, 256) \to  257$ becomes `[256, 256, 257]`. The list is now `[[97, 98, 256], [256, 256, 257]]`.
 3. Each base vocabulary entry becomes a record: ID 0 becomes `[0, [0]]`, ID 1 becomes `[1, [1]]`, and so on through ID 255.
 4. ID 256 contains `b"ab"`. `list(token_bytes)` produces `[97, 98]`; its complete record is `[256, [97, 98]]`.
 5. ID 257 contains `b"abab"`; its complete record is `[257, [97, 98, 97, 98]]`.
@@ -1190,9 +1170,7 @@ JSON object keys cannot directly represent our tuple keys, and JSON has no bytes
 
 We can now preserve text as stable IDs. The next question is how a model learns anything from those integers. Chapter03 gives them trainable vectors and follows the resulting gradients.
 
-<a id="chapter-03"></a>
-
-# 03 Make a model learn
+# 03 Make a model learn {#chapter-03}
 
 The vocabulary defines the candidates, but it does not say which candidate should follow a prefix. We now introduce parameters: numerical values that can change in response to examples. An embedding lookup selects a row; an output projection scores candidates; a loss measures the probability assigned to the observed answer.
 
@@ -1200,9 +1178,7 @@ This is the longest chapter because it follows one training calculation through 
 
 The resulting baseline is intentionally limited. Its modest architecture makes mistakes easier to diagnose and gives attention a specific problem to solve in the next chapter.
 
-<a id="section-03-01"></a>
-
-## 03.01 Token IDs to Embedding Vectors
+## 03.01 Token IDs to Embedding Vectors {#section-03-01}
 
 ### Method sources
 
@@ -1214,7 +1190,7 @@ Work through the example before editing 03_01_embedding_lookup.py. The numbered 
 
 ### Follow one complete input
 
-![The arrows select rows from the same table in input order. Positions zero and two both use ID 97, so their four-component output rows agree.](assets/03-01-embedding-rows.en.png)
+![The arrows select rows from the same table in input order. Positions zero and two both use ID 97, so their four-component output rows agree.](assets/03-01-embedding-rows.en.png){width=100%}
 
 The arrows select rows from the same table in input order. Positions zero and two both use ID 97, so their four-component output rows agree.
 
@@ -1225,7 +1201,7 @@ text:       "aba"
 token IDs:  [97, 98, 97]
 ```
 
-An embedding table contains one floating-point row per vocabulary entry. Choose vocabulary size `V = 256` and embedding dimension `D = 4`. The table `E` has shape `[256, 4]`.
+An embedding table contains one floating-point row per vocabulary entry. Choose vocabulary size $V = 256$ and embedding dimension $D = 4$. The table $E$ has shape `[256, 4]`.
 
 For a lookup demonstration, give two of its rows these values:
 
@@ -1260,17 +1236,17 @@ Repeated token IDs retrieve the same row from the same table at this stage. Late
 
 | Symbol | Meaning | Value in this example |
 | --- | --- | ---: |
-| `V` | Number of vocabulary entries; number of table rows. | 256 |
-| `D` | Number of floating-point components in each embedding. | 4 |
-| `T` | Number of input token positions. | 3 |
+| $V$ | Number of vocabulary entries; number of table rows. | 256 |
+| $D$ | Number of floating-point components in each embedding. | 4 |
+| $T$ | Number of input token positions. | 3 |
 
-The embedding table has shape `[V, D]`. A sequence lookup has shape `[T, D]`. The table contains `V * D` parameters in a trainable implementation; input length does not change the table size.
+The embedding table has shape `[V, D]`. A sequence lookup has shape `[T, D]`. The table contains $VD$ parameters in a trainable implementation; input length does not change the table size.
 
-With `T = 6` and `D = 8`, the lookup result has shape `[6, 8]` and contains 48 scalar values. With a batch of `B` equal-length sequences, the corresponding output shape is `[B, T, D]`; batching will be implemented later.
+With $T = 6$ and $D = 8$, the lookup result has shape `[6, 8]` and contains 48 scalar values. With a batch of $B$ equal-length sequences, the corresponding output shape is `[B, T, D]`; batching will be implemented later.
 
-![A separate D=8 example distinguishes shape labels from vector contents. Two input positions select two complete rows; the full table still has 256 rows.](assets/03-01-shape-and-components.en.png)
+![A separate D=8 example distinguishes shape labels from vector contents. Two input positions select two complete rows; the full table still has 256 rows.](assets/03-01-shape-and-components.en.png){width=100%}
 
-This second example uses `D=8`, rather than the exercise's `D=4`, to make the distinction explicit. In a shape label, `[2, 8]` means two rows of eight components, or 16 scalar entries. Inside a value row, `[0, 0]` means two actual zero-valued components. Changing the input from three positions to two changes the output's first dimension; it does not resize the vocabulary table.
+This second example uses $D=8$, rather than the exercise's $D=4$, to make the distinction explicit. In a shape label, `[2, 8]` means two rows of eight components, or 16 scalar entries. Inside a value row, `[0, 0]` means two actual zero-valued components. Changing the input from three positions to two changes the output's first dimension; it does not resize the vocabulary table.
 
 ### What each representation means
 
@@ -1297,7 +1273,7 @@ The inputs are `token_ids: list[int]` and `embedding_table: list[list[float]]`. 
 | Name | Type | Meaning |
 | --- | --- | --- |
 | `token_ids` | `list[int]` | Ordered input IDs supplied by the caller. |
-| `embedding_table` | `list[list[float]]` | Supplied table with one row per vocabulary entry and `D` components per row. |
+| `embedding_table` | `list[list[float]]` | Supplied table with one row per vocabulary entry and $D$ components per row. |
 | `vectors` | `list[list[float]]` | Output rows collected by the learner. |
 | `token_id` | `int` | Current ID visited in the input loop. |
 | Returned value | `list[list[float]]` | One whole row per token position, including repeated IDs. |
@@ -1321,7 +1297,7 @@ The expected final success line is `Lesson 03.01 checks passed.`
 
 #### Does a dimension of 8 mean values range from 0 to 256?
 
-No. `D=8` means eight numeric components per vector. Their values can be negative or positive floating-point numbers and are not limited to the raw-byte range. For `T=6` token positions, the output shape is `[6, 8]` with 48 scalar values. Shape counts rows and columns; it does not specify their numeric limits.
+No. $D=8$ means eight numeric components per vector. Their values can be negative or positive floating-point numbers and are not limited to the raw-byte range. For $T=6$ token positions, the output shape is `[6, 8]` with 48 scalar values. Shape counts rows and columns; it does not specify their numeric limits.
 
 #### Where do the numbers in `embedding_table[97]` come from?
 
@@ -1331,7 +1307,7 @@ The table supplied by our checks contains hand-chosen demonstration numbers. ID 
 
 Both positions contain ID 97 and use the same table, so both retrieve the same row. Preserve both occurrences in the output. Later positional and attention operations can distinguish the positions using their contexts.
 
-A merged BPE ID has its own embedding row with the same dimension `D`. Its tokenizer byte contents are a concatenation, but its model vector is not defined by concatenating the children's vectors. Growing the vocabulary grows the row count `V`; it does not automatically change `D`.
+A merged BPE ID has its own embedding row with the same dimension $D$. Its tokenizer byte contents are a concatenation, but its model vector is not defined by concatenating the children's vectors. Growing the vocabulary grows the row count $V$; it does not automatically change $D$.
 
 ### Explanation checkpoint and next lesson
 
@@ -1339,7 +1315,7 @@ A merged BPE ID has its own embedding row with the same dimension `D`. Its token
 
 `[3, 8]` describes the output shape: three token positions, each represented by eight numbers. A shape describes dimensions; it is not itself the tensor containing those numbers. The current exercise returns a nested Python list. A later tensor implementation can represent the same rectangular values as a rank-two tensor.
 
-For `V=258`, `D=8`, and `token_ids=[256, 97, 256]`, distinguish the two objects:
+For $V=258$, $D=8$, and `token_ids=[256, 97, 256]`, distinguish the two objects:
 
 | Object | Rows | Components per row | Shape |
 | --- | ---: | ---: | --- |
@@ -1358,19 +1334,17 @@ Both repeated positions read the same row of the same fixed table. The complete 
 
 For another short trace, change the input to `[256, 97]` while keeping the table fixed. What is the returned shape, and does the full table change size? This checks whether input length and vocabulary size are being distinguished.
 
-In this example, the output has shape `[2, 8]`, while the lookup table stays the same size. This demonstrates the distinction between input length and vocabulary size in this example. Write a shape with a comma, `[2, 8]`; the product `2 * 8` counts 16 scalar values.
+In this example, the output has shape `[2, 8]`, while the lookup table stays the same size. This demonstrates the distinction between input length and vocabulary size in this example. Write a shape with a comma, `[2, 8]`; the product $2 \times  8$ counts 16 scalar values.
 
-Explain what `V`, `D`, and `T` count. Trace the three output rows for `"aba"`, and explain why the first and third are equal at the lookup stage. Then reconstruct the lookup loop without AI completion.
+Explain what $V$, $D$, and $T$ count. Trace the three output rows for `"aba"`, and explain why the first and third are equal at the lookup stage. Then reconstruct the lookup loop without AI completion.
 
-For an explanation checkpoint, use `V=258`, `D=8`, and `token_ids=[256, 97, 256]`. State the shape of the full table and the returned sequence, then explain why the first and third lookup rows match.
+For an explanation checkpoint, use $V=258$, $D=8$, and `token_ids=[256, 97, 256]`. State the shape of the full table and the returned sequence, then explain why the first and third lookup rows match.
 
 The submitted loop starts an empty `vectors`, visits each `token_id`, and appends `embedding_table[token_id]` as a whole row. Its return is outside the loop, so every position is processed and an empty input returns the empty result. This is the correct lookup behavior. The table is still supplied data; this function does not update embedding parameters.
 
 Next, read [Lesson 03.02: parameters, loss, and gradients](#section-03-02), a concept lesson with no code assignment yet. Then represent these operations with trainable tensors, produce vocabulary logits in a minimal next-token model, and connect predictions to shifted targets and cross-entropy. Attention and the Transformer follow after the minimal training path is understood.
 
-<a id="section-03-02"></a>
-
-## 03.02 Parameters, Loss, and Gradients
+## 03.02 Parameters, Loss, and Gradients {#section-03-02}
 
 An embedding table becomes useful when its numbers can change in response to mistakes. Before updating a whole table, let us train just one number. Squared error gives us a loss we can draw, and its slope explains both the direction and the limits of a gradient-descent step.
 
@@ -1392,7 +1366,7 @@ The tokenizer supplies IDs. Training adjusts model parameters. Later lessons wil
 
 ### A small task with one adjustable number
 
-For this example only, let the prediction be the parameter itself, `prediction = w`. Set the desired target to `1.0`. Use squared error to measure the discrepancy:
+For this example only, let the prediction be the parameter itself, $\mathrm{prediction}=w$. Set the desired target to `1.0`. Use squared error to measure the discrepancy:
 
 ```text
 L(w) = (w - target)^2
@@ -1405,8 +1379,8 @@ This is a teaching example, not the language model's next-token objective. The s
 | `w` | Floating-point scalar | Adjustable parameter and prediction in this toy task. | `0.2` |
 | `target` | Floating-point scalar | Fixed desired prediction. | `1.0` |
 | `error` | Floating-point scalar | Prediction minus the target: `w - target`. | `-0.8` initially |
-| `L` | Nonnegative scalar | Squared-error loss; lower means closer to the target here. | `0.64` initially |
-| `g` | Floating-point scalar | Gradient: derivative of the loss with respect to `w`. | `-1.6` initially |
+| $L$ | Nonnegative scalar | Squared-error loss; lower means closer to the target here. | `0.64` initially |
+| $g$ | Floating-point scalar | Gradient: derivative of the loss with respect to `w`. | `-1.6` initially |
 | `learning_rate` | Positive scalar | Step size used for the update. | `0.1` |
 | `w_new` | Floating-point scalar | Parameter after one update. | `0.36` |
 
@@ -1418,7 +1392,7 @@ The gradient describes how the loss changes locally when the parameter increases
 g = dL/dw = 2 * (w - target)
 ```
 
-If `g` is positive, a small increase in `w` increases the loss locally, so a descent update moves `w` downward. If `g` is negative, a small increase in `w` decreases the loss locally, so the update moves `w` upward. In this example, zero gradient occurs when the prediction equals the target.
+If $g$ is positive, a small increase in `w` increases the loss locally, so a descent update moves `w` downward. If $g$ is negative, a small increase in `w` decreases the loss locally, so the update moves `w` upward. In this example, zero gradient occurs when the prediction equals the target.
 
 The elementary gradient-descent update is:
 
@@ -1428,22 +1402,22 @@ w_new = w - learning_rate * g
 
 The learning rate controls the step size. A step that is too large can increase the loss; decreasing loss after every update is not a universal guarantee.
 
-### Why is the gradient `2 * (w - target)`?
+### Why is the gradient $2(w-\mathrm{target})$?
 
-A derivative measures the local rate of change. Increase `w` by a small amount `h`, keep `target` fixed, and compare the change in loss with the change in the parameter:
+A derivative measures the local rate of change. Increase `w` by a small amount $h$, keep `target` fixed, and compare the change in loss with the change in the parameter:
 
 ```text
 change in loss / change in w = (L(w + h) - L(w)) / h
 ```
 
-Here, `h` is a nonzero scalar perturbation used to examine the loss function. It is not the learning rate or a training update. For example, with `w=0.2`, `target=1.0`, and `h=0.01`:
+Here, $h$ is a nonzero scalar perturbation used to examine the loss function. It is not the learning rate or a training update. For example, with `w=0.2`, `target=1.0`, and `h=0.01`:
 
-1. The original loss is `(0.2 - 1.0)^2 = 0.64`.
-2. The perturbed parameter is `0.21`, with loss `(0.21 - 1.0)^2 = 0.6241`.
-3. The loss change is `0.6241 - 0.64 = -0.0159`.
-4. The ratio is `-0.0159 / 0.01 = -1.59`, close to the gradient `-1.6`.
+1. The original loss is $(0.2 - 1.0)^{2} = 0.64$.
+2. The perturbed parameter is `0.21`, with loss $(0.21 - 1.0)^{2} = 0.6241$.
+3. The loss change is $0.6241 - 0.64 = -0.0159$.
+4. The ratio is $-0.0159 / 0.01 = -1.59$, close to the gradient `-1.6`.
 
-The exact expression follows by expanding the square. Write `a = w - target` temporarily:
+The exact expression follows by expanding the square. Write $a=w-\mathrm{target}$ temporarily:
 
 ```text
 L(w + h) - L(w) = (a + h)^2 - a^2
@@ -1451,7 +1425,7 @@ L(w + h) - L(w) = (a + h)^2 - a^2
 (L(w + h) - L(w)) / h = 2 * a + h
 ```
 
-As `h` approaches zero, the ratio approaches `2 * a = 2 * (w - target)`. That limit is the derivative `dL/dw`, which is the scalar gradient in this task. The factor `2` comes from expanding the squared error. A different loss or prediction formula generally has a different derivative.
+As $h$ approaches zero, the ratio approaches $2a=2(w-\mathrm{target})$. That limit is the derivative $\frac{dL}{dw}$, which is the scalar gradient in this task. The factor `2` comes from expanding the squared error. A different loss or prediction formula generally has a different derivative.
 
 For a sufficiently small parameter change, the gradient gives a local estimate:
 
@@ -1459,42 +1433,42 @@ For a sufficiently small parameter change, the gradient gives a local estimate:
 change in loss approximately equals g * change in w
 ```
 
-For this squared loss, the exact change also includes `(change in w)^2`. The approximation becomes more accurate as the change becomes smaller.
+For this squared loss, the exact change also includes $(\Delta w)^2$. The approximation becomes more accurate as the change becomes smaller.
 
 ### Complete worked update
 
 Use `w=0.2`, `target=1.0`, and `learning_rate=0.1`.
 
-![The dashed tangent has negative slope at w=0.2. Subtracting that negative gradient moves right to w=0.36; the new point lies lower on the actual loss curve.](assets/03-02-loss-and-gradient.en.png)
+![The dashed tangent has negative slope at w=0.2. Subtracting that negative gradient moves right to w=0.36; the new point lies lower on the actual loss curve.](assets/03-02-loss-and-gradient.en.png){width=100%}
 
-The dashed tangent has negative slope at w=0.2. Subtracting that negative gradient moves right to w=0.36; the new point lies lower on the actual loss curve.
+The dashed tangent has negative slope at $w=0.2$. Subtracting that negative gradient moves right to $w=0.36$; the new point lies lower on the actual loss curve.
 
 1. **Predict:** the toy task returns `0.2` because its prediction is `w` itself.
-2. **Compute the loss:** `(0.2 - 1.0)^2 = (-0.8)^2 = 0.64`.
-3. **Compute the gradient:** `g = 2 * (0.2 - 1.0) = -1.6`.
-4. **Update the parameter:** `w_new = 0.2 - 0.1 * (-1.6) = 0.36`. Subtracting a negative quantity increases `w`.
-5. **Check the new prediction:** the next prediction is `0.36`, and its loss is `(0.36 - 1.0)^2 = 0.4096`, smaller than `0.64`.
+2. **Compute the loss:** $(0.2 - 1.0)^{2} = (-0.8)^{2} = 0.64$.
+3. **Compute the gradient:** $g=2 \times  (0.2 - 1.0) = -1.6$.
+4. **Update the parameter:** $w_{\mathrm{new}}=0.2 - 0.1 \times  (-1.6) = 0.36$. Subtracting a negative quantity increases `w`.
+5. **Check the new prediction:** the next prediction is `0.36`, and its loss is $(0.36 - 1.0)^{2} = 0.4096$, smaller than `0.64`.
 
 This update moved the adjustable number toward the target. It changed a parameter value; it did not change any table dimensions or vocabulary IDs.
 
 ### Classroom follow-up: arithmetic and update direction
 
-**Why does a negative gradient make `w` increase?** Subtracting a negative number is equivalent to adding a positive number. Here, `0.1 * (-1.6) = -0.16`, so the update adds `0.16` to `w`.
+**Why does a negative gradient make `w` increase?** Subtracting a negative number is equivalent to adding a positive number. Here, $0.1 \times  (-1.6) = -0.16$, so the update adds `0.16` to `w`.
 
 Connect that arithmetic to the purpose of learning: a negative gradient means that increasing `w` a little decreases the loss locally. The update therefore moves in a direction that can reduce the error, with the learning rate controlling how far it moves.
 
 **Does training always increase a parameter?** Consider the same task with `w=1.2`, `target=1.0`, and `learning_rate=0.1`:
 
-1. **Compute the loss:** `(1.2 - 1.0)^2 = 0.04`.
-2. **Compute the gradient:** `g = 2 * (1.2 - 1.0) = 0.4`, a positive value.
-3. **Update the parameter:** `w_new = 1.2 - 0.1 * 0.4 = 1.16`. This time, `w` decreases.
-4. **Check the new loss:** `(1.16 - 1.0)^2 = 0.0256`, smaller than `0.04`.
+1. **Compute the loss:** $(1.2 - 1.0)^{2} = 0.04$.
+2. **Compute the gradient:** $g=2 \times  (1.2 - 1.0) = 0.4$, a positive value.
+3. **Update the parameter:** $w_{\mathrm{new}}=1.2 - 0.1 \times  0.4 = 1.16$. This time, `w` decreases.
+4. **Check the new loss:** $(1.16 - 1.0)^{2} = 0.0256$, smaller than `0.04`.
 
 In these two examples, the updates approach the target from opposite sides. Gradient descent adjusts the parameter according to the gradient; it does not always increase the parameter.
 
-**What happens when `w` already equals the target?** For `w=1.0`, `target=1.0`, and `learning_rate=0.1`, the result is `g=0` and `w_new=1.0`. The full calculation is `g = 2 * (1.0 - 1.0) = 0`, followed by `w_new = 1.0 - 0.1 * 0 = 1.0`. The loss is zero, and this update leaves the parameter unchanged. This squared-error example has reached its minimum.
+**What happens when `w` already equals the target?** For `w=1.0`, `target=1.0`, and `learning_rate=0.1`, the result is $g=0$ and `w_new=1.0`. The full calculation is $g=2 \times  (1.0 - 1.0) = 0$, followed by $w_{\mathrm{new}}=1.0 - 0.1 \times  0 = 1.0$. The loss is zero, and this update leaves the parameter unchanged. This squared-error example has reached its minimum.
 
-**What does `g=-1.6` predict for a parameter increase of `0.001`?** The loss decreases by `0.0016`, using the supplied relation between gradient and local loss change:
+**What does $g=-1.6$ predict for a parameter increase of `0.001`?** The loss decreases by `0.0016`, using the supplied relation between gradient and local loss change:
 
 ```text
 estimated loss change = -1.6 * 0.001 = -0.0016
@@ -1502,11 +1476,11 @@ exact new loss = (0.201 - 1.0)^2 = 0.638401
 exact loss change = 0.638401 - 0.64 = -0.001599
 ```
 
-The gradient gives a local linear approximation. For this squared loss, the difference is the additional `h^2 = 0.000001` term from the expansion. The exact calculation here is supplied explanation.
+The gradient gives a local linear approximation. For this squared loss, the difference is the additional $h^{2}=0.000001$ term from the expansion. The exact calculation here is supplied explanation.
 
 ### Returning to the embedding table
 
-An embedding row has `D` adjustable values. A model can calculate a gradient for each participating parameter and use those gradients to update the numbers. The gradients come from how those values affect the prediction loss. The table remains shape `[V, D]` after an update.
+An embedding row has $D$ adjustable values. A model can calculate a gradient for each participating parameter and use those gradients to update the numbers. The gradients come from how those values affect the prediction loss. The table remains shape `[V, D]` after an update.
 
 Lesson 03.01's list lookup reads the existing values and does not calculate a loss, gradients, or updates. The coming tensor implementation will connect those operations. With many parameters, the same basic idea applies to arrays of values and gradients.
 
@@ -1557,7 +1531,7 @@ Keep `target=1.0` and `learning_rate=0.1`. One call returns an updated parameter
 | 2 | `0.36` | `0.4096` | `-1.28` | `0.488` |
 | 3 | `0.488` | `0.262144` | `-1.024` | `0.5904` |
 
-For update 2, `gradient = 2 * (0.36 - 1.0) = -1.28`, then `w_new = 0.36 - 0.1 * (-1.28) = 0.488`. After update 3, the loss is `(0.5904 - 1.0)^2 = 0.16777216`.
+For update 2, $\mathrm{gradient}=2 \times  (0.36 - 1.0) = -1.28$, then $w_{\mathrm{new}}=0.36 - 0.1 \times  (-1.28) = 0.488$. After update 3, the loss is $(0.5904 - 1.0)^{2} = 0.16777216$.
 
 The gradient depends on the current parameter. Reusing `-1.6` at input `w=0.36` would produce `0.52`; that uses a derivative measured at a different point rather than the gradient at the current value. Recalculate both loss and gradient on each iteration.
 
@@ -1571,9 +1545,7 @@ Continue with [Lesson 03.03: a scalar training loop](#section-03-03). Its guided
 
 The one-update code checks and the second-gradient explanation are complete. Continue with the loop assignment in Lesson 03.03. Independently explain why the function returns the original loss, why a larger learning rate can overshoot, and which quantity changes when training updates an embedding table: its number of rows, or its floating-point values?
 
-<a id="section-03-03"></a>
-
-## 03.03 A Scalar Training Loop
+## 03.03 A Scalar Training Loop {#section-03-03}
 
 One update changes the parameter, so the next update must ask a fresh question at the new value. A training loop carries that value forward and keeps a record of the losses that produced each step. The arithmetic stays small enough to check by hand while we learn the loop structure used later.
 
@@ -1613,7 +1585,7 @@ Each helper call returns three local values: `loss`, `gradient`, and `w_new`. Th
 
 Use `initial_w=0.2`, `target=1.0`, `learning_rate=0.1`, and `num_steps=3`.
 
-![Each returned loss belongs to the parameter above it, before the next arrow. The rightmost state is the final parameter; evaluating it would be a separate fourth loss.](assets/03-03-parameter-timeline.en.png)
+![Each returned loss belongs to the parameter above it, before the next arrow. The rightmost state is the final parameter; evaluating it would be a separate fourth loss.](assets/03-03-parameter-timeline.en.png){width=100%}
 
 Each returned loss belongs to the parameter above it, before the next arrow. The rightmost state is the final parameter; evaluating it would be a separate fourth loss.
 
@@ -1716,9 +1688,7 @@ An empty loop skips its body; execution then continues with the following statem
 
 Continue with [Lesson 03.04: chain rule and automatic differentiation](#section-03-04). The remaining loop checkpoints stay available for review. Trainable tensors follow the chain-rule introduction.
 
-<a id="section-03-04"></a>
-
-## 03.04 Chain Rule and Automatic Differentiation
+## 03.04 Chain Rule and Automatic Differentiation {#section-03-04}
 
 ### Method sources
 
@@ -1730,7 +1700,7 @@ This section develops the chain rule without a separate code assignment. The nex
 
 ### Define the functions and gradient before calculating numbers
 
-Hold `x` and `target` fixed. The model and objective are functions of the adjustable parameter `w`:
+Hold $x$ and `target` fixed. The model and objective are functions of the adjustable parameter $w$:
 
 ```text
 prediction(w) = w * x
@@ -1738,13 +1708,13 @@ L(w) = loss = (prediction(w) - target) ** 2
      = (w * x - target) ** 2
 ```
 
-The gradient sought here is `dL/dw`: the derivative of the loss with respect to the parameter. For a differentiable scalar function, its definition is:
+The gradient sought here is $\frac{dL}{dw}$: the derivative of the loss with respect to the parameter. For a differentiable scalar function, its definition is:
 
 ```text
 dL/dw = limit as h approaches 0 of (L(w + h) - L(w)) / h
 ```
 
-Here `h` is a nonzero change in `w` before taking the limit. The derivative measures the loss's local rate of change as `w` changes, with the fixed quantities held constant. It does not mean dividing the current loss value by the current parameter value.
+Here $h$ is a nonzero change in $w$ before taking the limit. The derivative measures the loss's local rate of change as $w$ changes, with the fixed quantities held constant. It does not mean dividing the current loss value by the current parameter value.
 
 The **chain rule**, for this composition through `prediction`, is:
 
@@ -1766,20 +1736,20 @@ For this example, every quantity is a scalar number. Python examples use `float`
 
 | Name | Role | Initial value |
 | --- | --- | --- |
-| `w` | Adjustable model parameter. | `0.2` |
-| `x` | Fixed input for this example. | `2.0` |
+| $w$ | Adjustable model parameter. | `0.2` |
+| $x$ | Fixed input for this example. | `2.0` |
 | `target` | Fixed desired prediction. | `1.0` |
-| `prediction` | Model output, calculated as `w * x`. | `0.4` |
+| `prediction` | Model output, calculated as $wx$. | `0.4` |
 | `error` | Prediction minus target. | `-0.6` |
 | `loss` | Squared error, a scalar objective to reduce. | `0.36` |
-| `gradient` | Derivative of loss with respect to `w` at its current value. | Calculated below. |
+| `gradient` | Derivative of loss with respect to $w$ at its current value. | Calculated below. |
 | `learning_rate` | Positive multiplier used in the parameter update. | `0.1` |
 
-The parameter and the prediction now have different values. With `x=1.0`, this model reduces to the earlier `prediction = w` example. For this calculation, hold `x` and `target` fixed while considering a change in `w`.
+The parameter and the prediction now have different values. With `x=1.0`, this model reduces to the earlier $\mathrm{prediction}=w$ example. For this calculation, hold $x$ and `target` fixed while considering a change in $w$.
 
 ### Derivation: why the two rates multiply
 
-At the original `w`, write `error = w * x - target`. Changing `w` to `w + h` changes the prediction and error by exactly `x * h`:
+At the original $w$, write $\mathrm{error}=wx-\mathrm{target}$. Changing $w$ to $w+h$ changes the prediction and error by exactly $xh$:
 
 ```text
 prediction(w + h) = prediction(w) + x * h
@@ -1804,7 +1774,7 @@ as h approaches 0:
           = 2 * (w * x - target) * x
 ```
 
-The term `x ** 2 * h` tends to zero. The factor `2 * error` comes from the loss's response to its prediction, and the factor `x` comes from the prediction's response to `w`. Multiplying the rates accounts for both dependencies. This derivation establishes the formula for this example; the general chain rule extends the same local-rate reasoning to differentiable compositions.
+The term $x^{2}h$ tends to zero. The factor $2\,\mathrm{error}$ comes from the loss's response to its prediction, and the factor $x$ comes from the prediction's response to $w$. Multiplying the rates accounts for both dependencies. This derivation establishes the formula for this example; the general chain rule extends the same local-rate reasoning to differentiable compositions.
 
 Using the intermediate `error` explicitly gives the three-factor form:
 
@@ -1813,7 +1783,7 @@ dL/dw = dL/d(error) * d(error)/d(prediction) * d(prediction)/dw
       = (2 * error) * 1 * x
 ```
 
-Subtracting a fixed target has derivative `1`, so the two-factor and three-factor forms give the same result. The value `2 * error` gives the loss derivative with respect to `error`, and also with respect to `prediction` here. To obtain the derivative with respect to `w`, include the prediction's derivative `x`. When `x=1`, this reduces to the earlier formula in Lesson 03.02.
+Subtracting a fixed target has derivative `1`, so the two-factor and three-factor forms give the same result. The value $2\,\mathrm{error}$ gives the loss derivative with respect to `error`, and also with respect to `prediction` here. To obtain the derivative with respect to $w$, include the prediction's derivative $x$. When `x=1`, this reduces to the earlier formula in Lesson 03.02.
 
 ### Worked forward pass: substitute the values
 
@@ -1827,27 +1797,27 @@ loss = error ** 2
 
 With `w=0.2`, `x=2.0`, and `target=1.0`:
 
-1. `prediction = 0.2 * 2.0 = 0.4`.
-2. `error = 0.4 - 1.0 = -0.6`.
-3. `loss = (-0.6) ** 2 = 0.36`.
+1. $\mathrm{prediction}=0.2 \times  2.0 = 0.4$.
+2. $\mathrm{error}=0.4 - 1.0 = -0.6$.
+3. $L=(-0.6) ^{2} = 0.36$.
 
 This calculation from the inputs and parameter to the loss is the **forward pass**. Its dependency path is `w → prediction → error → loss`. A computation graph records such dependencies and operations; the fixed input and target also feed their respective operations.
 
 ### Local derivatives: how each operation responds
 
-The notation `dA/dB` means the derivative of `A` with respect to `B`: the local rate at which `A` changes as `B` changes. It is not ordinary division of the values `A` and `B`. A rate can be negative or greater than one.
+The notation $\frac{dA}{dB}$ means the derivative of $A$ with respect to $B$: the local rate at which $A$ changes as $B$ changes. It is not ordinary division of the values $A$ and $B$. A rate can be negative or greater than one.
 
 Read the operations backward, starting at the loss:
 
-1. **Square:** `loss = error ** 2`. Its derivative with respect to `error` is `2 * error`. At `error=-0.6`, this is `-1.2`.
-2. **Subtract a fixed target:** `error = prediction - target`. Increasing `prediction` by a small amount increases `error` by the same amount. Its derivative with respect to `prediction` is `1`.
-3. **Multiply by a fixed input:** `prediction = w * x`. Increasing `w` by a small amount changes `prediction` by `x` times that amount. Its derivative with respect to `w` is `x=2.0`.
+1. **Square:** $L=\mathrm{error}^{2}$. Its derivative with respect to `error` is $2\,\mathrm{error}$. At `error=-0.6`, this is `-1.2`.
+2. **Subtract a fixed target:** $\mathrm{error}=\mathrm{prediction}-\mathrm{target}$. Increasing `prediction` by a small amount increases `error` by the same amount. Its derivative with respect to `prediction` is `1`.
+3. **Multiply by a fixed input:** $\mathrm{prediction}=wx$. Increasing $w$ by a small amount changes `prediction` by $x$ times that amount. Its derivative with respect to $w$ is `x=2.0`.
 
 The square derivative uses the rule introduced in Lesson 03.02. Here it is first applied to the intermediate variable `error`; the chain rule connects it to the parameter.
 
 ### Worked chain rule: evaluate the derived formula
 
-The loss depends on the error, the error on the prediction, and the prediction on `w`. The derivative along this single path is the product of its local derivatives:
+The loss depends on the error, the error on the prediction, and the prediction on $w$. The derivative along this single path is the product of its local derivatives:
 
 ```text
 d(loss)/d(w)
@@ -1863,13 +1833,13 @@ Therefore, for this model and loss:
 gradient = 2 * (w * x - target) * x
 ```
 
-The final factor `x` accounts for how strongly the parameter affects the prediction. For example, increasing `w` by `0.001` increases `prediction` and `error` by `0.002`. At the current values, the first-order estimate of the loss change is `-1.2 * 0.002 = -0.0024`, which also equals `gradient * 0.001`. This estimate describes a small local change, not an exact finite difference.
+The final factor $x$ accounts for how strongly the parameter affects the prediction. For example, increasing $w$ by `0.001` increases `prediction` and `error` by `0.002`. At the current values, the first-order estimate of the loss change is $-1.2 \times  0.002 = -0.0024$, which also equals $\mathrm{gradient}\times0.001$. This estimate describes a small local change, not an exact finite difference.
 
 Multiply the derivative factors associated with the operations. The prediction value `0.4` and loss value `0.36` are forward results, not extra derivative factors.
 
 ### Backward pass and automatic differentiation
 
-![Blue arrows follow the forward calculation; the reverse orange arrows carry local derivatives. Multiply the three displayed factors to obtain dL/dw=-2.4.](assets/03-04-chain-rule.en.png)
+![Blue arrows follow the forward calculation; the reverse orange arrows carry local derivatives. Multiply the three displayed factors to obtain dL/dw=-2.4.](assets/03-04-chain-rule.en.png){width=100%}
 
 Blue arrows follow the forward calculation; the reverse orange arrows carry local derivatives. Multiply the three displayed factors to obtain dL/dw=-2.4.
 
@@ -1877,9 +1847,9 @@ Computing the loss gradient through the operations in reverse order is the **bac
 
 | Gradient being computed | Rule | Result |
 | --- | --- | --- |
-| Loss with respect to `error` | `2 * error` | `-1.2` |
+| Loss with respect to `error` | $2\,\mathrm{error}$ | `-1.2` |
 | Loss with respect to `prediction` | Previous gradient times `1` | `-1.2` |
-| Loss with respect to `w` | Previous gradient times `x` | `-2.4` |
+| Loss with respect to $w$ | Previous gradient times $x$ | `-2.4` |
 
 **Automatic differentiation** records the relevant operations and intermediate values, then applies their derivative rules and the chain rule to compute gradients. A framework can perform this bookkeeping for many parameters. In a scalar-loss model, each parameter's gradient expresses the loss's local response to that parameter while the other parameters are held fixed.
 
@@ -1918,16 +1888,14 @@ This example's loss decreased from `0.36` to `0.0144`. These values establish th
 
 The numerical checkpoint used `w=0.6`, `x=2.0`, and `target=1.0`. Retain its calculation plan for optional review:
 
-1. Calculate `prediction = w * x`.
-2. Calculate `error = prediction - target`.
-3. Calculate the square operation's local derivative, `2 * error`.
-4. Multiply it by the subtraction derivative `1` and multiplication derivative `x` to obtain `d(loss)/d(w)`.
+1. Calculate $\mathrm{prediction}=wx$.
+2. Calculate $\mathrm{error}=\mathrm{prediction}-\mathrm{target}$.
+3. Calculate the square operation's local derivative, $2\,\mathrm{error}$.
+4. Multiply it by the subtraction derivative `1` and multiplication derivative $x$ to obtain `d(loss)/d(w)`.
 
-With `w=0.6`, `x=2`, and `target=1`, prediction is `1.2`, error is `0.2`, loss is `0.04`, and the parameter gradient is `2×0.2×2=0.8`. The factor `x` comes from differentiating the prediction with respect to w.
+With `w=0.6`, `x=2`, and `target=1`, prediction is `1.2`, error is `0.2`, loss is `0.04`, and the parameter gradient is $2\times 0.2\times 2=0.8$. The factor $x$ comes from differentiating the prediction with respect to w.
 
-<a id="section-03-05"></a>
-
-## 03.05 Scalar Automatic Differentiation with PyTorch
+## 03.05 Scalar Automatic Differentiation with PyTorch {#section-03-05}
 
 ### Method sources
 
@@ -1955,13 +1923,13 @@ The derivative formula is our reference for understanding and verification. In t
 
 ### Principle: reverse differentiation through recorded operations
 
-For an intermediate quantity `u`, define `g_u = dL/du`: the loss's derivative with respect to that quantity. For an operation `v = f(u)`, its reverse contribution is:
+For an intermediate quantity $u$, define $g_u=\frac{dL}{du}$: the loss's derivative with respect to that quantity. For an operation $v=f(u)$, its reverse contribution is:
 
 ```text
 g_u += g_v * d(v)/d(u)
 ```
 
-Initialize gradient accumulators to zero and start at the scalar loss with `g_L = dL/dL = 1`. The `+=` notation means adding the contribution to the current accumulator; several paths can contribute to the same quantity. On the single path in this exercise, each quantity receives one contribution.
+Initialize gradient accumulators to zero and start at the scalar loss with $g_L=\frac{dL}{dL}=1$. The `+=` notation means adding the contribution to the current accumulator; several paths can contribute to the same quantity. On the single path in this exercise, each quantity receives one contribution.
 
 In the forward pass, PyTorch computes tensor values and records relevant operations and the information needed by their derivative rules. In the backward pass, it processes those dependencies in reverse, combining each incoming gradient with the operation's local derivative. This is reverse-mode automatic differentiation. The [official autograd tutorial](https://docs.pytorch.org/tutorials/beginner/basics/autogradqs_tutorial.html) explains this recording and propagation.
 
@@ -1969,7 +1937,7 @@ The chain-rule result is evaluated at the current forward values. Floating-point
 
 ### Complete forward and backward example
 
-![The forward values match the hand calculation. Backward uses those dependencies to populate the leaf parameter’s .grad; extracting a reporting number with .item() is a different operation.](assets/03-05-autograd-dependencies.en.png)
+![The forward values match the hand calculation. Backward uses those dependencies to populate the leaf parameter’s .grad; extracting a reporting number with .item() is a different operation.](assets/03-05-autograd-dependencies.en.png){width=100%}
 
 The forward values match the hand calculation. Backward uses those dependencies to populate the leaf parameter’s .grad; extracting a reporting number with .item() is a different operation.
 
@@ -2011,7 +1979,7 @@ An isolated constructor example is:
 parameter = torch.tensor(0.6, dtype=torch.float64, requires_grad=True)
 ```
 
-The first argument supplies the number. `dtype=torch.float64` chooses 64-bit floating-point precision; this is a numeric representation, not a tensor shape or embedding dimension. `requires_grad=True` requests gradient tracking for operations involving this tensor in normal gradient mode. `True` is a Boolean value with a capital `T`. This directly created parameter is a **leaf tensor**, the starting parameter node. See the [tensor constructor](https://docs.pytorch.org/docs/2.0/generated/torch.tensor.html).
+The first argument supplies the number. `dtype=torch.float64` chooses 64-bit floating-point precision; this is a numeric representation, not a tensor shape or embedding dimension. `requires_grad=True` requests gradient tracking for operations involving this tensor in normal gradient mode. `True` is a Boolean value with a capital $T$. This directly created parameter is a **leaf tensor**, the starting parameter node. See the [tensor constructor](https://docs.pytorch.org/docs/2.0/generated/torch.tensor.html).
 
 Arithmetic with this tensor produces connected tensor results. Keep `prediction_tensor`, `error`, and `loss` as tensors through the forward computation. This example can multiply by a Python float `x` and subtract a Python float `target` while preserving the dependency on `w_tensor`.
 
@@ -2071,9 +2039,7 @@ If `torch` cannot be imported, check the selected interpreter and activate the e
 
 Optional review: explain what `requires_grad` enables, why reverse differentiation starts with `1`, where the computed gradient is stored, why backward leaves `w_tensor` unchanged, and when `.item()` is appropriate. Continue with [Lesson 03.06](#section-03-06) to clear old gradients and apply a tensor parameter update. Later lessons connect these steps to training loops and embeddings.
 
-<a id="section-03-06"></a>
-
-## 03.06 Updating a Tensor Parameter
+## 03.06 Updating a Tensor Parameter {#section-03-06}
 
 ### Method sources
 
@@ -2095,7 +2061,7 @@ g = dL/dw = 2 * (w * x - target) * x
 w_new = w - learning_rate * g
 ```
 
-The derivative comes from Lesson 03.04's chain rule. For a small parameter change `delta_w`, the local estimate is `delta_L ≈ g * delta_w`. Substituting gradient descent's change `delta_w = -learning_rate * g` gives `delta_L ≈ -learning_rate * g ** 2`. With a positive learning rate and nonzero gradient, that estimate is negative. This explains the chosen direction; the approximation does not guarantee a decrease for a large finite step.
+The derivative comes from Lesson 03.04's chain rule. For a small parameter change $\Delta w$, the local estimate is $\Delta L\approx g\,\Delta w$. Substituting gradient descent's change $\Delta w=-\texttt{learning\_rate}\,g$ gives $\Delta L\approx-\texttt{learning\_rate}\,g^{2}$. With a positive learning rate and nonzero gradient, that estimate is negative. This explains the chosen direction; the approximation does not guarantee a decrease for a large finite step.
 
 For this particular squared loss, the exact finite change is:
 
@@ -2107,7 +2073,7 @@ The extra square term can outweigh the negative first-order term. The supplied c
 
 ### Classroom Q&A: prediction minus target, or target minus prediction?
 
-Consider whether `error = predicted_tensor - target` could instead subtract in the opposite order, and what difference `target - predicted_tensor` would make. Let `a=prediction=w*x` and `b=target`, with `x` and `target` fixed. Both signed-error conventions are valid for this squared-error objective:
+Consider whether `error = predicted_tensor - target` could instead subtract in the opposite order, and what difference `target - predicted_tensor` would make. Let $a=\mathrm{prediction}=wx$ and $b=\mathrm{target}$, with `x` and `target` fixed. Both signed-error conventions are valid for this squared-error objective:
 
 ```text
 error = a - b
@@ -2143,7 +2109,7 @@ Reversed definition:
     dL/dw = (2 * error_reversed) * (-1) * x
 ```
 
-Why is the reversed subtraction's derivative `-1`? When prediction increases by a small amount, `target - prediction` decreases by that same amount. Meanwhile `error_reversed=-error`, so the two sign changes cancel and the final parameter gradients agree.
+Why is the reversed subtraction's derivative `-1`? When prediction increases by a small amount, `target - prediction` decreases by that same amount. Meanwhile $\mathrm{error}_{\mathrm{reversed}}=-\mathrm{error}$, so the two sign changes cancel and the final parameter gradients agree.
 
 With `w=0.2`, `x=2.0`, and `target=1.0`, the complete comparison is:
 
@@ -2153,15 +2119,15 @@ With `w=0.2`, `x=2.0`, and `target=1.0`, the complete comparison is:
 | Signed error | `-0.6` | `+0.6` |
 | Squared loss | `0.36` | `0.36` |
 | Error derivative with respect to prediction | `+1` | `-1` |
-| Loss derivative with respect to `w` | `2 * (-0.6) * (+1) * 2 = -2.4` | `2 * (+0.6) * (-1) * 2 = -2.4` |
+| Loss derivative with respect to `w` | $2 \times  (-0.6) \times  (+1) \times  2 = -2.4$ | $2 \times  (+0.6) \times  (-1) \times  2 = -2.4$ |
 
-Both parameter updates at learning rate `0.1` give `w_new=0.2-0.1*(-2.4)=0.44`. The intermediate errors and local derivatives have opposite signs; the squared objective, final parameter gradient, and update are the same. Do not change the subtraction in gradient descent merely because the error definition was reversed.
+Both parameter updates at learning rate `0.1` give $w_{\mathrm{new}}=0.2-0.1\times (-2.4)=0.44$. The intermediate errors and local derivatives have opposite signs; the squared objective, final parameter gradient, and update are the same. Do not change the subtraction in gradient descent merely because the error definition was reversed.
 
 When manually deriving a gradient for `error_reversed`, use the factor `-1`: its formula is `-2 * error_reversed * x`, not `2 * error_reversed * x`. In this exercise, `loss.backward()` differentiates the written forward expression, so it accounts for that factor automatically. This equivalence follows from the symmetric square; it is not a rule that subtraction order is irrelevant to every possible objective.
 
 ### Classroom Q&A: why subtract `learning_rate * gradient`?
 
-A common question is why the update subtracts the scaled gradient rather than adding it. Start with what the gradient means: `g = dL/dw` describes the local change in loss when the parameter increases. It is a derivative, not the prediction error or a direct instruction to increase the parameter.
+A common question is why the update subtracts the scaled gradient rather than adding it. Start with what the gradient means: $g=\frac{dL}{dw}$ describes the local change in loss when the parameter increases. It is a derivative, not the prediction error or a direct instruction to increase the parameter.
 
 For a small parameter change, write:
 
@@ -2177,20 +2143,20 @@ delta_L ≈ g * (-learning_rate * g)
         = -learning_rate * g ** 2
 ```
 
-For nonzero `g`, this local estimate is negative. Adding the scaled gradient instead gives `delta_L ≈ +learning_rate * g ** 2`, a positive local estimate. The negative sign chooses the descent direction; the positive learning rate sets the step size.
+For nonzero $g$, this local estimate is negative. Adding the scaled gradient instead gives $\Delta L\approx+\texttt{learning\_rate}\,g^{2}$, a positive local estimate. The negative sign chooses the descent direction; the positive learning rate sets the step size.
 
 | Gradient at the current parameter | Effect of a small increase in `w` | Descent choice |
 | --- | --- | --- |
-| `g > 0` | Loss increases locally | Decrease `w` |
-| `g < 0` | Loss decreases locally | Increase `w` |
-| `g = 0` | First-order change is zero | This update leaves `w` unchanged |
+| $g>0$ | Loss increases locally | Decrease `w` |
+| $g<0$ | Loss decreases locally | Increase `w` |
+| $g=0$ | First-order change is zero | This update leaves `w` unchanged |
 
-Using the existing example, `w=0.2`, `x=2.0`, and `target=1.0` give `prediction=0.4`, `error=-0.6`, `loss=0.36`, and `g=-2.4`. Compare the two signs at `learning_rate=0.1`:
+Using the existing example, `w=0.2`, `x=2.0`, and `target=1.0` give `prediction=0.4`, `error=-0.6`, `loss=0.36`, and $g=-2.4$. Compare the two signs at `learning_rate=0.1`:
 
 | Update | New `w` | New prediction | New error | Recomputed loss |
 | --- | --- | --- | --- | --- |
-| Subtract: `0.2 - 0.1 * (-2.4)` | `0.44` | `0.88` | `-0.12` | `0.0144` |
-| Add: `0.2 + 0.1 * (-2.4)` | `-0.04` | `-0.08` | `-1.08` | `1.1664` |
+| Subtract: $0.2 - 0.1 \times  (-2.4)$ | `0.44` | `0.88` | `-0.12` | `0.0144` |
+| Add: $0.2 + 0.1 \times  (-2.4)$ | `-0.04` | `-0.08` | `-1.08` | `1.1664` |
 
 Subtracting this negative gradient increases the parameter and lowers the loss for this step. Adding it decreases the parameter and raises the loss. In both cases, recalculate the loss from the new parameter to assess the finite step. The local descent argument still needs a sufficiently small step; a large learning rate can overshoot. A zero gradient alone does not prove a minimum.
 
@@ -2205,23 +2171,23 @@ g(w) = dL/dw = 2 * (w - 1)
 
 The squared distance to `1` is smallest at `w=1`. The derivative is evaluated at the current parameter, so the same function can have different gradient signs at different points. Compare two starting points without using an optimizer; simply recalculate the loss after increasing or decreasing `w` by `0.1`.
 
-**Start at `w=2`: a positive gradient.** The derivative is `g(2)=2*(2-1)=+2`.
+**Start at `w=2`: a positive gradient.** The derivative is $g(2)=2(2-1)=+2$.
 
 | Action from the starting point | Parameter | Exact loss |
 | --- | --- | --- |
-| Original | `2.0` | `(2.0 - 1) ** 2 = 1.0` |
-| Increase by `0.1` | `2.1` | `(2.1 - 1) ** 2 = 1.21` |
-| Decrease by `0.1` | `1.9` | `(1.9 - 1) ** 2 = 0.81` |
+| Original | `2.0` | $(2.0 - 1) ^{2} = 1.0$ |
+| Increase by `0.1` | `2.1` | $(2.1 - 1) ^{2} = 1.21$ |
+| Decrease by `0.1` | `1.9` | $(1.9 - 1) ^{2} = 0.81$ |
 
 Increasing the parameter moves farther from the target and raises the loss. Decreasing it moves toward the target and lowers the loss. Thus a positive gradient calls for a negative parameter change in gradient descent.
 
-**Start at `w=0`: a negative gradient.** The derivative is `g(0)=2*(0-1)=-2`.
+**Start at `w=0`: a negative gradient.** The derivative is $g(0)=2(0-1)=-2$.
 
 | Action from the starting point | Parameter | Exact loss |
 | --- | --- | --- |
-| Original | `0.0` | `(0.0 - 1) ** 2 = 1.0` |
-| Increase by `0.1` | `0.1` | `(0.1 - 1) ** 2 = 0.81` |
-| Decrease by `0.1` | `-0.1` | `(-0.1 - 1) ** 2 = 1.21` |
+| Original | `0.0` | $(0.0 - 1) ^{2} = 1.0$ |
+| Increase by `0.1` | `0.1` | $(0.1 - 1) ^{2} = 0.81$ |
+| Decrease by `0.1` | `-0.1` | $(-0.1 - 1) ^{2} = 1.21$ |
 
 Increasing the parameter now moves toward the target and lowers the loss. Decreasing it moves farther away and raises the loss. Thus a negative gradient calls for a positive parameter change in gradient descent.
 
@@ -2239,7 +2205,7 @@ At w=0, g=-2:
     loss: 1.0 -> 0.81
 ```
 
-One subtraction rule selects the appropriate direction at both starting points. The table values are exact finite-step calculations up to floating-point rounding, whereas `delta_L ≈ g * delta_w` is a first-order estimate. At a change of `0.1`, the square term accounts for the difference between an estimated change of `0.2` and the exact increase `0.21`, or between an estimated decrease of `0.2` and the exact decrease `0.19`. These examples illustrate the sign locally; very large changes may cross the minimum.
+One subtraction rule selects the appropriate direction at both starting points. The table values are exact finite-step calculations up to floating-point rounding, whereas $\Delta L\approx g\,\Delta w$ is a first-order estimate. At a change of `0.1`, the square term accounts for the difference between an estimated change of `0.2` and the exact increase `0.21`, or between an estimated decrease of `0.2` and the exact decrease `0.19`. These examples illustrate the sign locally; very large changes may cross the minimum.
 
 ### A complete first update
 
@@ -2248,11 +2214,11 @@ Use `w=0.2`, `x=2.0`, `target=1.0`, and `learning_rate=0.1`. In code, the parame
 | Stage | Calculation | Result |
 | --- | --- | --- |
 | Clear prior gradient | Discard the stored `.grad` value | Parameter still `0.2` |
-| Forward prediction | `0.2 * 2.0` | `0.4` |
+| Forward prediction | $0.2 \times  2.0$ | `0.4` |
 | Forward error | `0.4 - 1.0` | `-0.6` |
-| Forward loss | `(-0.6) ** 2` | `0.36` |
-| Backward gradient | `2 * (-0.6) * 2.0` | `-2.4` |
-| Parameter update | `0.2 - 0.1 * (-2.4)` | `0.44` |
+| Forward loss | $(-0.6) ^{2}$ | `0.36` |
+| Backward gradient | $2 \times  (-0.6) \times  2.0$ | `-2.4` |
+| Parameter update | $0.2 - 0.1 \times  (-2.4)$ | `0.44` |
 
 Backward stores the gradient and leaves the parameter at `0.2`. The update changes it to `0.44`. Recomputing afterward gives prediction `0.88`, error `-0.12`, and loss `0.0144`.
 
@@ -2282,15 +2248,15 @@ Second call, after clearing the old gradient:
     w_after = 0.44 - 0.1 * (-0.48) = 0.488
 ```
 
-If the second call omitted the reset, `.grad` would contain `-2.4 + (-0.48) = -2.88`. Updating with that accumulated value would give `0.728`, not `0.488`. Accumulation can be intentional when combining multiple batches, but that later technique needs its own scaling and update schedule. Here each call is one complete update, so clear old gradients first. Clearing at the start also lets the caller inspect the current gradient after the step.
+If the second call omitted the reset, `.grad` would contain $-2.4 + (-0.48) = -2.88$. Updating with that accumulated value would give `0.728`, not `0.488`. Accumulation can be intentional when combining multiple batches, but that later technique needs its own scaling and update schedule. Here each call is one complete update, so clear old gradients first. Clearing at the start also lets the caller inspect the current gradient after the step.
 
 ### Why the update uses `torch.no_grad()`
 
-![Read left to right, keeping the old-state loss and gradient separate from the new parameter. Only the final in-place update belongs inside torch.no_grad().](assets/03-06-step-scopes.en.png)
+![Read left to right, keeping the old-state loss and gradient separate from the new parameter. Only the final in-place update belongs inside torch.no_grad().](assets/03-06-step-scopes.en.png){width=100%}
 
 Read left to right, keeping the old-state loss and gradient separate from the new parameter. Only the final in-place update belongs inside torch.no_grad().
 
-We need a differentiable forward computation to obtain `dL/dw` at the current parameter. Once backward finishes, changing the parameter for the next step should not extend that computation's backward graph. Use `torch.no_grad()` only around the update. The [autograd mechanics documentation](https://docs.pytorch.org/docs/2.0/notes/autograd.html) explains this use for optimizer updates.
+We need a differentiable forward computation to obtain $\frac{dL}{dw}$ at the current parameter. Once backward finishes, changing the parameter for the next step should not extend that computation's backward graph. Use `torch.no_grad()` only around the update. The [autograd mechanics documentation](https://docs.pytorch.org/docs/2.0/notes/autograd.html) explains this use for optimizer updates.
 
 The new Python keyword `with` enters a temporary context for its indented block. For `torch.no_grad()`, operations inside that block are excluded from reverse-mode graph recording; leaving the block restores the prior gradient mode. The syntax in a function is:
 
@@ -2325,7 +2291,7 @@ Use the same complete example before editing:
 | After forward and backward | `0.2` | `-2.4` | `(0.36, -2.4)` |
 | After the no-grad update | `0.44` | `-2.4` | Still the original `(0.36, -2.4)` |
 
-The update formula stays `w_new = w - learning_rate * gradient`: `0.2 - 0.1 * (-2.4) = 0.44`. The context changes how that update participates in autograd bookkeeping; it does not change the arithmetic.
+The update formula stays `w_new = w - learning_rate * gradient`: $0.2 - 0.1 \times  (-2.4) = 0.44$. The context changes how that update participates in autograd bookkeeping; it does not change the arithmetic.
 
 1. Immediately above the existing update, enter `with torch.no_grad():` at four-space indentation. The parentheses call the context manager; the colon begins its block.
 2. Indent the update to eight spaces. Update `w_tensor` directly with `-=`, removing `.data`; subtract the product of `learning_rate` and `w_tensor.grad`. Keep the original parameter object.
@@ -2404,9 +2370,7 @@ Keep forward/backward outside the no-grad update block. The examples below help 
 
 Optional review: why does clearing `.grad` leave the parameter unchanged? Why is the second step's fresh gradient `-0.48`? Why is only the update inside `no_grad`, and how does the caller observe the changed parameter? Written explanations and scaffold checks do not mark those questions independently answered. Continue with [Lesson 03.07](#section-03-07) to connect the verified update to a tensor training loop. Trainable embeddings follow.
 
-<a id="section-03-07"></a>
-
-## 03.07 A Tensor Training Loop
+## 03.07 A Tensor Training Loop {#section-03-07}
 
 The scalar loop returned a new Python number after every step. The tensor step instead changes a persistent parameter in place. Our new loop must respect that interface: create the parameter once, let the helper update it repeatedly, and record each returned loss without performing a second update.
 
@@ -2414,7 +2378,7 @@ Work through the example before editing 03_07_tensor_training_loop.py. The numbe
 
 ### The recurrence we will implement
 
-Keep `x`, `target`, and `learning_rate` fixed. Let `w_t` be the parameter before update number `t`, with `w_0 = initial_w`. For `t=0, 1, ..., num_steps-1`:
+Keep `x`, `target`, and `learning_rate` fixed. Let $w_t$ be the parameter before update number $t$, with $w_0=\texttt{initial\_w}$. For $t=0,1,\ldots,\texttt{num\_steps}-1$:
 
 ```text
 w_0 = initial_w
@@ -2425,7 +2389,7 @@ gradient_t = 2 * error_t * x
 w_(t+1) = w_t - learning_rate * gradient_t
 ```
 
-Each gradient is evaluated at the current parameter `w_t`, not at `initial_w` again. The parameter after one update is the starting parameter for the next. These equations describe repeated gradient descent; the helper obtains each gradient through autograd rather than a handwritten derivative in the loop.
+Each gradient is evaluated at the current parameter $w_t$, not at `initial_w` again. The parameter after one update is the starting parameter for the next. These equations describe repeated gradient descent; the helper obtains each gradient through autograd rather than a handwritten derivative in the loop.
 
 The history and return are:
 
@@ -2463,9 +2427,9 @@ The two returned numbers do not include a new parameter. In this loop, `grad_val
 
 ### Complete three-update example
 
-![The same tensor passes through four values. Three helper calls return three old-state losses; L_3 is shown separately so it cannot be mistaken for a returned history entry.](assets/03-07-parameter-timeline.en.png)
+![The same tensor passes through four values. Three helper calls return three old-state losses; $L_3$ is shown separately so it cannot be mistaken for a returned history entry.](assets/03-07-parameter-timeline.en.png){width=100%}
 
-The same tensor passes through four values. Three helper calls return three old-state losses; L_3 is shown separately so it cannot be mistaken for a returned history entry.
+The same tensor passes through four values. Three helper calls return three old-state losses; $L_{3}$ is shown separately so it cannot be mistaken for a returned history entry.
 
 Use `initial_w=0.2`, `x=2.0`, `target=1.0`, `learning_rate=0.1`, and `num_steps=3`.
 
@@ -2477,9 +2441,9 @@ Before the loop, create one trainable `w_tensor` holding `0.2` and a fresh `loss
 | `1` | `0.44` | `0.88` | `-0.12` | `0.0144` | `-0.48` | `0.488` |
 | `2` | `0.488` | `0.976` | `-0.024` | `0.000576` | `-0.096` | `0.4976` |
 
-For the first update, `gradient=2*(-0.6)*2=-2.4` and `w_new=0.2-0.1*(-2.4)=0.44`. Save the returned loss `0.36`. The same parameter now holds `0.44`.
+For the first update, $\mathrm{gradient}=2\times (-0.6)\times 2=-2.4$ and $w_{\mathrm{new}}=0.2-0.1\times (-2.4)=0.44$. Save the returned loss `0.36`. The same parameter now holds `0.44`.
 
-For the second, the helper uses `0.44`: `prediction=0.88`, `error=-0.12`, `loss=0.0144`, and `gradient=2*(-0.12)*2=-0.48`. It updates the parameter to `0.44-0.1*(-0.48)=0.488`; append `0.0144`.
+For the second, the helper uses `0.44`: `prediction=0.88`, `error=-0.12`, `loss=0.0144`, and $\mathrm{gradient}=2\times (-0.12)\times 2=-0.48$. It updates the parameter to $0.44-0.1\times (-0.48)=0.488$; append `0.0144`.
 
 For the third, it uses `0.488`: `prediction=0.976`, `error=-0.024`, `loss=0.000576`, and `gradient=-0.096`. The parameter becomes `0.4976`; append `0.000576`.
 
@@ -2501,7 +2465,7 @@ All values are subject to floating-point rounding. The comparison driver allows 
 
 The helper returns a Python float captured from the forward pass before its parameter update. By the time the call returns, `w_tensor` has changed, but `loss_value` still describes the parameter that produced that forward computation. Appending it after the call records the pre-update loss.
 
-The loss at the final parameter is `(0.4976*2-1)**2=0.00002304`. That is a separate evaluation at `w_3`; the requested three updates used and recorded `loss_0`, `loss_1`, and `loss_2`. Do not append the final evaluation as a fourth entry. Later training systems can report final evaluations separately from update history.
+The loss at the final parameter is $(0.4976\times 2-1)^{2}=0.00002304$. That is a separate evaluation at $w_3$; the requested three updates used and recorded $L_0$, $L_1$, and $L_2$. Do not append the final evaluation as a fourth entry. Later training systems can report final evaluations separately from update history.
 
 ### Inputs, local variables, and returned values
 
@@ -2559,7 +2523,7 @@ error_(t+1)
 loss_(t+1) = (1 - 2 * learning_rate * x ** 2) ** 2 * loss_t
 ```
 
-With `x=2` and `learning_rate=0.1`, the error multiplier is `0.2`, and the loss multiplier is `0.04`: `0.36 → 0.0144 → 0.000576`. For nonzero `x`, the error magnitude shrinks when `0 < learning_rate < 1/(x**2)`. This exact relationship is specific to the fixed scalar squared loss. With `x=0`, the parameter cannot affect the prediction; with learning rate zero, it does not move. Larger steps can increase the loss, so history must report the actual values rather than assuming improvement or stopping early.
+With `x=2` and `learning_rate=0.1`, the error multiplier is `0.2`, and the loss multiplier is `0.04`: $0.36 \to  0.0144 \to  0.000576$. For nonzero `x`, the error magnitude shrinks when $0<\texttt{learning\_rate}<\frac{1}{x^{2}}$. This exact relationship is specific to the fixed scalar squared loss. With `x=0`, the parameter cannot affect the prediction; with learning rate zero, it does not move. Larger steps can increase the loss, so history must report the actual values rather than assuming improvement or stopping early.
 
 ### Run and expected output
 
@@ -2588,9 +2552,7 @@ An incorrect history length can come from returning inside the loop or appending
 
 Optional review: why create the parameter and history before the loop? Why does the second helper call see `0.44` without assigning `w_new`? Why is the last history value `0.000576` instead of the final loss `0.00002304`? Why can zero steps still return? Continue with [Lesson 03.08: trainable embeddings](#section-03-08). A minimal next-token objective follows that assignment.
 
-<a id="section-03-08"></a>
-
-## 03.08 Trainable Embeddings
+## 03.08 Trainable Embeddings {#section-03-08}
 
 ### Method sources
 
@@ -2602,7 +2564,7 @@ Work through the example before editing 03_08_embedding_gradient_step.py. The nu
 
 ### From one scalar parameter to a table of parameters
 
-In Lesson 03.06, one floating-point number `w_tensor` was the parameter. Here every floating-point entry of `embedding_table` is a parameter. A table with `V` rows and `D` columns therefore contains `V*D` trainable numbers. Lookup selects some of them for the current loss; it does not reduce the table to the selected rows.
+In Lesson 03.06, one floating-point number `w_tensor` was the parameter. Here every floating-point entry of `embedding_table` is a parameter. A table with $V$ rows and $D$ columns therefore contains $VD$ trainable numbers. Lookup selects some of them for the current loss; it does not reduce the table to the selected rows.
 
 The mechanism remains the same: calculate the loss from the current parameters, differentiate that loss with respect to the parameters, then update those parameters. Integer token IDs choose rows. The floating-point values in the rows are what learning changes.
 
@@ -2616,7 +2578,7 @@ We use the following symbols throughout the formulas and code:
 | $V$ | Table row count | Vocabulary size | Positive integer |
 | $D$ | Table column count | Number of components in each embedding vector | Positive integer |
 | $T$ | Input length | Number of token positions in this call | Positive integer |
-| $i_t$ | `token_ids[t]` | ID at input position $t$ | Integer from `0` to `V-1` |
+| $i_t$ | `token_ids[t]` | ID at input position $t$ | Integer from `0` to $V-1$ |
 | $Z$ | `selected_vectors` | Vectors selected in input order | `[T, D]` |
 | $Y$ | `target_vectors` | Fixed target vectors for this teaching objective | `[T, D]` |
 | $e$ | `errors` | Componentwise prediction minus target | `[T, D]` |
@@ -2624,9 +2586,9 @@ We use the following symbols throughout the formulas and code:
 | $G$ | `embedding_table.grad` after backward | Loss derivative for every table entry | `[V, D]` |
 | $\eta$ | `learning_rate` | Update multiplier | Nonnegative float |
 
-The table is a real-valued matrix, written $E\in\mathbb{R}^{V\times D}$ in mathematics and stored as a floating-point tensor in the exercise. `V` comes from the tokenizer vocabulary and can exceed 256. `D` counts components; it does not bound their values. A vector can contain negative numbers or values larger than one.
+The table is a real-valued matrix, written $E\in\mathbb{R}^{V\times D}$ in mathematics and stored as a floating-point tensor in the exercise. $V$ comes from the tokenizer vocabulary and can exceed 256. $D$ counts components; it does not bound their values. A vector can contain negative numbers or values larger than one.
 
-All indices start at zero, matching Python. `t` runs from `0` to `T-1` over input positions; `r` runs from `0` to `V-1` over table rows; `d` runs from `0` to `D-1` over vector components. A subscript $E_{r,d}$ means the same entry as `embedding_table[r, d]`.
+All indices start at zero, matching Python. $t$ runs from `0` to $T-1$ over input positions; $r$ runs from `0` to $V-1$ over table rows; $d$ runs from `0` to $D-1$ over vector components. A subscript $E_{r,d}$ means the same entry as `embedding_table[r, d]`.
 
 Distinguish an input position from a table row. For `token_ids=[0,2]`, input position `t=1` contains ID `2`, so it reads table row `r=2`. Repeated IDs can make several input positions read the same row.
 
@@ -2640,7 +2602,7 @@ $$
 Z_{t,d}=E_{i_t,d}
 $$
 
-Read this as: component `d` at input position `t` equals component `d` in the row named by that position's token ID. The code operation is `embedding_table[token_ids]`. It produces `[T,D]` while the parameter table remains `[V,D]`.
+Read this as: component $d$ at input position $t$ equals component $d$ in the row named by that position's token ID. The code operation is `embedding_table[token_ids]`. It produces `[T,D]` while the parameter table remains `[V,D]`.
 
 #### 2. Error and mean squared loss
 
@@ -2652,7 +2614,7 @@ $$
 L=\frac{1}{TD}\sum_{t=0}^{T-1}\sum_{d=0}^{D-1}\left(Z_{t,d}-Y_{t,d}\right)^2
 $$
 
-The two sums visit every input position and every vector component. Compute each component's deviation, square it, add the squares, then divide by the number of selected components, $TD$. For two positions and two components, the divisor is four. The vocabulary size `V` is not the divisor because the loss is formed from the selected output, not all vocabulary rows.
+The two sums visit every input position and every vector component. Compute each component's deviation, square it, add the squares, then divide by the number of selected components, $TD$. For two positions and two components, the divisor is four. The vocabulary size $V$ is not the divisor because the loss is formed from the selected output, not all vocabulary rows.
 
 The matching tensor operations are elementwise subtraction, `** 2`, and `.mean()` without a dimension argument. That mean turns all `[T,D]` squared errors into one scalar. This is the all-element mean described by the [MSELoss documentation](https://docs.pytorch.org/docs/2.0/generated/torch.nn.MSELoss.html).
 
@@ -2668,11 +2630,11 @@ $$
 
 The final factor `1` comes from the derivative of $Z_{t,d}-Y_{t,d}$ with respect to $Z_{t,d}$. The symbol $\partial$ means a partial derivative: change this one component while keeping the other selected components fixed. The result describes the local loss change per small increase in that component.
 
-For error `1` with four total components, the derivative is `2*1/4=0.5`. For error `2`, it is `2*2/4=1.0`. This is the gradient of the selected output; we still need to send it to the table parameters that produced that output.
+For error `1` with four total components, the derivative is $2\times 1/4=0.5$. For error `2`, it is $2\times 2/4=1.0$. This is the gradient of the selected output; we still need to send it to the table parameters that produced that output.
 
 #### 4. Use the chain rule to route gradients back to the table
 
-For a fixed component `d`, lookup has the local derivative:
+For a fixed component $d$, lookup has the local derivative:
 
 $$
 \frac{\partial Z_{t,d}}{\partial E_{r,d}}=
@@ -2682,7 +2644,7 @@ $$
 \end{cases}
 $$
 
-If position `t` reads row `r`, increasing that table entry by a small amount increases the selected component by the same amount: derivative `1`. If it reads another row, that selected component does not change: derivative `0`. Different vector components also have no cross-dependence in lookup.
+If position $t$ reads row $r$, increasing that table entry by a small amount increases the selected component by the same amount: derivative `1`. If it reads another row, that selected component does not change: derivative `0`. Different vector components also have no cross-dependence in lookup.
 
 The parameter gradient adds contributions from every position that depends on it:
 
@@ -2696,9 +2658,9 @@ G_{r,d}&=\frac{\partial L}{\partial E_{r,d}}\\
 \end{aligned}
 $$
 
-The last sum includes only positions whose ID equals row `r`. If no position reads that row, there are no contributions and its gradient is zero. If several positions read it, their contributions add to the same parameter. A selected row can also have zero gradient when errors vanish or opposing contributions cancel.
+The last sum includes only positions whose ID equals row $r$. If no position reads that row, there are no contributions and its gradient is zero. If several positions read it, their contributions add to the same parameter. A selected row can also have zero gradient when errors vanish or opposing contributions cancel.
 
-`G` has shape `[V,D]` because there is one derivative per table parameter. The selected-output gradient has shape `[T,D]`. Keeping these two shapes distinct explains why backward returns a full table gradient even when the input reads only two rows.
+$G$ has shape `[V,D]` because there is one derivative per table parameter. The selected-output gradient has shape `[T,D]`. Keeping these two shapes distinct explains why backward returns a full table gradient even when the input reads only two rows.
 
 #### 5. Update every table component
 
@@ -2718,7 +2680,7 @@ These zero-gradient statements concern this lookup-only objective with plain gra
 
 ### Complete small example: every forward and backward step
 
-![The upper panels compare the full table, its gradient, and its update. The lower panels restart with repeated ID zero and show two normalized contributions accumulating into one shared row.](assets/03-08-embedding-gradient.en.png)
+![The upper panels compare the full table, its gradient, and its update. The lower panels restart with repeated ID zero and show two normalized contributions accumulating into one shared row.](assets/03-08-embedding-gradient.en.png){width=100%}
 
 The upper panels compare the full table, its gradient, and its update. The lower panels restart with repeated ID zero and show two normalized contributions accumulating into one shared row.
 
@@ -2746,7 +2708,7 @@ target_vectors Y = [[0.0, 0.0], [4.0, 4.0]]
 learning_rate = 0.1
 ```
 
-Here `V=3`, `D=2`, `T=2`, and `T*D=4`. The three hypothetical token IDs are `0`, `1`, and `2`; this tiny vocabulary is only for hand calculation.
+Here $V=3$, $D=2$, $T=2$, and $TD=4$. The three hypothetical token IDs are `0`, `1`, and `2`; this tiny vocabulary is only for hand calculation.
 
 #### Step 1: Select the rows in input order
 
@@ -2793,7 +2755,7 @@ $$
 
 The following trace keeps the position, source row, error, and contribution separate:
 
-| Position `t` | Component `d` | Source row `token_ids[t]` | Selected value | Target | Error | Contribution `2*error/4` |
+| Position $t$ | Component $d$ | Source row `token_ids[t]` | Selected value | Target | Error | Contribution `2*error/4` |
 | --- | --- | --- | --- | --- | --- | --- |
 | `0` | `0` | `0` | `1` | `0` | `1` | `0.5` |
 | `0` | `1` | `0` | `2` | `0` | `2` | `1.0` |
@@ -2886,10 +2848,10 @@ Keep the mean denominator in the calculation. Compare these two calls, each star
 
 | Input | Number of selected components | Contribution from each position | Total row-0 gradient |
 | --- | --- | --- | --- |
-| `[0]` | `1*2=2` | `[2*1/2, 2*2/2]=[1,2]` | `[1,2]` |
-| `[0,0]` | `2*2=4` | `[2*1/4, 2*2/4]=[0.5,1]` | `[0.5,1]+[0.5,1]=[1,2]` |
+| `[0]` | $1\times 2=2$ | $[2\times 1/2, 2\times 2/2]=[1,2]$ | `[1,2]` |
+| `[0,0]` | $2\times 2=4$ | $[2\times 1/4, 2\times 2/4]=[0.5,1]$ | $[0.5,1]+[0.5,1]=[1,2]$ |
 
-The two half-sized contributions give the same final gradient. The earlier comparison between `[0,2]` and `[0,0]` held `T=2` fixed and changed which rows received the contributions. Always account for both the number of paths and the loss normalization.
+The two half-sized contributions give the same final gradient. The earlier comparison between `[0,2]` and `[0,0]` held $T=2$ fixed and changed which rows received the contributions. Always account for both the number of paths and the loss normalization.
 
 Contributions can also cancel. With IDs `[0,0]`, row `[1,2]`, and targets `[0,0]` at the first position and `[2,4]` at the second, the errors are `[1,2]` and `[-1,-2]`. Their row contributions `[0.5,1]` and `[-0.5,-1]` sum to zero. A selected row is therefore not guaranteed a nonzero gradient.
 
@@ -2897,7 +2859,7 @@ Contributions can also cancel. With IDs `[0,0]`, row `[1,2]`, and targets `[0,0]
 
 `embedding_table[token_ids]` selects rows in order, preserving repetitions, and keeps a differentiable connection to the floating-point table. This replaces the Python-list representation of the earlier lookup exercise. Keep `selected_vectors` as a tensor; converting it to ordinary numbers and reconstructing a new tensor would lose the original dependency.
 
-Subtracting matching-shape tensors and applying `** 2` act element by element. `.mean()` without a dimension argument averages every element into a scalar. It is not just the sum, and its denominator is neither `V` nor `T` alone. The table's gradient after backward has shape `[V,D]`, not the selected output's `[T,D]`.
+Subtracting matching-shape tensors and applying `** 2` act element by element. `.mean()` without a dimension argument averages every element into a scalar. It is not just the sum, and its denominator is neither $V$ nor $T$ alone. The table's gradient after backward has shape `[V,D]`, not the selected output's `[T,D]`.
 
 `.item()` extracts the scalar loss as a Python float. A multi-element gradient matrix cannot be extracted with one `.item()`. Keep the returned `gradient_table` as a tensor.
 
@@ -2955,7 +2917,7 @@ This fragment shows the block structure, not the assignment solution. The seven 
 | `loss_value` after `.item()` | `float` | Extracted pre-update loss. |
 | `gradient_table` | Floating-point `torch.Tensor`, `[V,D]` | Independent copy of the current loss derivative with respect to the table. |
 
-Assume finite values, valid IDs, `V>0`, `D>0`, `T>0`, fixed targets with `requires_grad=False`, and normal gradient mode. No validation or constructor work is required in the exercise function. An empty lookup can exist, but this mean-loss assignment requires at least one selected component; there is no empty-training case. Supplied checks use CPU `float64` table/target tensors and `torch.long` IDs.
+Assume finite values, valid IDs, $V>0$, $D>0$, $T>0$, fixed targets with `requires_grad=False`, and normal gradient mode. No validation or constructor work is required in the exercise function. An empty lookup can exist, but this mean-loss assignment requires at least one selected component; there is no empty-training case. Supplied checks use CPU `float64` table/target tensors and `torch.long` IDs.
 
 Return `(loss_value, gradient_table)`. Both describe the table before updating; the passed table now holds updated values and remains a trainable leaf. The IDs and target vectors keep their values. The gradient return is a snapshot, not a replacement parameter table.
 
@@ -2998,11 +2960,9 @@ A loss of `10` in the first example indicates summing rather than averaging the 
 
 ### Questions to work through
 
-Optional review: distinguish table, selected-output, and gradient shapes; explain the `T*D` denominator; explain why an unselected row has zero gradient in this objective; trace repeated-ID contributions including normalization; distinguish token IDs from trainable values; explain why the gradient snapshot is cloned. This teaching loss verifies lookup gradients. Continue with [Lesson 03.09: logits and softmax](#section-03-09), then the planned next-token loss.
+Optional review: distinguish table, selected-output, and gradient shapes; explain the $TD$ denominator; explain why an unselected row has zero gradient in this objective; trace repeated-ID contributions including normalization; distinguish token IDs from trainable values; explain why the gradient snapshot is cloned. This teaching loss verifies lookup gradients. Continue with [Lesson 03.09: logits and softmax](#section-03-09), then the planned next-token loss.
 
-<a id="section-03-09"></a>
-
-## 03.09 Logits and Softmax
+## 03.09 Logits and Softmax {#section-03-09}
 
 An embedding vector is not yet a prediction over tokens. We need an output projection that scores every vocabulary candidate, followed by a rule for turning those scores into probabilities. This gives each input position its own distribution while keeping vector width, sequence length, and vocabulary size distinct.
 
@@ -3019,15 +2979,15 @@ input token IDs -> embedding vectors -> position vectors [T,D]
 
 Here `hidden_vectors` contains supplied position vectors. In a minimal model these can come straight from lookup. A Transformer later uses contextual processing before the output projection. This exercise implements the projection and probability conversion; it does not yet implement attention or a full language model.
 
-In next-token prediction, probability column `v` corresponds to vocabulary ID `v`. A row represents the candidate distribution for the next token at that position. The toy vocabulary below has three hypothetical IDs, `0`, `1`, and `2`; they are not a complete byte tokenizer.
+In next-token prediction, probability column $v$ corresponds to vocabulary ID $v$. A row represents the candidate distribution for the next token at that position. The toy vocabulary below has three hypothetical IDs, `0`, `1`, and `2`; they are not a complete byte tokenizer.
 
-A logit is a real-valued score before softmax. It can be negative, zero, or positive. It need not lie between zero and one, and a row of logits need not sum to one. A higher score gives a higher softmax probability within that same row. The input vector has `D` components; the output has `V` candidate scores. `D` and `V` count different things and need not match.
+A logit is a real-valued score before softmax. It can be negative, zero, or positive. It need not lie between zero and one, and a row of logits need not sum to one. A higher score gives a higher softmax probability within that same row. The input vector has $D$ components; the output has $V$ candidate scores. $D$ and $V$ count different things and need not match.
 
 The example weights are chosen for arithmetic, not learned from data. A probability from this untrained toy head is an output of that calculation; it does not establish useful language-model capability.
 
 ### What does the input-position count T mean?
 
-What does an input position mean, and why can there be several? For the single sequence discussed here, a position is one slot in the tokenized input. `T` counts how many token occurrences the input contains. A text prompt usually contains several tokens, so it has several positions.
+What does an input position mean, and why can there be several? For the single sequence discussed here, a position is one slot in the tokenized input. $T$ counts how many token occurrences the input contains. A text prompt usually contains several tokens, so it has several positions.
 
 Conceptually:
 
@@ -3035,7 +2995,7 @@ $$
 T=\operatorname{len}(\mathrm{token\_ids})
 $$
 
-The current `compute_logits` function receives vectors rather than IDs. Each row of `hidden_vectors` represents one of those positions, so its `T` is `hidden_vectors.shape[0]`. No extra `token_ids` parameter is being added to the exercise. This chapter uses one sequence; a separate batch dimension for multiple sequences comes later.
+The current `compute_logits` function receives vectors rather than IDs. Each row of `hidden_vectors` represents one of those positions, so its $T$ is `hidden_vectors.shape[0]`. No extra `token_ids` parameter is being added to the exercise. This chapter uses one sequence; a separate batch dimension for multiple sequences comes later.
 
 #### A concrete token sequence
 
@@ -3047,9 +3007,9 @@ For illustration, assume a tokenizer splits the text `我爱猫` into the three 
 | `1` | `爱` |
 | `2` | `猫` |
 
-There are three occupied positions, so `T=3`. This one-character-per-token split is an explicit teaching assumption, not a claim about the existing byte/BPE tokenizer. Actual token boundaries depend on the tokenizer. Count the resulting tokens, not the original characters. For example, the earlier sequence `[256,97,256]` also has `T=3`, even though there are only two distinct IDs; the repeated ID occupies another position.
+There are three occupied positions, so $T=3$. This one-character-per-token split is an explicit teaching assumption, not a claim about the existing byte/BPE tokenizer. Actual token boundaries depend on the tokenizer. Count the resulting tokens, not the original characters. For example, the earlier sequence `[256,97,256]` also has $T=3$, even though there are only two distinct IDs; the repeated ID occupies another position.
 
-Each position gets one vector. If the vector dimension is `D=8`, the shapes are:
+Each position gets one vector. If the vector dimension is $D=8$, the shapes are:
 
 ```text
 position 0 -> one 8-component vector
@@ -3061,9 +3021,9 @@ logits:         [3,V]
 probabilities:  [3,V]
 ```
 
-`T` counts the input occurrences, `D` counts components of each vector, and `V` counts all vocabulary candidates. The vocabulary size need not equal three. If a separate toy vocabulary contained exactly `我`, `爱`, `猫`, and `。  `, it would have `V=4`, giving probabilities `[3,4]`: three input positions, four candidates per position.
+$T$ counts the input occurrences, $D$ counts components of each vector, and $V$ counts all vocabulary candidates. The vocabulary size need not equal three. If a separate toy vocabulary contained exactly `我`, `爱`, `猫`, and `。  `, it would have $V=4$, giving probabilities `[3,4]`: three input positions, four candidates per position.
 
-The existing numeric example in this lesson has `hidden_vectors=[[1,2],[2,1]]`. That is two vectors, one per position, so `T=2` and `D=2`. The first vector is `[1,2]`; the second is `[2,1]`. Its logits have shape `[2,3]` because that example's vocabulary has three candidates. The text illustration above is a different example and does not replace those exercise inputs.
+The existing numeric example in this lesson has `hidden_vectors=[[1,2],[2,1]]`. That is two vectors, one per position, so $T=2$ and $D=2$. The first vector is `[1,2]`; the second is `[2,1]`. Its logits have shape `[2,3]` because that example's vocabulary has three candidates. The text illustration above is a different example and does not replace those exercise inputs.
 
 #### Why training can return a prediction row at every position
 
@@ -3090,7 +3050,7 @@ In a contextual model, a hidden vector can represent the permitted prefix up to 
 
 When the current prompt tokenizes to `我`, `爱`, `猫`, it already has three input positions. For next-token generation, use the distribution at the final input position to select the next token. If the selected token is `。  `, appending it gives four positions; a later generation step predicts what follows that longer prefix.
 
-Several input positions therefore describe the context already supplied. They do not make the next-token generation step produce several unknown future tokens at once. If probabilities are calculated for all positions, the earlier rows concern shorter prefixes; the final row concerns the full current prefix. `T` is an input-length count, not the number of future tokens selected in one generation step.
+Several input positions therefore describe the context already supplied. They do not make the next-token generation step produce several unknown future tokens at once. If probabilities are calculated for all positions, the earlier rows concern shorter prefixes; the final row concerns the full current prefix. $T$ is an input-length count, not the number of future tokens selected in one generation step.
 
 ### Symbols, exact code names, and shapes
 
@@ -3105,15 +3065,15 @@ Several input positions therefore describe the context already supplied. They do
 | $D$ | Vector dimension | Number of components per input vector | Positive integer |
 | $V$ | Vocabulary size | Number of candidate token IDs | Positive integer |
 | $t,d,v$ | Formula indices | Position, vector component, vocabulary candidate | Zero-based |
-| $m_t$ | `row_max[t,0]` | Maximum score at position `t` | `row_max` is `[T,1]` |
+| $m_t$ | `row_max[t,0]` | Maximum score at position $t$ | `row_max` is `[T,1]` |
 
-Indices start at zero: `0 <= t < T`, `0 <= d < D`, and `0 <= v < V`. The subscript $Z_{t,v}$ means `logits[t,v]`. In this chapter `Z` denotes logits; the previous chapter's selected embedding vectors can supply this chapter's `H`.
+Indices start at zero: $0\le t<T$, $0\le d<D$, and $0\le v<V$. The subscript $Z_{t,v}$ means `logits[t,v]`. In this chapter $Z$ denotes logits; the previous chapter's selected embedding vectors can supply this chapter's $H$.
 
-Assume finite floating-point inputs, `T>0`, `D>0`, `V>0`, matching shapes, matching dtype/device, and normal gradient mode. The supplied driver uses CPU `float64`. Inputs may require gradients. No tensor construction or input-validation logic is assigned to the learner. Empty rows and nonfinite inputs are outside this exercise's contract.
+Assume finite floating-point inputs, $T>0$, $D>0$, $V>0$, matching shapes, matching dtype/device, and normal gradient mode. The supplied driver uses CPU `float64`. Inputs may require gradients. No tensor construction or input-validation logic is assigned to the learner. Empty rows and nonfinite inputs are outside this exercise's contract.
 
 ### From a vector to vocabulary scores
 
-![Read one row of H against one column of W. Their two products sum to one candidate score; changing D into V changes columns, while the two input positions remain two rows.](assets/03-09-output-projection.en.png)
+![Read one row of H against one column of W. Their two products sum to one candidate score; changing D into V changes columns, while the two input positions remain two rows.](assets/03-09-output-projection.en.png){width=100%}
 
 Read one row of H against one column of W. Their two products sum to one candidate score; changing D into V changes columns, while the two input positions remain two rows.
 
@@ -3123,7 +3083,7 @@ $$
 Z_{t,v}=\sum_{d=0}^{D-1}H_{t,d}W_{d,v}+b_v
 $$
 
-Read one candidate score as follows: multiply each input component by the corresponding weight for that candidate, add those products, then add the candidate's bias. `W` has one column per candidate. Column `v` contains the `D` weights used to score candidate `v`.
+Read one candidate score as follows: multiply each input component by the corresponding weight for that candidate, add those products, then add the candidate's bias. $W$ has one column per candidate. Column $v$ contains the $D$ weights used to score candidate $v$.
 
 The matrix form is:
 
@@ -3137,21 +3097,21 @@ $$
 [T,D]\;@\;[D,V]\longrightarrow[T,V]
 $$
 
-The inner sizes `D` must match. The outer sizes give `T` rows and `V` columns. Python's `@` performs this matrix product for two-dimensional tensors; the [matrix-product documentation](https://docs.pytorch.org/docs/2.0/generated/torch.matmul.html) explains its shape behavior. `*` is elementwise multiplication and does not calculate these row-column weighted sums.
+The inner sizes $D$ must match. The outer sizes give $T$ rows and $V$ columns. Python's `@` performs this matrix product for two-dimensional tensors; the [matrix-product documentation](https://docs.pytorch.org/docs/2.0/generated/torch.matmul.html) explains its shape behavior. `*` is elementwise multiplication and does not calculate these row-column weighted sums.
 
-Adding bias `[V]` to scores `[T,V]` applies the same bias vector to every row. Conceptually `[V]` aligns as `[1,V]` and broadcasts across `T`. This follows the [broadcasting rules](https://docs.pytorch.org/docs/2.0/notes/broadcasting.html); it does not require a learner loop or manually copied bias matrix.
+Adding bias `[V]` to scores `[T,V]` applies the same bias vector to every row. Conceptually `[V]` aligns as `[1,V]` and broadcasts across $T$. This follows the [broadcasting rules](https://docs.pytorch.org/docs/2.0/notes/broadcasting.html); it does not require a learner loop or manually copied bias matrix.
 
-`W` and `b` can be trained along with the embedding table in a later loss-based training loop. Softmax itself has no learned parameters. This exercise returns logits while keeping their dependence on the supplied vectors, weights, and bias.
+$W$ and `b` can be trained along with the embedding table in a later loss-based training loop. Softmax itself has no learned parameters. This exercise returns logits while keeping their dependence on the supplied vectors, weights, and bias.
 
 ### From scores to probabilities
 
-At position `t`, softmax is:
+At position $t$, softmax is:
 
 $$
 P_{t,v}=\frac{e^{Z_{t,v}}}{\sum_{j=0}^{V-1}e^{Z_{t,j}}}
 $$
 
-Here $e\approx2.71828$ is Euler's number, the base of natural logarithms, and $e^x=\exp(x)$ is the exponential function. This `e` is not the previous chapter's error variable. `j` visits all vocabulary candidates in the same row, and `v` denotes the particular candidate whose probability we want.
+Here $e\approx2.71828$ is Euler's number, the base of natural logarithms, and $e^x=\exp(x)$ is the exponential function. This `e` is not the previous chapter's error variable. $j$ visits all vocabulary candidates in the same row, and $v$ denotes the particular candidate whose probability we want.
 
 The exponential turns any finite real score into a positive weight and preserves score ordering. Dividing by the sum of those weights normalizes the row:
 
@@ -3160,9 +3120,9 @@ $$
 =\frac{\sum_{v=0}^{V-1}e^{Z_{t,v}}}{\sum_{j=0}^{V-1}e^{Z_{t,j}}}=1
 $$
 
-For a finite real row with `V>1`, mathematical probabilities are strictly between zero and one. With `V=1`, the only probability is one. Floating-point calculations can underflow tiny probabilities to zero, so numerical checks allow the closed interval `[0,1]` and a tolerance when checking the row sum. The [official softmax documentation](https://docs.pytorch.org/docs/2.0/generated/torch.nn.functional.softmax.html) defines the normalization along a chosen dimension.
+For a finite real row with $V>1$, mathematical probabilities are strictly between zero and one. With $V=1$, the only probability is one. Floating-point calculations can underflow tiny probabilities to zero, so numerical checks allow the closed interval `[0,1]` and a tolerance when checking the row sum. The [official softmax documentation](https://docs.pytorch.org/docs/2.0/generated/torch.nn.functional.softmax.html) defines the normalization along a chosen dimension.
 
-The denominator belongs to one position's `V` candidates. It does not combine probabilities across the `T` positions. Every output row sums to one independently; the sum of the entire `[T,V]` output is consequently `T`.
+The denominator belongs to one position's $V$ candidates. It does not combine probabilities across the $T$ positions. Every output row sums to one independently; the sum of the entire `[T,V]` output is consequently $T$.
 
 Softmax preserves score ordering. For two candidates in one row:
 
@@ -3176,7 +3136,7 @@ Softmax calculates the distribution. Selecting a token is a subsequent operation
 
 ### Stable softmax: subtract the row maximum
 
-![Follow a row through maximum subtraction and normalization. Candidate order stays fixed, and each output row sums to one independently of every other row.](assets/03-09-row-softmax.en.png)
+![Follow a row through maximum subtraction and normalization. Candidate order stays fixed, and each output row sums to one independently of every other row.](assets/03-09-row-softmax.en.png){width=100%}
 
 Follow a row through maximum subtraction and normalization. Candidate order stays fixed, and each output row sums to one independently of every other row.
 
@@ -3199,7 +3159,7 @@ m_t=\max_{0\le j<V}Z_{t,j},\qquad
 P_{t,v}=\frac{e^{Z_{t,v}-m_t}}{\sum_{j=0}^{V-1}e^{Z_{t,j}-m_t}}
 $$
 
-Now every shifted score is at most zero, so its exponential is at most one. At least one shifted score is zero, giving `exp(0)=1`. This avoids large positive exponentials and prevents a row of all-zero exponentials in the finite `float64` examples used here. Small tails can still underflow to zero.
+Now every shifted score is at most zero, so its exponential is at most one. At least one shifted score is zero, giving $\exp(0)=1$. This avoids large positive exponentials and prevents a row of all-zero exponentials in the finite `float64` examples used here. Small tails can still underflow to zero.
 
 Each position uses its own maximum and denominator. One global maximum for the whole tensor can leave a distant row with all exponentials numerically zero; the supplied driver includes rows with widely separated offsets to detect that mistake.
 
@@ -3217,7 +3177,7 @@ b&=[0,0,0]
 \end{aligned}
 $$
 
-Here `T=2`, `D=2`, and `V=3`. There are two input positions, two components per vector, and three candidate tokens.
+Here $T=2$, $D=2$, and $V=3$. There are two input positions, two components per vector, and three candidate tokens.
 
 #### Step 1: Calculate each row-column score
 
@@ -3249,7 +3209,7 @@ $$
 
 The input vectors are `[2,2]`, while logits are `[2,3]`. The projection changes the component count into the candidate count.
 
-To see nonzero bias, keep `H` and `W`, but change `b` to `[0.5,-1,2]`:
+To see nonzero bias, keep $H$ and $W$, but change `b` to `[0.5,-1,2]`:
 
 $$
 Z=\begin{bmatrix}1+0.5&2-1&3+2\\2+0.5&1-1&3+2\end{bmatrix}
@@ -3305,7 +3265,7 @@ Therefore `row_sums` is approximately `[[1.5032147244],[1.5032147244]]`, shape `
 | `1` | `1` | `1` | `-2` | `0.1353352832` | `0.0900305732` |
 | `1` | `2` | `3` | `0` | `1.0` | `0.6652409558` |
 
-For the first row's candidate `0`, calculate `0.1353352832 / 1.5032147244`, approximately `0.0900305732`. Apply the same division to each component:
+For the first row's candidate `0`, calculate $0.1353352832 / 1.5032147244$, approximately `0.0900305732`. Apply the same division to each component:
 
 $$
 P\approx\begin{bmatrix}0.0900305732&0.2447284711&0.6652409558\\0.2447284711&0.0900305732&0.6652409558\end{bmatrix}
@@ -3335,7 +3295,7 @@ row_sums:   [T,1]
 division result: [T,V]
 ```
 
-The single value in each row is applied to that row's `V` entries. A plain `[T]` result does not describe a per-row column: for `[2,3]`, the trailing `2` conflicts with `3`; when `T=V`, it can broadcast in a misleading way without an error. Keeping `[T,1]` makes the intended relationship explicit.
+The single value in each row is applied to that row's $V$ entries. A plain `[T]` result does not describe a per-row column: for `[2,3]`, the trailing `2` conflicts with `3`; when $T=V$, it can broadcast in a misleading way without an error. Keeping `[T,1]` makes the intended relationship explicit.
 
 `torch.exp(shifted_logits)` applies $e^x$ elementwise and returns a tensor with the same shape. `exp_scores.sum(dim=-1, keepdim=True)` gives one denominator per row. A `.sum()` without the dimension would add every row together; the [sum documentation](https://docs.pytorch.org/docs/2.0/generated/torch.sum.html) explains dimension reduction and retained shape.
 
@@ -3361,7 +3321,7 @@ Both functions return one tensor, with matching dtype/device and the appropriate
 
 Open `03_09_logits_and_softmax.py` and find the Stage A learner region in `compute_logits`. Ordinary statements use four spaces.
 
-1. **Form `weighted_scores`.** Use the `@` operator with `hidden_vectors` on the left and `output_weights` on the right. The inner `D` sizes match; the result is `[T,V]`. The worked example gives `[[1,2,3],[2,1,3]]` before bias.
+1. **Form `weighted_scores`.** Use the `@` operator with `hidden_vectors` on the left and `output_weights` on the right. The inner $D$ sizes match; the result is `[T,V]`. The worked example gives `[[1,2,3],[2,1,3]]` before bias.
 2. **Add `output_bias` to produce `logits`.** Use tensor addition `left + right`. `[V]` broadcasts across the rows; zero bias leaves the example unchanged, while `[0.5,-1,2]` produces `[[1.5,1,5],[2.5,0,5]]`. Preserve the input tensors.
 3. **Return `logits`.** Use `return value` at four spaces. Keep the tensor and its dependence on the input vectors, weights, and bias.
 
@@ -3435,7 +3395,7 @@ Keep the supplied setup and driver unchanged. A `.values` omission can leave a r
 
 **Does subtracting the maximum destroy information?** The same constant is subtracted from every score in one row, so all score differences remain unchanged. The common exponential factor cancels. Subtracting different arbitrary offsets per candidate would generally change the distribution.
 
-**Are the input token IDs and output candidate IDs the same axis?** Input positions choose which vectors enter the calculation. Output columns enumerate all `V` vocabulary candidates. An input of length `T=2` still gives three candidate probabilities per row when `V=3`; it does not shrink the vocabulary.
+**Are the input token IDs and output candidate IDs the same axis?** Input positions choose which vectors enter the calculation. Output columns enumerate all $V$ vocabulary candidates. An input of length $T=2$ still gives three candidate probabilities per row when $V=3$; it does not shrink the vocabulary.
 
 **Do two output rows mean generating two future tokens simultaneously?** The example computes the distributions for two supplied positions. In a causal model, each training position predicts its own next-token target using permitted context. Autoregressive generation selects the next token from the current position, appends it, and recomputes the next distribution. Context processing and generation loops follow later.
 
@@ -3451,15 +3411,13 @@ $$
 =p_i\left(\mathbf{1}_{i=j}-p_j\right)
 $$
 
-The indicator $\mathbf{1}_{i=j}$ is one for the same candidate and zero otherwise. Thus the derivative is $p_i(1-p_i)$ for `i=j` and $-p_ip_j$ for different candidates. Increasing one score can raise its own probability and lower the others through the shared denominator. The stable form defines the same mathematical function. Autograd handles the connected tensor operations; the supplied driver checks gradients without requiring you to write this derivative.
+The indicator $\mathbf{1}_{i=j}$ is one for the same candidate and zero otherwise. Thus the derivative is $p_i(1-p_i)$ for $i=j$ and $-p_ip_j$ for different candidates. Increasing one score can raise its own probability and lower the others through the shared denominator. The stable form defines the same mathematical function. Autograd handles the connected tensor operations; the supplied driver checks gradients without requiring you to write this derivative.
 
 ### Questions to work through
 
-Optional checkpoints: distinguish `D` from `V`; trace a row-column logit calculation and bias broadcasting; calculate one probability row; prove shift invariance; explain the vocabulary axis and `[T,1]` reductions; explain why returned probabilities stay connected. Continue with [Lesson 03.10: next-token cross-entropy](#section-03-10).
+Optional checkpoints: distinguish $D$ from $V$; trace a row-column logit calculation and bias broadcasting; calculate one probability row; prove shift invariance; explain the vocabulary axis and `[T,1]` reductions; explain why returned probabilities stay connected. Continue with [Lesson 03.10: next-token cross-entropy](#section-03-10).
 
-<a id="section-03-10"></a>
-
-## 03.10 Cross-Entropy for Next-Token Targets
+## 03.10 Cross-Entropy for Next-Token Targets {#section-03-10}
 
 ### Method sources
 
@@ -3480,7 +3438,7 @@ target tokens: [爱, 猫, 。]
 
 This token split is an explicit example assumption, not a claim about the existing byte/BPE tokenizer. A full causal model lets a position use only its permitted prefix. Context processing and causal masking are still later topics; the current exercise receives scores directly.
 
-`target_ids[t]` identifies the correct candidate column for position `t`. It is not a probability, a desired embedding vector, or a prediction chosen by argmax. For targets `[2,0]`, position `0` has true next-token ID `2`, and position `1` has true next-token ID `0`. ID zero does not mean probability zero.
+`target_ids[t]` identifies the correct candidate column for position $t$. It is not a probability, a desired embedding vector, or a prediction chosen by argmax. For targets `[2,0]`, position `0` has true next-token ID `2`, and position `1` has true next-token ID `0`. ID zero does not mean probability zero.
 
 ### Symbols and shapes before the formulas
 
@@ -3488,15 +3446,15 @@ This token split is an explicit example assumption, not a claim about the existi
 | --- | --- | --- | --- |
 | $Z$ | `logits` | Supplied raw vocabulary scores | `[T,V]` |
 | $P$ | Mathematical softmax probabilities | Distribution implied by each score row | `[T,V]` |
-| $y_t$ | `target_ids[t]` | Observed next-token candidate at position `t` | `target_ids` is `[T]` |
+| $y_t$ | `target_ids[t]` | Observed next-token candidate at position $t$ | `target_ids` is `[T]` |
 | $\ell_t$ | Per-position loss | Negative log-probability of the observed candidate | One value per position |
 | $L$ | `loss` | Mean of those position losses | Scalar tensor |
 | $m_t$ | `row_max[t,0]` | Largest score in one row | `row_max` is `[T,1]` |
 | $S$ | `shifted_logits` | Scores after subtracting each row's maximum | `[T,V]` |
 
-`T` counts input positions, as clarified in the previous chapter. Each of those positions contributes one target loss. `V` counts the candidates in each distribution. Indices are zero-based. Supplied logits are floating-point tensors; target IDs are fixed integer tensors with dtype `torch.long`, one valid ID in `[0,V)` per row.
+$T$ counts input positions, as clarified in the previous chapter. Each of those positions contributes one target loss. $V$ counts the candidates in each distribution. Indices are zero-based. Supplied logits are floating-point tensors; target IDs are fixed integer tensors with dtype `torch.long`, one valid ID in `[0,V)` per row.
 
-Assume `T>0`, `V>0`, finite scores, valid target IDs, matching devices, and normal gradient mode. Checks use CPU `float64` scores. Input construction and validation are supplied; the only new tensor created by the learner is a row-index sequence. Both inputs must keep their values.
+Assume $T>0$, $V>0$, finite scores, valid target IDs, matching devices, and normal gradient mode. Checks use CPU `float64` scores. Input construction and validation are supplied; the only new tensor created by the learner is a row-index sequence. Both inputs must keep their values.
 
 ### Negative log-likelihood and mean loss
 
@@ -3518,7 +3476,7 @@ $$
 L=-\frac1T\sum_{t=0}^{T-1}\ln P_{t,y_t}
 $$
 
-Read this as: select the probability of the true candidate in each row, take its natural logarithm, negate it, then average the `T` resulting losses. The divisor is `T`, not `V` or `T*V`. The candidates collectively determine the probability, but each position contributes one supervised outcome. This class-index formulation is described by [CrossEntropyLoss](https://docs.pytorch.org/docs/2.0/generated/torch.nn.CrossEntropyLoss.html).
+Read this as: select the probability of the true candidate in each row, take its natural logarithm, negate it, then average the $T$ resulting losses. The divisor is $T$, not $V$ or $TV$. The candidates collectively determine the probability, but each position contributes one supervised outcome. This class-index formulation is described by [CrossEntropyLoss](https://docs.pytorch.org/docs/2.0/generated/torch.nn.CrossEntropyLoss.html).
 
 Natural logarithm is the inverse of the exponential: $\ln(e^x)=x$. `torch.log` applies it elementwise, as specified in the [log documentation](https://docs.pytorch.org/docs/2.0/generated/torch.log.html). For probabilities between zero and one, the log is nonpositive; negation makes the loss nonnegative. Higher true-token probability gives smaller loss:
 
@@ -3529,9 +3487,9 @@ Natural logarithm is the inverse of the exponential: $\ln(e^x)=x$. `torch.log` a
 | `0.1` | `2.302585` |
 | `0.01` | `4.605170` |
 
-![Loss curve: increasing the true next-token probability reduces its negative log-likelihood.](assets/03-10-loss-curve.en.png)
+![Loss curve: increasing the true next-token probability reduces its negative log-likelihood.](assets/03-10-loss-curve.en.png){width=100%}
 
-**Figure 03.10-1 — Read the formula as a curve.** The horizontal axis is the probability assigned to the observed token, and the vertical axis is its loss. Moving right along the curve increases that probability and lowers the loss; the orange points match the table above. The domain is `0 < p <= 1`. The visible vertical range ends near five, while loss continues growing without bound as `p` approaches zero. Labels are rounded.
+**Figure 03.10-1 — Read the formula as a curve.** The horizontal axis is the probability assigned to the observed token, and the vertical axis is its loss. Moving right along the curve increases that probability and lowers the loss; the orange points match the table above. The domain is $0<p\le1$. The visible vertical range ends near five, while loss continues growing without bound as `p` approaches zero. Labels are rounded.
 
 At probability one, the loss is zero; as the probability approaches zero, the loss grows without bound. Locally:
 
@@ -3559,7 +3517,7 @@ $$
 =-\sum_{t=0}^{T-1}\ln P_{t,y_t}
 $$
 
-Dividing by `T` gives the per-position mean used here. It helps compare average loss across examples of different lengths under the same tokenizer and evaluation setup.
+Dividing by $T$ gives the per-position mean used here. It helps compare average loss across examples of different lengths under the same tokenizer and evaluation setup.
 
 ### Derive the stable computation directly from logits
 
@@ -3599,7 +3557,7 @@ loss: 2000
 
 Computing softmax first gives a numerical target probability of zero, and `log(0)` is not finite. The direct log-score expression still produces the appropriate finite loss `2000`. Clipping the probability with an added floor would alter that loss rather than reproduce this objective.
 
-![Two computation paths: logging an underflowed probability produces infinity, while computing log-probabilities directly preserves a finite loss of 2000.](assets/03-10-stable-log-probabilities.en.png)
+![Two computation paths: logging an underflowed probability produces infinity, while computing log-probabilities directly preserves a finite loss of 2000.](assets/03-10-stable-log-probabilities.en.png){width=100%}
 
 **Figure 03.10-2 — Follow the arrows from the same logits.** The left branch first stores probabilities in floating-point arithmetic; the true candidate's tiny probability underflows to zero before the log. The right branch computes the shifted log-probability directly, selects `-2000`, and negates it to obtain `2000`. The displayed values are computed floating-point results. The mathematical softmax probability of this candidate is still positive; the two branches define the same objective, but their numerical paths differ.
 
@@ -3614,7 +3572,7 @@ Z=\begin{bmatrix}1&2&3\\2&1&3\end{bmatrix},\qquad
 \mathrm{target\_ids}=[2,0]
 $$
 
-Here `T=2`, `V=3`. From the previous softmax calculation:
+Here $T=2$, $V=3$. From the previous softmax calculation:
 
 $$
 P\approx\begin{bmatrix}0.0900305732&0.2447284711&0.6652409558\\0.2447284711&0.0900305732&0.6652409558\end{bmatrix}
@@ -3629,9 +3587,9 @@ $$
 
 The first row assigns more probability to its true token, so it has the smaller loss. Although candidate `2` is the argmax in both rows, the second row's actual target is candidate `0`. Choosing the argmax as the target would reward the model's own prediction instead of assessing the observed outcome.
 
-![A two-by-three probability matrix with coordinates (0,2) and (1,0) highlighted, leading to two position losses and their mean.](assets/03-10-target-selection.en.png)
+![A two-by-three probability matrix with coordinates (0,2) and (1,0) highlighted, leading to two position losses and their mean.](assets/03-10-target-selection.en.png){width=100%}
 
-**Figure 03.10-3 — Read rows as positions and columns as candidate IDs.** Targets `[2,0]` select the teal cells at `(0,2)` and `(1,0)`. In the second row, the selected probability is approximately `0.2447`, even though candidate `2` has the largest probability. Each selected value yields one position loss through negative natural log. The final box averages those two losses, dividing by `T=2`; `V=3` counts columns. Displayed probabilities and losses are rounded from full-precision calculations.
+**Figure 03.10-3 — Read rows as positions and columns as candidate IDs.** Targets `[2,0]` select the teal cells at `(0,2)` and `(1,0)`. In the second row, the selected probability is approximately `0.2447`, even though candidate `2` has the largest probability. Each selected value yields one position loss through negative natural log. The final box averages those two losses, dividing by $T=2$; $V=3$ counts columns. Displayed probabilities and losses are rounded from full-precision calculations.
 
 #### Step 2: Shift scores and calculate the row normalizers
 
@@ -3684,17 +3642,17 @@ $$
 
 Return this as a scalar tensor so it remains connected to the logits. Displayed decimals are rounded; checks use full precision and tolerances.
 
-For comparison, equal scores over three candidates assign probability `1/3` to any target and give loss $\ln3\approx1.098612$. A vocabulary with only one candidate assigns probability one and gives loss zero. Both are covered by the driver.
+For comparison, equal scores over three candidates assign probability $\frac{1}{3}$ to any target and give loss $\ln3\approx1.098612$. A vocabulary with only one candidate assigns probability one and gives loss zero. Both are covered by the driver.
 
 ### New syntax: log, row indices, and paired indexing
 
 `torch.log(row_sums)` applies the natural log to each row normalizer and keeps shape `[T,1]`. It is the log of a sum of exponentials, not a sum of logs and not the log of the original logits, which can be negative.
 
-`logits.shape[0]` supplies `T`. `torch.arange(logits.shape[0], device=logits.device)` builds `[0,1,...,T-1]` on the score tensor's device. Integral bounds produce integer indices; see [arange](https://docs.pytorch.org/docs/2.0/generated/torch.arange.html). For two positions it produces `[0,1]`.
+`logits.shape[0]` supplies $T$. `torch.arange(logits.shape[0], device=logits.device)` builds `[0,1,...,T-1]` on the score tensor's device. Integral bounds produce integer indices; see [arange](https://docs.pytorch.org/docs/2.0/generated/torch.arange.html). For two positions it produces `[0,1]`.
 
 With two same-length index tensors, `matrix[rows, columns]` picks the coordinate pair at each index. In this example it picks `(0,2)` and `(1,0)`. One-index lookup in the embedding lesson selected entire rows; here we select one number from each row. This selection remains differentiable with respect to the floating-point log-probabilities. The integer labels and row indices are fixed selectors.
 
-Negation uses unary `-`. Parentheses group the negative selected vector before `.mean()`. At this point the vector has `T` values, so the mean divides by `T`. The loss must remain a tensor; `.item()` belongs only in logging after the tensor has been retained for differentiation.
+Negation uses unary `-`. Parentheses group the negative selected vector before `.mean()`. At this point the vector has $T$ values, so the mean divides by $T$. The loss must remain a tensor; `.item()` belongs only in logging after the tensor has been retained for differentiation.
 
 ### Exact inputs, intermediate values, and return
 
@@ -3767,7 +3725,7 @@ In row `0` of the worked example, the true candidate is `2`, giving gradient $(0
 
 ### Reading questions and status
 
-**Why average only true-target losses?** Each position supplies one observed next token. All vocabulary candidates affect its probability through normalization, but they are not `V` separate observed outcomes.
+**Why average only true-target losses?** Each position supplies one observed next token. All vocabulary candidates affect its probability through normalization, but they are not $V$ separate observed outcomes.
 
 **Why not use argmax as the target?** The target comes from data. Replacing it with the model's current favorite fails to measure the actual next-token prediction.
 
@@ -3777,9 +3735,7 @@ The continuation is the current guided [Lesson 03.11](#section-03-11): a minimal
 
 **Two spellings of a reduction.** `torch.sum(exp_scores, dim=-1, keepdim=True)` and `exp_scores.sum(dim=-1, keepdim=True)` perform the same reduction. Both retain one column per row so broadcasting remains explicit.
 
-<a id="section-03-11"></a>
-
-## 03.11 One Joint Next-Token Training Step
+## 03.11 One Joint Next-Token Training Step {#section-03-11}
 
 Lookup, vocabulary scores, and loss now form one connected computation. One backward pass can therefore tell all three parameter tensors how to change. We will calculate every gradient at the old state before updating the table, projection, and bias together.
 
@@ -3799,7 +3755,7 @@ Work through the example before editing 03_11_next_token_train_step.py. The numb
 | $Z$ | `logits` | Connected floating tensor `[T,V]` | Raw output scores |
 | $L$ | `loss` | Connected scalar tensor | Mean true-target cross-entropy |
 
-`V` is vocabulary size, `D` vector dimension, and `T` input-position count. Inputs and observed targets are fixed during the update. The loss is a function of all three trainable tensors, $L(E,W,b)$; a partial derivative with respect to one parameter component holds the other components fixed. Integer IDs select locations and are not differentiation variables.
+$V$ is vocabulary size, $D$ vector dimension, and $T$ input-position count. Inputs and observed targets are fixed during the update. The loss is a function of all three trainable tensors, $L(E,W,b)$; a partial derivative with respect to one parameter component holds the other components fixed. Integer IDs select locations and are not differentiation variables.
 
 Assume positive dimensions, finite values, valid IDs, matching dtype/device, and normal gradient mode. The three parameter tensors have separate storage, are leaves with `requires_grad=True`, and are not tied to one another. The supplied driver constructs them as CPU `float64`; the learner does not need new parameter construction or validation.
 
@@ -3848,13 +3804,13 @@ $$
 
 The formulas act component by component. A positive component gradient decreases that parameter component; a negative one increases it. The objective guides the embedding values through prediction quality rather than a hand-chosen target vector.
 
-![One scalar loss sends gradients through the output head and lookup to the embedding table, weights, and bias.](assets/03-11-training-flow.en.png)
+![One scalar loss sends gradients through the output head and lookup to the embedding table, weights, and bias.](assets/03-11-training-flow.en.png){width=100%}
 
 **Figure 03.11-1 — Read blue arrows forward, orange arrows backward.** Input IDs select $H$ from $E$; $W$ and $b$ turn it into $Z$; true target IDs determine the scalar loss. Reverse arrows show the derivative paths to all three parameters. There is no gradient/update arrow to the integer IDs. The boxed update follows the completed backward pass. Shapes and values match the small example below.
 
 ### Complete small example: two candidates and one input position
 
-Use a teaching vocabulary of two IDs. A token sequence `[0,1]` supplies input `[0]` and target `[1]`. Choose `T=1`, `D=1`, `V=2` to make every component visible; these small dimensions serve the example.
+Use a teaching vocabulary of two IDs. A token sequence `[0,1]` supplies input `[0]` and target `[1]`. Choose $T=1$, $D=1$, $V=2$ to make every component visible; these small dimensions serve the example.
 
 $$
 E=\begin{bmatrix}1\\2\end{bmatrix},\quad
@@ -3882,7 +3838,7 @@ P=\begin{bmatrix}\frac{e^1}{e^1+e^0}&\frac{e^0}{e^1+e^0}\end{bmatrix}
 L=-\ln P_{0,1}\approx1.3132616875
 $$
 
-The true ID is `1`, whose probability is the second entry. `T=1` means one position loss; dividing by `V=2` would be incorrect. This forward calculation has not changed any parameter.
+The true ID is `1`, whose probability is the second entry. $T=1$ means one position loss; dividing by $V=2$ would be incorrect. This forward calculation has not changed any parameter.
 
 #### 2. Backward: derive every gradient in this example
 
@@ -3960,7 +3916,7 @@ $$
 
 The new true-target probability is approximately `0.3440811280`, and the new loss is approximately `1.0668778121`. The model still assigns higher probability to candidate zero; one useful update need not immediately fix the argmax. It increases probability on the actual target and lowers the loss in this example. This second forward belongs to the check driver, not the learner step's returned observations.
 
-![Before and after the same joint update: true-target probability rises and cross-entropy loss falls in the worked example.](assets/03-11-update-effect.en.png)
+![Before and after the same joint update: true-target probability rises and cross-entropy loss falls in the worked example.](assets/03-11-update-effect.en.png){width=100%}
 
 **Figure 03.11-2 — Compare one parameter state with the next.** Blue bars use the original $E,W,b$; teal bars use the three updated tensors with `learning_rate=0.1`. Read the left axis as a probability and the right axis as loss. The helper returns the original loss `1.3133`. A separate forward obtains the new loss `1.0669`. Bar labels are rounded. This measured improvement applies to the given example; a sufficiently large step can increase loss.
 
@@ -3980,7 +3936,7 @@ $$
 (G_E)_{r,d}=\sum_{t:x_t=r}(G_H)_{t,d}
 $$
 
-Repeated input IDs add contributions to the same table row. Unused rows have zero gradient in this objective. The division by `T` already occurs in $G_Z$; do not divide again by `T`, `D`, or `V` when applying these chains. In the small example `H=1`, so weight and bias gradients happen to have equal values; they need not agree in general.
+Repeated input IDs add contributions to the same table row. Unused rows have zero gradient in this objective. The division by $T$ already occurs in $G_Z$; do not divide again by $T$, $D$, or $V$ when applying these chains. In the small example $H=1$, so weight and bias gradients happen to have equal values; they need not agree in general.
 
 For sufficiently small steps, a first-order loss estimate is:
 
@@ -4014,7 +3970,7 @@ Inside the update loop, `parameter -= learning_rate * parameter.grad` mutates th
 | Update body inside both no-grad and parameter `for` | `12` |
 | Final return, after leaving both blocks | `4` |
 
-The two loops visit three parameters, not input positions or training steps. Tensor operations already calculate all `T` positions together.
+The two loops visit three parameters, not input positions or training steps. Tensor operations already calculate all $T$ positions together.
 
 ### Guided implementation
 
@@ -4066,9 +4022,7 @@ Lesson 03.11 checks passed.
 
 The continuation is the current guided [Lesson 03.12](#section-03-12): repeat this completed step while retaining parameters and recording pre-update loss history. Context processing remains a later chapter.
 
-<a id="section-03-12"></a>
-
-## 03.12 Repeat the Next-Token Training Step
+## 03.12 Repeat the Next-Token Training Step {#section-03-12}
 
 The next-token model has taken its first step; now we will let the same parameters take several more. A useful loss history must preserve which state produced each number. This loop revisits the same training pairs so that parameter continuity and logging time are easy to inspect.
 
@@ -4087,13 +4041,13 @@ Work through the example before editing 03_12_next_token_training_loop.py. The n
 | `num_steps` | Nonnegative Python int | Exact number of update calls |
 | `losses` | Fresh `list[float]` | One pre-update loss per call, in order |
 
-`T` counts supervised input positions per step, `D` vector components, and `V` vocabulary candidates. Assume the valid IDs, finite values, matching dtype/device, separate parameter storage, and normal gradient mode from 03.11. The driver supplies CPU `float64` trainable leaves. The learner does not construct parameters or validate inputs.
+$T$ counts supervised input positions per step, $D$ vector components, and $V$ vocabulary candidates. Assume the valid IDs, finite values, matching dtype/device, separate parameter storage, and normal gradient mode from 03.11. The driver supplies CPU `float64` trainable leaves. The learner does not construct parameters or validate inputs.
 
 The function returns only `losses`. The caller already holds the original three parameter objects, and their values become the final trained values. Every stored entry is a Python float rather than a loss tensor or gradient tuple. For `num_steps=0`, return a fresh empty list and leave parameter values and stored gradients untouched.
 
 ### Parameter states and loss history
 
-Group the contents of the three parameter tensors after `k` updates as:
+Group the contents of the three parameter tensors after $k$ updates as:
 
 $$
 \theta_k=(E_k,W_k,b_k),\qquad \theta_0=(E_0,W_0,b_0)
@@ -4114,7 +4068,7 @@ $$
 \theta_{k+1}=\theta_k-\eta\nabla_{\theta}L(\theta_k),\qquad k=0,\ldots,N-1
 $$
 
-`N=num_steps`, and $\eta$ is `learning_rate`. The gradient is the three parameter-shaped derivatives from 03.11. Each call uses the latest values, with a new forward calculation and fresh gradients supplied by the helper. The next call therefore starts at $\theta_{k+1}$.
+$N=$ `num_steps`, and $\eta$ is `learning_rate`. The gradient is the three parameter-shaped derivatives from 03.11. Each call uses the latest values, with a new forward calculation and fresh gradients supplied by the helper. The next call therefore starts at $\theta_{k+1}$.
 
 The returned numeric record is:
 
@@ -4123,11 +4077,11 @@ $$
 \mathrm{losses}=[L_0,L_1,\ldots,L_{N-1}]\quad(N\ge1)
 $$
 
-After `N` calls, the original tensors contain $\theta_N$. The last recorded value measures $\theta_{N-1}$, before the last update. A separate forward can evaluate $L(\theta_N)$; it is not another history entry under this contract. Thus `N` updates visit `N+1` parameter states while producing exactly `N` recorded values.
+After $N$ calls, the original tensors contain $\theta_N$. The last recorded value measures $\theta_{N-1}$, before the last update. A separate forward can evaluate $L(\theta_N)$; it is not another history entry under this contract. Thus $N$ updates visit $N+1$ parameter states while producing exactly $N$ recorded values.
 
-![Three persistent parameter updates produce three pre-update loss entries, with final evaluation shown separately.](assets/03-12-loop-timeline.en.png)
+![Three persistent parameter updates produce three pre-update loss entries, with final evaluation shown separately.](assets/03-12-loop-timeline.en.png){width=100%}
 
-**Figure 03.12-1 — Follow the states, then the recorded values.** Each top box represents the contents of the same $E,W,b$ after `k` updates. Blue arrows are the three update calls. Teal arrows collect the loss at each call's starting state. The orange state is the final trained state, whose loss is separately evaluated. In the curve, solid teal markers are the returned history; the hollow orange marker is the separate final evaluation. Values are rounded and use the complete example below.
+**Figure 03.12-1 — Follow the states, then the recorded values.** Each top box represents the contents of the same $E,W,b$ after $k$ updates. Blue arrows are the three update calls. Teal arrows collect the loss at each call's starting state. The orange state is the final trained state, whose loss is separately evaluated. In the curve, solid teal markers are the returned history; the hollow orange marker is the separate final evaluation. Values are rounded and use the complete example below.
 
 ### Complete three-update example
 
@@ -4151,14 +4105,14 @@ $$
 
 The first call uses the gradients already derived in 03.11 and leaves the table's selected component at approximately `0.9268941421`. The second call starts from all three updated tensors. Every active parameter component and the evaluated loss at each state are shown below. The unused table row `E[1,0]` stays exactly `2` throughout this fixed-window example.
 
-| Updates completed `k` | `E[0,0]` | `W[0,0]` | `W[0,1]` | `b[0]` | `b[1]` | Evaluated loss `L_k` |
+| Updates completed $k$ | `E[0,0]` | `W[0,0]` | `W[0,1]` | `b[0]` | `b[1]` | Evaluated loss $L_k$ |
 | --- | --- | --- | --- | --- | --- | --- |
 | `0` | `1.0000000000` | `1.0000000000` | `0.0000000000` | `0.0000000000` | `0.0000000000` | `1.3132616875` |
 | `1` | `0.9268941421` | `0.9268941421` | `0.0731058579` | `-0.0731058579` | `0.0731058579` | `1.0668778121` |
 | `2` | `0.8708925573` | `0.8660974061` | `0.1339025939` | `-0.1386977451` | `0.1386977451` | `0.8894180392` |
 | `3` | `0.8277585808` | `0.8147926734` | `0.1852073266` | `-0.1976082643` | `0.1976082643` | `0.7580921817` |
 
-For example, at state one, $H\approx0.9268941421$ and the probability of candidate zero is approximately `0.6559188720`. For this one-position target `1`, the new score gradient is `[p_0,-p_0]`. The next selected-table gradient is:
+For example, at state one, $H\approx0.9268941421$ and the probability of candidate zero is approximately `0.6559188720`. For this one-position target `1`, the new score gradient is $[p_0,-p_0]$. The next selected-table gradient is:
 
 $$
 \begin{aligned}
@@ -4175,9 +4129,9 @@ Track the Python list and caller-owned tensors in execution order:
 
 | Call | Starting state | Helper's first returned item | State after the call | `losses` after append |
 | --- | --- | --- | --- | --- |
-| `1` | `theta_0` | `1.3132616875` | `theta_1` | `[1.3132616875]` |
-| `2` | `theta_1` | `1.0668778121` | `theta_2` | `[1.3132616875,1.0668778121]` |
-| `3` | `theta_2` | `0.8894180392` | `theta_3` | `[1.3132616875,1.0668778121,0.8894180392]` |
+| `1` | $\theta_0$ | `1.3132616875` | $\theta_1$ | `[1.3132616875]` |
+| `2` | $\theta_1$ | `1.0668778121` | $\theta_2$ | `[1.3132616875,1.0668778121]` |
+| `3` | $\theta_2$ | `0.8894180392` | $\theta_3$ | `[1.3132616875,1.0668778121,0.8894180392]` |
 
 The list append executes after the helper has updated parameters and returned. Its saved number still describes the state before that update because the helper extracted that loss earlier. Execution time and the state measured by a report are different concepts.
 
@@ -4203,7 +4157,7 @@ When `num_steps=0`, `range(0)` yields no iterations. No step helper runs, no gra
 
 Every function call creates its own fresh history list. If the caller passes the same trained parameters to another call, training continues from their current values. For the same fixed data and learning rate, three updates followed by two updates produce the same parameter trajectory as five uninterrupted updates. The two returned lists remain independent.
 
-`num_steps` counts update calls rather than generated tokens or epochs. Each call scores all `T` supplied targets. This toy budget therefore performs `N*T` supervised-position evaluations during training; those repeated evaluations are not `N*T` distinct examples. An epoch needs a defined pass through a dataset, which this fixed-window wrapper does not implement.
+`num_steps` counts update calls rather than generated tokens or epochs. Each call scores all $T$ supplied targets. This toy budget therefore performs $NT$ supervised-position evaluations during training; those repeated evaluations are not $NT$ distinct examples. An epoch needs a defined pass through a dataset, which this fixed-window wrapper does not implement.
 
 The example's losses fall for `learning_rate=0.1`. Loss need not decrease at every arbitrary learning rate; the check driver preserves a large-step increase. Lower loss on repeatedly used training pairs alone also does not establish performance on unseen text. Dataset splits and independent evaluation remain later topics.
 
@@ -4229,7 +4183,7 @@ Open `03_12_next_token_training_loop.py` and find the completed `train_next_toke
 
 1. **Create the history.** At four spaces, assign an empty list to `losses` using `[]`. Parameters are already supplied. Before the loop, the list is empty.
 2. **Set the repetition budget.** At four spaces, write `for step in range(num_steps):`. Its colon begins the eight-space body. `range(3)` repeats three times; `range(0)` skips that body.
-3. **Reuse one complete update.** At eight spaces, call `next_token_train_step` with `embedding_table`, `token_ids`, `output_weights`, `output_bias`, `target_ids`, `learning_rate` in that order. Save its returned tuple as `step_result`. The first call updates the original tensors from `theta_0` to `theta_1`; the next call sees `theta_1`.
+3. **Reuse one complete update.** At eight spaces, call `next_token_train_step` with `embedding_table`, `token_ids`, `output_weights`, `output_bias`, `target_ids`, `learning_rate` in that order. Save its returned tuple as `step_result`. The first call updates the original tensors from $\theta_0$ to $\theta_1$; the next call sees $\theta_1$.
 4. **Record the first tuple item.** Still at eight spaces, select `step_result[0]` as `loss_value`, then call `losses.append(loss_value)`. After two calls the example list contains approximately `[1.3132616875,1.0668778121]`. The helper's gradient snapshots are not history entries.
 5. **Return after the loop.** At four spaces, return `losses`. Three calls produce three floats; zero calls produce `[]`. The original parameter tensors contain the final values. Do not append another evaluation or perform another update.
 
@@ -4268,9 +4222,7 @@ The continuation is the completed [03.13](#section-03-13): fixed-parameter next-
 
 **A continued call is not another block.** Arguments inside parentheses can occupy several lines. Their visual indentation groups the arguments; only a new control-flow header such as `for` or `with` opens a nested suite.
 
-<a id="section-03-13"></a>
-
-## 03.13 Predict One Next Token
+## 03.13 Predict One Next Token {#section-03-13}
 
 Training changes the model; prediction uses the model as it stands. Given a prompt, we will inspect the distribution at its final position and choose one next ID. This is the smallest inference operation from which a generation loop can be built.
 
@@ -4290,7 +4242,7 @@ Work through the example before editing 03_13_predict_next_token.py. The numbere
 | $p$ | `next_probabilities` | Untracked floating tensor `[V]` | Distribution following the prompt |
 | $\hat v$ | `next_token_id` | Python `int` | Greedy candidate ID |
 
-`T` counts prompt token occurrences, `D` vector components, and `V` vocabulary candidates. Indices are zero-based. Assume positive dimensions, valid IDs, compatible shapes/devices/dtypes, and finite forward scores. The supplied floating parameters are leaves and may require gradients or be frozen; preserve their flags, values, storage, and any stored gradients. The checks construct CPU `float64` tensors.
+$T$ counts prompt token occurrences, $D$ vector components, and $V$ vocabulary candidates. Indices are zero-based. Assume positive dimensions, valid IDs, compatible shapes/devices/dtypes, and finite forward scores. The supplied floating parameters are leaves and may require gradients or be frozen; preserve their flags, values, storage, and any stored gradients. The checks construct CPU `float64` tensors.
 
 Return `(next_token_id, next_probabilities)` in that order. The ID is in `[0,V)`, and the probability vector has the same floating dtype/device as the parameters. Preserve the supplied prompt and caller's gradient mode. There are no target labels, loss calculation, backward call, learning rate, or parameter update in this helper.
 
@@ -4333,7 +4285,7 @@ W=\begin{bmatrix}1&0\\0&1\end{bmatrix},\qquad
 b=[0,0],\qquad x=[0,1]
 $$
 
-Here `T=2`, `D=2`, `V=2`; equal dimension sizes are incidental. Bias is stored as a one-dimensional `[2]` tensor. The prompt uses two positions. Lookup gives:
+Here $T=2$, $D=2$, $V=2$; equal dimension sizes are incidental. Bias is stored as a one-dimensional `[2]` tensor. The prompt uses two positions. Lookup gives:
 
 $$
 H=\begin{bmatrix}1&2\\3&1\end{bmatrix},\qquad
@@ -4362,7 +4314,7 @@ $$
 
 Return Python integer `0` and the `[2]` probability tensor. ID zero does not mean probability zero. The first row favors ID one, so choosing the first row would produce a different and inappropriate prediction for extending this prompt. Selecting argmax over the entire matrix would flatten both position and candidate axes rather than selecting one candidate from the final row.
 
-![The final input row supplies one vocabulary probability vector, and argmax selects its candidate ID.](assets/03-13-last-row-selection.en.png)
+![The final input row supplies one vocabulary probability vector, and argmax selects its candidate ID.](assets/03-13-last-row-selection.en.png){width=100%}
 
 **Figure 03.13-1 — Read columns as candidate IDs and rows as input positions.** The first row belongs to the first prompt token. Both teal cells form the final row's `[V]` distribution. The orange border marks its largest entry at candidate zero; the returned ID is `0`, and the whole last row is returned alongside it. Labels are rounded from the calculation above.
 
@@ -4390,13 +4342,13 @@ The supplied driver also trains a small current-byte model after implementing th
 | Training helper code | Section 03.12 companion interface, after implementation |
 | Synthetic data version | `synthetic-byte-aba-v1`: UTF-8 bytes of `aba` |
 | Tokenizer version | `utf8-byte-256-v1`: token ID equals byte value |
-| Training inputs / targets | `[97,98]` / `[98,97]`, giving `a -> b` and `b -> a` |
-| Shapes | `V=256`, `D=2`, `T=2` |
+| Training inputs / targets | `[97,98]` / `[98,97]`, giving $\texttt{a}\to\texttt{b}$ and $\texttt{b}\to\texttt{a}$ |
+| Shapes | $V=256$, $D=2$, $T=2$ |
 | Initialization | Table zeros except row 97 `[1,2]` and row 98 `[3,1]`; output weights and bias zero |
 | Update budget | Plain gradient descent, `learning_rate=0.1`, `num_steps=100`; 200 supervised-position uses |
 | Evaluation | Fixed same two pairs; mean cross-entropy and greedy next-ID queries without updates |
 
-Zero initial output weights/bias imply probability `1/256` for each candidate and initial mean loss $\ln256\approx5.5451774445$. After the 100 updates, the separate final mean loss is approximately `0.0188148725`. The last pre-update history entry is approximately `0.0190794658`, preserving the distinction from 03.12.
+Zero initial output weights/bias imply probability $\frac{1}{256}$ for each candidate and initial mean loss $\ln256\approx5.5451774445$. After the 100 updates, the separate final mean loss is approximately `0.0188148725`. The last pre-update history entry is approximately `0.0190794658`, preserving the distinction from 03.12.
 
 | Prompt/query | Greedy next ID after training | Probability assigned to that target |
 | --- | --- | --- |
@@ -4405,9 +4357,9 @@ Zero initial output weights/bias imply probability `1/256` for each candidate an
 
 The full distributions contain 256 candidates. The measured values show learning of these reused synthetic pairs, not held-out text performance. The lookup-plus-head architecture still uses only the current byte. The checks and figures preserve the data, initialization, budget, evaluation, and code provenance; no model-weight file or raw execution log is stored.
 
-![True-next-byte probabilities before and after the specified training budget.](assets/03-13-training-to-prediction.en.png)
+![True-next-byte probabilities before and after the specified training budget.](assets/03-13-training-to-prediction.en.png){width=100%}
 
-**Figure 03.13-2 — Inspect the trained prediction on each supplied pair.** Each bar is one target's probability from a full 256-candidate distribution, not a two-candidate normalization. Before training it is `1/256`; after training the fixed-parameter query assigns approximately `0.9790` or `0.9837`. Both queries evaluate the training pairs. An independent NumPy calculation reproduced these values.
+**Figure 03.13-2 — Inspect the trained prediction on each supplied pair.** Each bar is one target's probability from a full 256-candidate distribution, not a two-candidate normalization. Before training it is $\frac{1}{256}$; after training the fixed-parameter query assigns approximately `0.9790` or `0.9837`. Both queries evaluate the training pairs. An independent NumPy calculation reproduced these values.
 
 ### What autoregressive generation adds next
 
@@ -4423,7 +4375,7 @@ This is the autoregressive idea: generated output becomes part of the next input
 
 This model's rows are independent lookups, so prompts with the same final ID have the same next distribution even when earlier tokens differ. A contextual model needs to combine the allowed prefix into its final hidden vector; attention and Transformer components are later lessons.
 
-Greedy selection maximizes each immediate choice. It does not necessarily maximize an entire sequence's joint probability: with first-choice probabilities `A=0.6`, `B=0.4` and best continuations `0.51` after A or `0.99` after B, the greedy A path has probability `0.306`, while the B path has `0.396`. This optional probability example explains the local nature of greedy selection; broader decoding methods follow later.
+Greedy selection maximizes each immediate choice. It does not necessarily maximize an entire sequence's joint probability: with first-choice probabilities $A=0.6$, $B=0.4$ and best continuations `0.51` after A or `0.99` after B, the greedy A path has probability `0.306`, while the B path has `0.396`. This optional probability example explains the local nature of greedy selection; broader decoding methods follow later.
 
 ### Seven numbered implementation steps
 
@@ -4468,9 +4420,7 @@ Lesson 03.13 checks passed.
 
 **Does greedy selection change the learned model?** It reads the distribution and selects an ID. The supplied parameters stay fixed, and repeating the same prompt produces the same choice under this deterministic helper.
 
-<a id="section-03-14"></a>
-
-## 03.14 Autoregressive Generation
+## 03.14 Autoregressive Generation {#section-03-14}
 
 ### Method sources
 
@@ -4491,9 +4441,9 @@ Work through the example before editing 03_14_autoregressive_generation.py. The 
 | `num_new_tokens` | Python integer $N\ge0$ | Exact number of newly appended IDs |
 | `generated_ids` | Returned `torch.long` tensor `[T+N]` | Original prompt plus continuation |
 
-`T` is the original prompt length, `V` the vocabulary size, and `D` the vector dimension. Assume valid IDs, positive dimensions, compatible shapes/dtypes/devices, and finite forward scores; learner input validation is not assigned. The output uses the prompt's dtype/device and independent storage. Preserve the original prompt, parameter values/storage/trainability/stored gradients, and caller gradient mode.
+$T$ is the original prompt length, $V$ the vocabulary size, and $D$ the vector dimension. Assume valid IDs, positive dimensions, compatible shapes/dtypes/devices, and finite forward scores; learner input validation is not assigned. The output uses the prompt's dtype/device and independent storage. Preserve the original prompt, parameter values/storage/trainability/stored gradients, and caller gradient mode.
 
-Return one full ID tensor, not a probability vector, Python list, or tuple. Even `N=0` returns an independent copy of the original prompt and makes zero model calls. This lesson stops after exactly `N` new tokens. EOS stopping, context truncation, and sampling are later topics.
+Return one full ID tensor, not a probability vector, Python list, or tuple. Even $N=0$ returns an independent copy of the original prompt and makes zero model calls. This lesson stops after exactly $N$ new tokens. EOS stopping, context truncation, and sampling are later topics.
 
 ### The sequence changes, parameters stay fixed
 
@@ -4531,9 +4481,9 @@ W=\begin{bmatrix}1&0\\0&1\end{bmatrix},\quad b=[0,0],\quad
 x=[0,1],\quad T=2,\quad N=3
 $$
 
-The final row after ID `1` has scores `[3,1]`; stable softmax subtracts `3`, giving `[0,-2]`, then divides `[1,e^{-2}]` by $1+e^{-2}$. Its probabilities are approximately `[0.8807970780,0.1192029220]`, so select ID `0`.
+The final row after ID `1` has scores `[3,1]`; stable softmax subtracts `3`, giving `[0,-2]`, then divides $[1,e^{-2}]$ by $1+e^{-2}$. Its probabilities are approximately `[0.8807970780,0.1192029220]`, so select ID `0`.
 
-After ID `0`, scores are `[1,2]`; subtract `2`, giving `[-1,0]`, then divide `[e^{-1},1]` by $e^{-1}+1$. Its probabilities are approximately `[0.2689414214,0.7310585786]`, so select ID `1`.
+After ID `0`, scores are `[1,2]`; subtract `2`, giving `[-1,0]`, then divide $[e^{-1},1]$ by $e^{-1}+1$. Its probabilities are approximately `[0.2689414214,0.7310585786]`, so select ID `1`.
 
 | Iteration $k$ / call | Current `generated_ids` | Last ID | Final-row probabilities, rounded | Selected ID | After concatenation |
 | --- | --- | --- | --- | --- | --- |
@@ -4541,9 +4491,9 @@ After ID `0`, scores are `[1,2]`; subtract `2`, giving `[-1,0]`, then divide `[e
 | `1` / `2` | `[0,1,0]` | `0` | `[0.2689,0.7311]` | `1` | `[0,1,0,1]` |
 | `2` / `3` | `[0,1,0,1]` | `1` | `[0.8808,0.1192]` | `0` | `[0,1,0,1,0]` |
 
-Return `tensor([0,1,0,1,0])`, shape `[5]`. The original `context_ids` stays `[0,1]`. Three predictions produced three new IDs `[0,1,0]`, while the complete returned sequence has five IDs. For `N=1`, return `[0,1,0]`; for `N=0`, return a fresh `[0,1]` without calling prediction.
+Return `tensor([0,1,0,1,0])`, shape `[5]`. The original `context_ids` stays `[0,1]`. Three predictions produced three new IDs `[0,1,0]`, while the complete returned sequence has five IDs. For $N=1$, return `[0,1,0]`; for $N=0$, return a fresh `[0,1]` without calling prediction.
 
-![Three selected IDs grow the prompt through four sequence states, while parameters stay fixed.](assets/03-14-prompt-growth.en.png)
+![Three selected IDs grow the prompt through four sequence states, while parameters stay fixed.](assets/03-14-prompt-growth.en.png){width=100%}
 
 **Figure 03.14-1 — Read the upper boxes from left to right.** Each arrow appends one selected ID; `+0` means append ID zero, not add numeric zero to existing entries. The lower cards give the corresponding final-row distribution. Three calls increase the length from two to five, and all use the same parameter values.
 
@@ -4603,7 +4553,7 @@ The supplied merged-ID example uses an illustrative vocabulary with `vocab[256]=
 
 For a raw-byte vocabulary, `中` is bytes `[228,184,173]`, hexadecimal `E4 B8 AD`. `[228,184]` is an incomplete prefix and strict decoding raises `UnicodeDecodeError`; after adding `173`, the full sequence decodes to one character. A budget counts tokens and can stop within a character. Keep the accumulated IDs; byte-safe streaming and policies for unfinished output follow later. Do not silently change the completed strict decoder or claim all generated byte sequences are valid UTF-8.
 
-![Two bytes remain an incomplete UTF-8 prefix; joining all three bytes decodes one character.](assets/03-14-token-bytes.en.png)
+![Two bytes remain an incomplete UTF-8 prefix; joining all three bytes decodes one character.](assets/03-14-token-bytes.en.png){width=100%}
 
 **Figure 03.14-2 — Follow each row from IDs to joined bytes to text.** This is a separate decoder illustration, not generated Chinese capability. The upper row exposes the incomplete suffix; the lower row supplies the full encoding of `中`. Decimal ID labels and hexadecimal byte labels describe the same values.
 
@@ -4613,8 +4563,8 @@ For a raw-byte vocabulary, `中` is bytes `[228,184,173]`, hexadecimal `E4 B8 AD
 | --- | --- |
 | Completed training/inference helper code | 03.12–03.14 companion interfaces |
 | Data / tokenizer versions | `synthetic-byte-aba-v1` / `utf8-byte-256-v1` |
-| Training pairs | Inputs `[97,98]`, targets `[98,97]`: `a -> b`, `b -> a` |
-| Shapes / initialization | `V=256,D=2,T=2`; table zeros except rows 97 `[1,2]`, 98 `[3,1]`; weights and bias zero |
+| Training pairs | Inputs `[97,98]`, targets `[98,97]`: $\texttt{a}\to\texttt{b}$, $\texttt{b}\to\texttt{a}$ |
+| Shapes / initialization | $V=256,D=2,T=2$; table zeros except rows 97 `[1,2]`, 98 `[3,1]`; weights and bias zero |
 | Training budget | Plain gradient descent, learning rate `0.1`, 100 updates, 200 supervised-position uses |
 | Evaluation protocol | Same-pair synthetic verification; prompt `[97]`, six greedy predictions, parameters fixed |
 | Returned IDs / decoded text | `[97,98,97,98,97,98,97]` / `abababa` |
@@ -4635,9 +4585,7 @@ The [03.13 record](#section-03-13) retains the mean-loss and target-probability 
 
 The completed [03.15](#section-03-15) introduces temperature and sampling; the completed [03.16](#section-03-16) connects sampled generation, followed by completed 03.17 stopping and 03.18 display. Completed [03.19](#section-03-19) prepares batches; completed [03.20](#section-03-20) connects scores and loss. Contextual attention, caches, and substantive corpus training remain later topics in the roadmap.
 
-<a id="section-03-15"></a>
-
-## 03.15 Temperature and Sampling
+## 03.15 Temperature and Sampling {#section-03-15}
 
 Always choosing the most likely token is only one way to use a distribution. Temperature changes how concentrated the distribution is, and sampling draws an ID according to its probabilities. We will separate these two operations so randomness has a clear source and a clear meaning.
 
@@ -4652,7 +4600,7 @@ Work through the example before editing 03_15_temperature_and_sampling.py. The n
 | `scaled_logits` | Floating tensor `[T,V]` | Scores divided by temperature |
 | `probabilities`, $P^{(\tau)}$ | Returned floating tensor `[T,V]` | Normalized candidate distribution per row |
 
-`T` still counts positions and `V` counts vocabulary candidates. Use $\tau$ for temperature to avoid confusing it with `T`. Assume `T,V>0`, finite logits, and finite scaled logits; learner input validation is not assigned. Preserve input values, dtype/device, stored gradients, and the autograd connection, as in the completed 03.09 mathematical helper. The later inference caller controls no-grad scope.
+$T$ still counts positions and $V$ counts vocabulary candidates. Use $\tau$ for temperature to avoid confusing it with $T$. Assume $T,V>0$, finite logits, and finite scaled logits; learner input validation is not assigned. Preserve input values, dtype/device, stored gradients, and the autograd connection, as in the completed 03.09 mathematical helper. The later inference caller controls no-grad scope.
 
 ### Temperature scales logits before normalization
 
@@ -4676,7 +4624,7 @@ As $\tau$ approaches zero from above, probability concentrates on the largest sc
 
 ### Complete temperature calculation
 
-Use the hand-picked two-position tensor `logits=[[3,1],[1,3]]`, with `T=2,V=2`. These are arithmetic inputs, not a training result. For `temperature=0.5`:
+Use the hand-picked two-position tensor `logits=[[3,1],[1,3]]`, with $T=2,V=2$. These are arithmetic inputs, not a training result. For `temperature=0.5`:
 
 ```text
 scaled_logits = [[6,2],[2,6]]
@@ -4703,7 +4651,7 @@ $$
 
 The second row reverses those probabilities and favors ID `1` at all three settings. Return all position rows, shape `[2,2]`; the later inference caller chooses the final row. Lower temperature does not train different parameter values, and higher temperature does not guarantee better text quality.
 
-![Temperature changes candidate probabilities while the greedy winner remains the same.](assets/03-15-temperature-distribution.en.png)
+![Temperature changes candidate probabilities while the greedy winner remains the same.](assets/03-15-temperature-distribution.en.png){width=100%}
 
 **Figure 03.15-1 — Read the horizontal axis as temperature and the vertical axis as probability.** Blue is candidate ID zero, orange ID one. Bars show the three table settings; curve points mark the same values. The scores `[3,1]` stay fixed. Blue stays higher, explaining why argmax alone selects ID zero throughout.
 
@@ -4730,9 +4678,9 @@ A complete probability illustration divides a unit interval:
 | $0.6\le u<0.9$ | `1` | `0.3` |
 | $0.9\le u<1$ | `2` | `0.1` |
 
-Thus `u=0.2` illustrates ID `0`, `u=0.75` ID `1`, and `u=0.95` ID `2`. The ID-one example shows a valid sample that is not argmax. These numbers explain the distribution; they do not claim that PyTorch implements this diagram literally or that a particular seed produces those draws.
+Thus $u=0.2$ illustrates ID `0`, $u=0.75$ ID `1`, and $u=0.95$ ID `2`. The ID-one example shows a valid sample that is not argmax. These numbers explain the distribution; they do not claim that PyTorch implements this diagram literally or that a particular seed produces those draws.
 
-![Probability regions illustrate why sampling can select a candidate below the maximum.](assets/03-15-sampling-regions.en.png)
+![Probability regions illustrate why sampling can select a candidate below the maximum.](assets/03-15-sampling-regions.en.png){width=100%}
 
 **Figure 03.15-2 — Region widths equal candidate probabilities.** Arrows mark three hypothetical draws in the three regions. This is a separate `[3]` probability example, not the two-candidate temperature calculation.
 
@@ -4778,7 +4726,7 @@ Lesson 03.15 checks passed.
 
 ### Connection, reader questions, and evidence
 
-The supplied final check uses hand-picked `E=[[1,2],[3,1]]`, identity `W`, zero `b`, prompt `[0,1]`, temperature `2`, six new IDs, and generator seed `137`. A caller places lookup/projection/temperature under no-grad, selects the final probability row, samples one ID, and appends it. It matches a reference stream, produces eight total IDs, and preserves parameters. The original greedy predictor and generation loop stay intact; the completed [03.16](#section-03-16) connects sampled generation, followed by EOS stopping in 03.17 and continuation decoding in 03.18.
+The supplied final check uses hand-picked `E=[[1,2],[3,1]]`, identity $W$, zero `b`, prompt `[0,1]`, temperature `2`, six new IDs, and generator seed `137`. A caller places lookup/projection/temperature under no-grad, selects the final probability row, samples one ID, and appends it. It matches a reference stream, produces eight total IDs, and preserves parameters. The original greedy predictor and generation loop stay intact; the completed [03.16](#section-03-16) connects sampled generation, followed by EOS stopping in 03.17 and continuation decoding in 03.18.
 
 **Why not divide probabilities by temperature?** That does not implement the exponential score scaling or, by itself, preserve a sum of one. Temperature acts before softmax.
 
@@ -4788,9 +4736,7 @@ The supplied final check uses hand-picked `E=[[1,2],[3,1]]`, identity `W`, zero 
 
 **Does this improve what the model knows?** Parameters stay fixed. Selection changes how a distribution is used; contextual architecture, data, and training determine different parts of model behavior.
 
-<a id="section-03-16"></a>
-
-## 03.16 Sampled Autoregressive Generation
+## 03.16 Sampled Autoregressive Generation {#section-03-16}
 
 We can now replace the greedy choice in the generation loop with a sampled choice. The recurrence stays familiar, but the random stream must continue across steps. We will also keep tensor type and device consistent as the prompt grows.
 
@@ -4809,9 +4755,9 @@ Work through the example before editing 03_16_sampled_generation.py. The numbere
 | `generator` | Caller-owned `torch.Generator` | Already seeded pseudorandom stream |
 | `generated_ids` | Returned `torch.long` tensor `[T+N]` | Prompt plus sampled continuation |
 
-`T` is prompt length, `V` vocabulary size, and `D` vector dimension. Assume valid IDs, compatible shapes, dtypes and devices and supported generator, and finite logits/scaled logits; input validation is not assigned. Return a fresh full ID tensor on the prompt's device, including the original prompt. Preserve original prompt values and parameter values/storage/trainability/stored gradients, caller gradient mode, and global random stream. The supplied generator advances through one completed sampler call per new ID.
+$T$ is prompt length, $V$ vocabulary size, and $D$ vector dimension. Assume valid IDs, compatible shapes, dtypes and devices and supported generator, and finite logits/scaled logits; input validation is not assigned. Return a fresh full ID tensor on the prompt's device, including the original prompt. Preserve original prompt values and parameter values/storage/trainability/stored gradients, caller gradient mode, and global random stream. The supplied generator advances through one completed sampler call per new ID.
 
-For `N=0`, return an independent prompt copy without any projection, temperature, or sampling calls and without consuming the generator state. The positive-temperature formula applies here; no zero-temperature branch, EOS stop, or context truncation is added. The caller still decodes IDs through the matching tokenizer vocabulary.
+For $N=0$, return an independent prompt copy without any projection, temperature, or sampling calls and without consuming the generator state. The positive-temperature formula applies here; no zero-temperature branch, EOS stop, or context truncation is added. The caller still decodes IDs through the matching tokenizer vocabulary.
 
 ### Sampling inside the recurrence
 
@@ -4840,9 +4786,9 @@ Return $s^{(N)}$, length $T+N$. The ID sequence and random-stream state change; 
 
 `compute_logits` returns `[T+k,V]`; `temperature_probabilities` preserves that shape; `probabilities[-1]` reduces it to `[V]`; `sample_token_id` returns a Python integer. A `[1]` integer tensor then extends the one-dimensional ID sequence. Each iteration selects one token, so three new tokens require three complete cycles.
 
-![Lookup, scores, temperature, final-row selection, sampling, and append form one repeating inference cycle.](assets/03-16-sampled-flow.en.png)
+![Lookup, scores, temperature, final-row selection, sampling, and append form one repeating inference cycle.](assets/03-16-sampled-flow.en.png){width=100%}
 
-**Figure 03.16-1 — Follow the upper row rightward, then the lower row leftward.** The left upward arrow enters the next iteration, whose index is now `k+1`; its length is the previous `T+k+1`. Only the final distribution is sampled. Orange marks the ID selection; parameter values stay fixed throughout.
+**Figure 03.16-1 — Follow the upper row rightward, then the lower row leftward.** The left upward arrow enters the next iteration, whose index is now $k+1$; its length is the previous $T+k+1$. Only the final distribution is sampled. Orange marks the ID selection; parameter values stay fixed throughout.
 
 The current lookup-plus-head model still uses only the last input ID for its next distribution. Passing the growing full prefix establishes the interface; contextual attention follows later. Stochastic output does not itself add contextual understanding or train new knowledge.
 
@@ -4856,19 +4802,19 @@ W=\begin{bmatrix}1&0\\0&1\end{bmatrix},\quad b=[0,0],\quad
 x=[0,1],\quad T=2,\quad \tau=2,\quad N=3
 $$
 
-The first forward has `selected_vectors=[[1,2],[3,1]]` and equal logits because `W` is identity and `b` is zero. Temperature scaling gives `[[0.5,1],[1.5,0.5]]`. Its final row subtracts `1.5`, yielding `[0,-1]`; exponentials `[1,e^{-1}]` normalize to:
+The first forward has `selected_vectors=[[1,2],[3,1]]` and equal logits because $W$ is identity and `b` is zero. Temperature scaling gives `[[0.5,1],[1.5,0.5]]`. Its final row subtracts `1.5`, yielding `[0,-1]`; exponentials $[1,e^{-1}]$ normalize to:
 
 $$
 p^{(0)}\approx[0.7310585786,0.2689414214]
 $$
 
-For an illustrative unit-interval draw `u=0.2`, choose ID `0` and append it, producing `[0,1,0]`. The next final ID is zero, so its scores are `[1,2]`; after scaling and stable subtraction they become `[-0.5,0]`, with exponentials `[e^{-0.5},1]`:
+For an illustrative unit-interval draw $u=0.2$, choose ID `0` and append it, producing `[0,1,0]`. The next final ID is zero, so its scores are `[1,2]`; after scaling and stable subtraction they become `[-0.5,0]`, with exponentials $[e^{-0.5},1]$:
 
 $$
 p^{(1)}\approx[0.3775406688,0.6224593312]
 $$
 
-An illustrative `u=0.3` lies below the first cumulative boundary `0.3775`, so choose ID `0` again, even though ID `1` has larger probability. This produces `[0,1,0,0]`. With the same final ID, the next distribution is unchanged; illustrative `u=0.8` selects ID `1`.
+An illustrative $u=0.3$ lies below the first cumulative boundary `0.3775`, so choose ID `0` again, even though ID `1` has larger probability. This produces `[0,1,0,0]`. With the same final ID, the next distribution is unchanged; illustrative $u=0.8$ selects ID `1`.
 
 | Call | Current sequence | Final-row probabilities, rounded | Illustrative $u$ | Sampled ID | Extended sequence |
 | --- | --- | --- | --- | --- | --- |
@@ -4878,7 +4824,7 @@ An illustrative `u=0.3` lies below the first cumulative boundary `0.3775`, so ch
 
 Return `tensor([0,1,0,0,1])`, shape `[5]`, **for these hypothetical choices**. They explain recurrence and valid non-greedy selection, not a promised PyTorch seed trace or its internal algorithm. The real sampler consumes the caller's generator. The supplied checks separately compare actual draws and final generator state with a same-runtime reference.
 
-![Three hypothetical sampled choices extend the sequence, with the second selecting a smaller-probability ID.](assets/03-16-sampled-trace.en.png)
+![Three hypothetical sampled choices extend the sequence, with the second selecting a smaller-probability ID.](assets/03-16-sampled-trace.en.png){width=100%}
 
 **Figure 03.16-2 — Each rightmost sequence becomes the next row's input.** The orange second choice is valid because ID zero has positive probability. It changes the next input, and thus which scores the next call uses. A greedy trajectory for this model would instead return `[0,1,0,1,0]`; the third-call inputs of those two trajectories differ.
 
@@ -4936,7 +4882,7 @@ Lesson 03.16 checks passed.
 
 **Why not call the completed greedy predictor?** Its selection rule is argmax. This wrapper needs the completed score and temperature helpers followed by the sampling helper; keep the earlier greedy path intact.
 
-**Does one sampler call return all future tokens?** It selects one ID. The generation loop makes exactly `N` calls, growing the prefix once per call.
+**Does one sampler call return all future tokens?** It selects one ID. The generation loop makes exactly $N$ calls, growing the prefix once per call.
 
 **Does the caller's seed specify the hypothetical u values above?** No. Those numbers explain valid choices. Real sample traces depend on the generator state, inputs, call order, and runtime; the tests use a matching reference rather than a cross-version promised list.
 
@@ -4946,9 +4892,7 @@ These are hand-picked arithmetic and scaffold-verification recipes, not training
 
 
 
-<a id="section-03-17"></a>
-
-## 03.17 EOS and Generation Stopping
+## 03.17 EOS and Generation Stopping {#section-03-17}
 
 A generation loop needs an answer to a practical question: when is it finished? A token budget limits the work, while a newly generated EOS can end it earlier. We will make both stopping conditions explicit without losing the marker that explains why generation stopped.
 
@@ -4999,7 +4943,7 @@ r=\begin{cases}
 \end{cases}
 $$
 
-Here `T` is original prompt length, `M` is the maximum number of new tokens, and `L` is the actual number generated, including EOS if it ends the output. The maximum does not count existing prompt tokens. For zero budget, no new ID is drawn, so `L=0` and reason is `"length"`.
+Here $T$ is original prompt length, $M$ is the maximum number of new tokens, and $L$ is the actual number generated, including EOS if it ends the output. The maximum does not count existing prompt tokens. For zero budget, no new ID is drawn, so $L=0$ and reason is `"length"`.
 
 The recurrence still appends before checking:
 
@@ -5013,7 +4957,7 @@ This retains the selected EOS in the returned IDs and makes the stop event inspe
 
 EOS is a special control token whose meaning is defined by the tokenizer/model protocol. It is not a universal numeric ID or a UTF-8 end byte. The small example below defines `0 -> a`, `1 -> b`, `2 -> EOS`; this differs from the raw-byte vocabulary where ID `2` represents byte value `2`.
 
-For an existing contiguous vocabulary `0,...,V_old-1`, one possible extension reserves previously unused ID `V_old` and increases candidate count to `V_old+1`. The embedding table gains a row, the output head a column and bias entry, and training examples must teach that EOS follows the intended sequence boundary. Do not overwrite an existing merged-token ID or assume adding a stopping condition teaches the model when to stop.
+For an existing contiguous vocabulary $0,\ldots,V_{\mathrm{old}}-1$, one possible extension reserves previously unused ID $V_{\mathrm{old}}$ and increases candidate count to $V_{\mathrm{old}}+1$. The embedding table gains a row, the output head a column and bias entry, and training examples must teach that EOS follows the intended sequence boundary. Do not overwrite an existing merged-token ID or assume adding a stopping condition teaches the model when to stop.
 
 The existing educational BPE byte dictionaries do not yet implement a complete special-token serialization/segmentation policy. This assignment supplies an explicit illustrative EOS configuration; general tokenizer integration remains later work. The decoder stays strict and receives ordinary token byte mappings after the caller handles the special marker.
 
@@ -5037,9 +4981,9 @@ Input ID one selects vector `[0,1]`. Scores are `[0,0,1000]`, with shifted value
 | `2` | `[0,1]` | `1` | `2` | `[0,1,2]` | Set reason to `"eos"`, then break |
 | `3–5` | — | — | — | — | Never called |
 
-Return `(tensor([0,1,2]), "eos")`. Here `T=1`, `K=2`, `L=min(5,2)=2`, and total length is `3`. The EOS ID is included. Ordinary display IDs `[0,1]` decode to `ab` through `{0:b"a",1:b"b"}` after the caller separates the final marker.
+Return `(tensor([0,1,2]), "eos")`. Here $T=1$, $K=2$, $L=\min(5,2)=2$, and total length is `3`. The EOS ID is included. Ordinary display IDs `[0,1]` decode to `ab` through `{0:b"a",1:b"b"}` after the caller separates the final marker.
 
-![Only two new IDs are generated even though the budget permits five, and the EOS is retained.](assets/03-17-stopping-budget.en.png)
+![Only two new IDs are generated even though the budget permits five, and the EOS is retained.](assets/03-17-stopping-budget.en.png){width=100%}
 
 **Figure 03.17-1 — Count the generated boxes, not the maximum slots.** Orange is the newly appended EOS. Gray slots are unused budget and do not consume helper calls or randomness. The original prompt contributes one more returned ID.
 
@@ -5060,7 +5004,7 @@ With `eos_token_id=None`, EOS stopping is disabled and the full budget is used. 
 
 `break` exits the nearest loop immediately. Execution continues after that loop, where the final return belongs; `break` does not itself return from the function. [Python break reference](https://docs.python.org/3/reference/simple_stmts.html#the-break-statement).
 
-![The budget controls loop entry, and a newly appended EOS determines the early exit.](assets/03-17-stopping-flow.en.png)
+![The budget controls loop entry, and a newly appended EOS determines the early exit.](assets/03-17-stopping-flow.en.png){width=100%}
 
 **Figure 03.17-2 — Budget and EOS control different points.** The `for` loop already handles the maximum count; the diagram is conceptual and does not ask for an additional while loop. Generate and append one ID, then test the new EOS. A positive test sets `"eos"` and breaks; otherwise the next loop iteration proceeds if budget remains.
 
@@ -5108,9 +5052,7 @@ Lesson 03.17 checks passed.
 
 This is a hand-picked arithmetic/control example rather than a training experiment. Stopping, special-token integration, contextual attention, and substantive data/training remain distinct parts of the learning path.
 
-<a id="section-03-18"></a>
-
-## 03.18 Decode the Generated Continuation
+## 03.18 Decode the Generated Continuation {#section-03-18}
 
 The generated sequence contains both the prompt and its continuation, and it may end with a control token. Displaying only the new text requires selecting the right IDs before interpreting their bytes. Token counts, byte boundaries, and text boundaries each play a different role in this small adapter.
 
@@ -5156,7 +5098,7 @@ If $m=0$, the empty concatenation is `b""`, which decodes to `""`. The existing 
 
 This path does not convert IDs directly with `bytes(ids)`. A merged ID such as 256 can represent several bytes and cannot itself be one raw byte. EOS is a control event, not ordinary byte content. Neither token count nor byte count determines the number of decoded characters.
 
-![Prompt selection, trailing EOS removal, vocabulary lookup, and joined UTF-8 decoding.](assets/03-18-decoding-flow.en.png)
+![Prompt selection, trailing EOS removal, vocabulary lookup, and joined UTF-8 decoding.](assets/03-18-decoding-flow.en.png){width=100%}
 
 **Figure 03.18-1 — Read downward from the full IDs.** Gray excludes the prompt; orange identifies EOS; teal retains ordinary byte contents. The two partial Chinese byte chunks become valid only after joining. Three ordinary tokens produce five bytes and three Unicode code points in this example.
 
@@ -5198,7 +5140,7 @@ A maximum budget counts tokens. It can end after bytes `[228,189]`, before the f
 
 There is also a **prompt boundary** case. The full ordinary IDs `[228,189,160]` decode to 你. If `prompt_length=1`, the new suffix is only `[189,160]`, starting inside that character; it cannot be decoded independently. With `prompt_length=0`, the same full input decodes successfully.
 
-![The full byte sequence decodes successfully while its selected continuation starts inside a character.](assets/03-18-utf8-boundary.en.png)
+![The full byte sequence decodes successfully while its selected continuation starts inside a character.](assets/03-18-utf8-boundary.en.png){width=100%}
 
 **Figure 03.18-2 — Compare the two byte streams.** The left retains all three bytes. The right excludes prompt byte 228, so its suffix is not standalone UTF-8. This adapter deliberately reports that error. Rendering the combined full text, carrying an incremental decoder across the boundary, or using replacement characters are separate display policies; no such policy is implemented here.
 
@@ -5256,9 +5198,7 @@ Lesson 03.18 checks passed.
 
 The completed [03.19](#section-03-19) returns to training data: construct batched input windows and shifted next-token targets. Its full chapter, figures, and guided exercise are ready.
 
-<a id="section-03-19"></a>
-
-## 03.19 Batched Next-Token Training Windows
+## 03.19 Batched Next-Token Training Windows {#section-03-19}
 
 We return to training with the same shifted-window idea from Chapter 01. This time, several source starts supply several rows at once. Stacking those rows introduces the batch dimension without changing what each position is asked to predict.
 
@@ -5274,7 +5214,7 @@ Work through the example before editing 03_19_next_token_batch.py. The numbered 
 | `input_ids`, $X$ | Returned `torch.long` tensor `[B,T]` | Input windows |
 | `target_ids`, $Y$ | Returned `torch.long` tensor `[B,T]` | Corresponding next-token answers |
 
-`N` counts source tokens; `B` counts samples; `T` counts positions per sample. `V` is vocabulary size and is separate from all three. Each output stays on the source tensor's device. Preserve the source, start list, caller gradient mode, and random stream. Return two fresh tensors independent of the source, each other, and later calls.
+$N$ counts source tokens; $B$ counts samples; $T$ counts positions per sample. $V$ is vocabulary size and is separate from all three. Each output stays on the source tensor's device. Preserve the source, start list, caller gradient mode, and random stream. Return two fresh tensors independent of the source, each other, and later calls.
 
 Assume valid inputs: $B\ge1$, $T\ge1$, and every start satisfies $0\le i_b$ and $i_b+T<N$. Validation is not assigned. Duplicate, overlapping, or out-of-order starts are allowed and must retain their supplied order. Token IDs can exceed 255. This exercise has no empty-batch branch, padding, shuffle, document-boundary policy, or new special-token mapping.
 
@@ -5305,7 +5245,7 @@ $$
 
 There are $BT$ supervised positions in this fixed-length, unmasked batch. This is a count of target comparisons, not a promise of improved model quality or a measured training throughput.
 
-![Two source spans become input/target rows with the target shifted one source position.](assets/03-19-shifted-windows.en.png)
+![Two source spans become input/target rows with the target shifted one source position.](assets/03-19-shifted-windows.en.png){width=100%}
 
 **Figure 03.19-1 — Each downward arrow is one prediction/answer pair.** The upper source labels show actual token indices. Each lower input row has three IDs, and its target row also has three. The final target comes from the extra fourth source token. The two samples form `[2,3]` tensors.
 
@@ -5336,14 +5276,14 @@ y_row = [101,102,103]  # efg
 
 After appending, each list holds two `[3]` tensors. Stack each list on dimension zero to obtain:
 
-The two source spans are `abcd` and `defg`. They share `d`: it is the first sample's final answer and the second sample's first input. Two four-token spans therefore need only seven distinct source positions here; valid windows may overlap.
+The two source spans are `abcd` and `defg`. They share $d$: it is the first sample's final answer and the second sample's first input. Two four-token spans therefore need only seven distinct source positions here; valid windows may overlap.
 
 $$
 X=\begin{bmatrix}97&98&99\\100&101&102\end{bmatrix},\qquad
 Y=\begin{bmatrix}98&99&100\\101&102&103\end{bmatrix}
 $$
 
-Return `(input_ids, target_ids)`, each shape `[2,3]`. For example, `input_ids[0,1]` is 98 (`b`) and its answer `target_ids[0,1]` is 99 (`c`). The final input `c` in row zero predicts `d`, which is outside that row's input window.
+Return `(input_ids, target_ids)`, each shape `[2,3]`. For example, `input_ids[0,1]` is 98 (`b`) and its answer `target_ids[0,1]` is 99 (`c`). The final input `c` in row zero predicts $d$, which is outside that row's input window.
 
 | Row | Inputs | Targets | Three aligned comparisons |
 | --- | --- | --- | --- |
@@ -5364,9 +5304,9 @@ $$
 
 Training uses observed preceding tokens as input, often called teacher forcing. It can compute the position predictions together because the observed input row is available, while causal visibility blocks future positions from influencing earlier predictions. The target tensor is used to calculate loss and stays outside the model's forward input.
 
-In row `abc`, the position predicting `b` may see `a`; the position predicting `c` may see `ab`; the position predicting `d` may see `abc`. Although `b` and `c` are stored in the input row, the first prediction must not see them. Merely constructing shifted targets does not implement that restriction; causal attention/masking follows later.
+In row `abc`, the position predicting `b` may see `a`; the position predicting `c` may see `ab`; the position predicting $d$ may see `abc`. Although `b` and `c` are stored in the input row, the first prediction must not see them. Merely constructing shifted targets does not implement that restriction; causal attention/masking follows later.
 
-![The visible input prefix grows by position while future input cells remain blocked.](assets/03-19-causal-supervision.en.png)
+![The visible input prefix grows by position while future input cells remain blocked.](assets/03-19-causal-supervision.en.png){width=100%}
 
 **Figure 03.19-2 — Teal marks a conceptual causal model's permitted input cells.** Gray marks future cells that must be blocked. Orange identifies the true next ID. This window builder supplies data; it does not implement the mask or make the earlier model contextual. During free generation, future IDs are unknown and still must be selected sequentially.
 
@@ -5420,25 +5360,23 @@ Lesson 03.19 checks passed.
 
 ### Bridge to model shapes and reader questions
 
-Embedding lookup on IDs `[B,T]` produces vectors `[B,T,D]`. A contextual model should preserve the sample and position axes while computing context, then produce scores `[B,T,V]`. `V` is the number of candidate IDs for each position, not a third sample dimension.
+Embedding lookup on IDs `[B,T]` produces vectors `[B,T,D]`. A contextual model should preserve the sample and position axes while computing context, then produce scores `[B,T,V]`. $V$ is the number of candidate IDs for each position, not a third sample dimension.
 
-The supplied last check is a smaller, independent fixture: IDs `[0,1,2,0,1,2,0]`, starts `[0,3]`, length 3, and fixed parameters with `V=3,D=2`. It flattens the **independent lookup baseline's** six vectors into `[6,2]`, calls completed projection and loss helpers, and checks gradients. This is a correctness bridge without parameter updates or a training-quality claim. It does not authorize flattening away sequence structure before future attention; batched contextual loss will be taught separately.
+The supplied last check is a smaller, independent fixture: IDs `[0,1,2,0,1,2,0]`, starts `[0,3]`, length 3, and fixed parameters with $V=3,D=2$. It flattens the **independent lookup baseline's** six vectors into `[6,2]`, calls completed projection and loss helpers, and checks gradients. This is a correctness bridge without parameter updates or a training-quality claim. It does not authorize flattening away sequence structure before future attention; batched contextual loss will be taught separately.
 
 **Must start positions be contiguous or random?** No. This function accepts already chosen valid starts. `[2,0,2]` means three samples in that order, with the same source window repeated in rows zero and two. Choosing a sampling strategy is separate work.
 
 **Does T+1 mean the model receives an extra token?** No. The data builder needs an extra source token to supply the last answer. Each returned model input row still has only T tokens.
 
-**Does batching train different models?** The future batch shares one model's parameters across all rows. `B` organizes data; it does not allocate one separate model per row.
+**Does batching train different models?** The future batch shares one model's parameters across all rows. $B$ organizes data; it does not allocate one separate model per row.
 
-**Does the second row see the first row?** Each row is a separate sample. The second row's prefixes are `d`, `de`, and `def`; it does not attend to the first row's `abc`. Cropping a window also omits earlier source context before its chosen start. Sharing model parameters does not merge sample contexts.
+**Does the second row see the first row?** Each row is a separate sample. The second row's prefixes are $d$, `de`, and `def`; it does not attend to the first row's `abc`. Cropping a window also omits earlier source context before its chosen start. Sharing model parameters does not merge sample contexts.
 
 **Can windows cross documents?** This exercise assumes one supplied stream with permitted spans. Real data preparation must specify document boundaries, EOS insertion, splits, and masking. No such policy is silently imposed here. Overlapping training windows are allowed; train/validation splitting must be designed separately to prevent shared-data leakage.
 
 The completed [03.20](#section-03-20) connects these batch shapes to raw vocabulary scores and a connected mean token loss. Its expanded chapter, paired figures, and two-stage scaffold are ready.
 
-<a id="section-03-20"></a>
-
-## 03.20 Batched Logits and Mean Token Loss
+## 03.20 Batched Logits and Mean Token Loss {#section-03-20}
 
 A batch adds a dimension to the data, but every position still needs its own vocabulary scores and true target. We will carry the batch and position axes through lookup and projection, then flatten them together for the familiar two-dimensional loss interface. The target order must travel with the score order.
 
@@ -5456,7 +5394,7 @@ Work through the example before editing 03_20_batched_logits_and_loss.py. The nu
 | `target_ids`, $Y$ | `torch.long` tensor `[B,T]` | Already shifted observed next-token answers |
 | Returned `loss`, $\mathcal L$ | Scalar floating tensor, shape `[]` | Mean true-target negative log-probability |
 
-`B` counts samples, `T` positions per sample, `D` embedding features, and `V` candidate IDs per position. In formulas the bias is written $\beta$ to distinguish it from row index $b$. For example, `logits[1,0]` is one `[V]` score vector; `logits[1,0,2]` is the score for candidate ID 2 at sample one, position zero.
+$B$ counts samples, $T$ positions per sample, $D$ embedding features, and $V$ candidate IDs per position. In formulas the bias is written $\beta$ to distinguish it from row index $b$. For example, `logits[1,0]` is one `[V]` score vector; `logits[1,0,2]` is the score for candidate ID 2 at sample one, position zero.
 
 Assume positive dimensions, valid IDs, compatible dtypes/devices, and finite scores in the numerical range used by the checks. Validation is not assigned. Preserve all input values, parameter storage/trainability/stored gradients, caller gradient mode, and global random state. Keep the graph when gradients are enabled. Do not detach, enter no-grad, call backward, clear gradients, extract a Python float, or update parameters inside either exercise function.
 
@@ -5481,14 +5419,14 @@ $$
 P_{b,t,v}=\frac{\exp(Z_{b,t,v})}{\sum_{j=0}^{V-1}\exp(Z_{b,t,j})}
 $$
 
-Normalize over the candidate axis `V`, separately for every `(b,t)`. One true target ID selects one probability per position. The desired mean loss is:
+Normalize over the candidate axis $V$, separately for every `(b,t)`. One true target ID selects one probability per position. The desired mean loss is:
 
 $$
 \mathcal L=-\frac{1}{BT}\sum_{b=0}^{B-1}\sum_{t=0}^{T-1}
 \log P_{b,t,Y_{b,t}}
 $$
 
-The denominator counts supervised positions. Each position has `V` candidate scores, but only one supplied answer. The stable 03.10 helper computes target log-probabilities directly from raw scores, avoiding an intermediate tiny probability that may underflow before taking its log.
+The denominator counts supervised positions. Each position has $V$ candidate scores, but only one supplied answer. The stable 03.10 helper computes target log-probabilities directly from raw scores, avoiding an intermediate tiny probability that may underflow before taking its log.
 
 ### Flatten positions while preserving candidates and answer alignment
 
@@ -5499,13 +5437,13 @@ q=bT+t,\qquad \widetilde Z_{q,v}=Z_{b,t,v},\qquad
 \widetilde Y_q=Y_{b,t}
 $$
 
-The shape conversion is `[B,T,V] → [B*T,V]`, accompanied by `[B,T] → [B*T]`. Candidate columns remain together. For `B=2,T=2`, the position order is `(0,0),(0,1),(1,0),(1,1)`.
+The shape conversion is `[B,T,V] → [B*T,V]`, accompanied by `[B,T] → [B*T]`. Candidate columns remain together. For $B=2,T=2$, the position order is `(0,0),(0,1),(1,0),(1,1)`.
 
 Stage A also uses this order to adapt vectors `[B,T,D] → [B*T,D]` before calling the completed two-dimensional projection. Its scores `[B*T,V]` are restored to `[B,T,V]`. Stage B flattens those scores and their targets in the same order, then calls the completed two-dimensional loss.
 
-![The batch/position axes merge for completed helpers while feature and vocabulary axes stay explicit.](assets/03-20-batch-shapes.en.png)
+![The batch/position axes merge for completed helpers while feature and vocabulary axes stay explicit.](assets/03-20-batch-shapes.en.png){width=100%}
 
-**Figure 03.20-1 — Follow Stage A left to right, then follow the score route to Stage B.** Stage A returns restored raw scores. Stage B receives targets separately and computes one scalar. `D` and `V` both equal three only in this example; their meanings and possible sizes differ.
+**Figure 03.20-1 — Follow Stage A left to right, then follow the score route to Stage B.** Stage A returns restored raw scores. Stage B receives targets separately and computes one scalar. $D$ and $V$ both equal three only in this example; their meanings and possible sizes differ.
 
 ### Complete worked example
 
@@ -5541,9 +5479,9 @@ S=1+e^{-1}+e^{-2}\approx1.5032147244,\qquad
 \log S\approx0.4076059644
 $$
 
-The supplied target is ID 1, so its probability is `0.3678794412/S ≈ 0.2447284711`. Its stable negative log-probability is `1+log(S) ≈ 1.4076059644`. The largest-score candidate is ID 2, but loss selects the observed answer ID 1.
+The supplied target is ID 1, so its probability is $\frac{0.3678794412}{S}\approx0.2447284711$. Its stable negative log-probability is $1+\ln(S)\approx1.4076059644$. The largest-score candidate is ID 2, but loss selects the observed answer ID 1.
 
-All four rows are permutations of `[1,2,3]`, so they share `S`. Their complete true-target trace is:
+All four rows are permutations of `[1,2,3]`, so they share $S$. Their complete true-target trace is:
 
 | Flat q | Position `(b,t)` | Raw scores | Target ID | Selected probability | Negative log-probability |
 | --- | --- | --- | --- | --- | --- |
@@ -5561,7 +5499,7 @@ $$
 
 Return a scalar tensor with that value, keeping its gradient path. The completed helper already takes this mean; the outer adapter performs no additional division.
 
-![Flattened positions select their supplied targets and contribute one loss each.](assets/03-20-target-alignment.en.png)
+![Flattened positions select their supplied targets and contribute one loss each.](assets/03-20-target-alignment.en.png){width=100%}
 
 **Figure 03.20-2 — Orange identifies the true-target score column in each row.** The probability and loss columns refer to that selected candidate. Four losses are averaged, including both occurrences of input ID zero.
 
@@ -5574,15 +5512,15 @@ $$
 =\frac{P_{b,t,v}-\mathbf1\{v=Y_{b,t}\}}{BT}
 $$
 
-For the first worked position, this is approximately `[0.0225076433,-0.1888178822,0.1663102389]`. The target component is negative: increasing that score locally reduces loss. Non-target components are positive. The `1/(BT)` factor comes from the mean across four positions.
+For the first worked position, this is approximately `[0.0225076433,-0.1888178822,0.1663102389]`. The target component is negative: increasing that score locally reduces loss. Non-target components are positive. The $\frac{1}{BT}$ factor comes from the mean across four positions.
 
-The caller can later run `loss.backward()` and obtain gradients for the shared table, weights, and bias. Repeated ID zero sends contributions from both its positions to the same embedding row. Because `W` is identity, their combined table-row gradient is approximately `[0.0450152866,-0.3776357645,0.3326204779]`. Backward computes gradients; an optimizer/update is still a separate operation.
+The caller can later run `loss.backward()` and obtain gradients for the shared table, weights, and bias. Repeated ID zero sends contributions from both its positions to the same embedding row. Because $W$ is identity, their combined table-row gradient is approximately `[0.0450152866,-0.3776357645,0.3326204779]`. Backward computes gradients; an optimizer/update is still a separate operation.
 
 ### Reshape syntax before implementation
 
-`batch_size, context_length = input_ids.shape` unpacks the two dimensions. `embedding_table[input_ids]` keeps `[B,T]` and appends the vector dimension `D`. `.reshape(-1, embedding_dim)` groups the first two axes and lets PyTorch infer the missing size from the element count. Here `2*2*3=12` values become four rows of three.
+`batch_size, context_length = input_ids.shape` unpacks the two dimensions. `embedding_table[input_ids]` keeps `[B,T]` and appends the vector dimension $D$. `.reshape(-1, embedding_dim)` groups the first two axes and lets PyTorch infer the missing size from the element count. Here $2\times 2\times 3=12$ values become four rows of three.
 
-Only one reshape dimension may be `-1`. A later `.reshape(batch_size, context_length, -1)` restores the sample/position axes and infers `V`. For loss, `.reshape(-1, vocab_size)` retains each position's candidate vector; `.reshape(-1)` on targets produces one ID per flat position.
+Only one reshape dimension may be `-1`. A later `.reshape(batch_size, context_length, -1)` restores the sample/position axes and infers $V$. For loss, `.reshape(-1, vocab_size)` retains each position's candidate vector; `.reshape(-1)` on targets produces one ID per flat position.
 
 Reshape preserves logical element order and may return a view or a copy depending on layout. Do not rely on storage ownership or modify its result in place. It keeps autograd connected; a copy needed for a strided layout does not mean detachment. [PyTorch reshape documentation](https://docs.pytorch.org/docs/2.0/generated/torch.reshape.html).
 
@@ -5651,7 +5589,7 @@ Lesson 03.20 checks passed.
 
 **Why not feed probabilities into the old loss?** That helper expects raw logits and computes stable log-probabilities internally. Applying softmax first changes its input interpretation. [Cross-entropy documentation](https://docs.pytorch.org/docs/2.0/generated/torch.nn.CrossEntropyLoss.html).
 
-**Can a library cross-entropy accept `[B,T,V]` directly?** The usual class-index interface uses scores `[N,C,...]`, with candidate classes on the second axis. Our layout keeps `V` last. This adapter uses unambiguous `[B*T,V]` scores with `[B*T]` targets and the completed 2D helper; other layouts require a deliberate compatible conversion.
+**Can a library cross-entropy accept `[B,T,V]` directly?** The usual class-index interface uses scores `[N,C,...]`, with candidate classes on the second axis. Our layout keeps $V$ last. This adapter uses unambiguous `[B*T,V]` scores with `[B*T]` targets and the completed 2D helper; other layouts require a deliberate compatible conversion.
 
 **Why return a scalar tensor rather than `.item()`?** The training caller needs the graph for backward. `.item()` is suitable for display/logging after retaining the connected loss, not as this function's return.
 
@@ -5661,9 +5599,7 @@ Lesson 03.20 checks passed.
 
 **Does q=b*T+t use the batch size B?** Lowercase b is a zero-based sample index, distinct from uppercase B, the sample count. For B=2, T=2, positions (0,0),(0,1),(1,0),(1,1) map to q=0,1,2,3. The second row's first position is 1*2+0=2. In general, 0<=b<B, 0<=t<T, and 0<=q<B*T. Scores and targets follow the same mapping, with all V candidate columns retained.
 
-<a id="section-03-21"></a>
-
-## 03.21 One Joint Update from a Next-Token Batch
+## 03.21 One Joint Update from a Next-Token Batch {#section-03-21}
 
 Several samples can contribute to a single update. Their position losses are averaged into one scalar, and their gradients meet at shared parameters before those parameters change. We will extend the joint training step to a batch while retaining the timing and object identity learned earlier.
 
@@ -5680,7 +5616,7 @@ Work through the example before editing 03_21_batch_train_step.py. The numbered 
 | `target_ids`, $Y$ | Fixed `torch.long` tensor `[B,T]` | Already shifted next-token answers |
 | `learning_rate`, $\eta$ | Nonnegative Python float | Common update multiplier |
 
-`B` counts sample rows, `T` positions per row, `D` vector features, and `V` candidate IDs. `D` and `V` can differ: this chapter deliberately uses `D=1,V=2`. Assume positive dimensions, valid IDs, compatible floating dtypes/devices, finite values, normal gradient mode, and separately stored untied parameters. Input validation is not assigned.
+$B$ counts sample rows, $T$ positions per row, $D$ vector features, and $V$ candidate IDs. $D$ and $V$ can differ: this chapter deliberately uses $D=1,V=2$. Assume positive dimensions, valid IDs, compatible floating dtypes/devices, finite values, normal gradient mode, and separately stored untied parameters. Input validation is not assigned.
 
 Return `(loss_value, gradient_table, gradient_weights, gradient_bias)`:
 
@@ -5706,7 +5642,7 @@ P_{b,t,v}=\frac{e^{Z_{b,t,v}}}{\sum_j e^{Z_{b,t,j}}},\qquad
 =-\frac1{BT}\sum_{b,t}\log P_{b,t,Y_{b,t}}
 $$
 
-`X` and `Y` are fixed for differentiation. The loss depends on all three parameters through this connected computation. Call the completed `compute_batch_logits` and `batch_cross_entropy`; the stable loss helper computes log-probabilities directly. The mathematical probabilities below explain the derivatives, rather than requiring an extra softmax call in your core.
+`X` and $Y$ are fixed for differentiation. The loss depends on all three parameters through this connected computation. Call the completed `compute_batch_logits` and `batch_cross_entropy`; the stable loss helper computes log-probabilities directly. The mathematical probabilities below explain the derivatives, rather than requiring an extra softmax call in your core.
 
 For one candidate score, the derivative is:
 
@@ -5715,7 +5651,7 @@ $$
 =\frac{P_{b,t,v}-\mathbf1\{v=Y_{b,t}\}}{BT}
 $$
 
-The indicator is one for the supplied target and zero otherwise. The denominator comes from averaging supervised positions. The helper already applies it: do not divide loss or gradients by `B`, `T`, or `V` again.
+The indicator is one for the supplied target and zero otherwise. The denominator comes from averaging supervised positions. The helper already applies it: do not divide loss or gradients by $B$, $T$, or $V$ again.
 
 Flatten positions in the same order $q=bT+t$: $\widetilde H$ has shape `[B*T,D]` and $\widetilde G_Z$ has shape `[B*T,V]`. Applying the chain rule to the linear head gives:
 
@@ -5743,13 +5679,13 @@ $$
 
 Why subtraction? For a small displacement $\Delta\theta$, $\Delta\mathcal L\approx G_\theta^\mathsf T\Delta\theta$. Choosing $\Delta\theta=-\eta G_\theta$ makes the first-order term $-\eta\lVert G_\theta\rVert^2\le0$. This is a local approximation; an overly large step can increase the actual loss.
 
-![One connected batch loss supplies all gradients before the parameter update.](assets/03-21-batch-update-flow.en.png)
+![One connected batch loss supplies all gradients before the parameter update.](assets/03-21-batch-update-flow.en.png){width=100%}
 
 **Figure 03.21-1 — Read left to right.** Forward and backward use normal gradient mode. Only the final in-place update uses `torch.no_grad()`. Save pre-update observations before that update. .
 
 ### Complete worked example: four positions, D different from V
 
-Use the hand-picked correctness fixture `batch-two-id-sgd-v1`. Source IDs `[0,1,0,1]`, starts `[0,1]`, and `T=2` yield:
+Use the hand-picked correctness fixture `batch-two-id-sgd-v1`. Source IDs `[0,1,0,1]`, starts `[0,1]`, and $T=2$ yield:
 
 $$
 X=\begin{bmatrix}0&1\\1&0\end{bmatrix},\quad
@@ -5758,7 +5694,7 @@ E=\begin{bmatrix}1\\2\end{bmatrix},\quad
 W=\begin{bmatrix}1&0\end{bmatrix},\quad\beta=[0,0],\quad\eta=0.1
 $$
 
-Here `B=2,T=2,D=1,V=2`: `E[2,1]`, `H[2,2,1]`, `W[1,2]`, `Z[2,2,2]`. The projection changes vector width one to candidate count two. In flat position order `(0,0),(0,1),(1,0),(1,1)`:
+Here $B=2,T=2,D=1,V=2$: `E[2,1]`, `H[2,2,1]`, `W[1,2]`, `Z[2,2,2]`. The projection changes vector width one to candidate count two. In flat position order `(0,0),(0,1),(1,0),(1,1)`:
 
 | q | Input ID | Vector | Scores | Target ID | Target probability | Position loss |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -5807,13 +5743,13 @@ W_{\mathrm{new}}&\approx[0.9753673633,0.0246326367],\\
 \end{aligned}
 $$
 
-For example, `E[0,0] = 1 - 0.1*0.3655292893 = 0.9634470711`. The second row increases because its gradient is negative: `2 - 0.1*(-0.0596014610) = 2.0059601461`.
+For example, $E_{0,0}=1-0.1\times0.3655292893=0.9634470711$. The second row increases because its gradient is negative: $2 - 0.1\times (-0.0596014610) = 2.0059601461$.
 
 The function returns `0.7200948493` and the three **old-state** gradient snapshots. Recomputing forward separately at the new state gives input-zero scores `[0.9091220465,0.0543250245]`, input-one scores `[1.9259552757,0.0800048704]`, selected probabilities `[0.2984275419,0.8636509327,0.8636509327,0.2984275419]`, and new mean loss `0.6779073607`. The supplied driver checks this separate observation; it is not the returned loss.
 
-![Repeated IDs accumulate into shared rows, followed by one SGD update.](assets/03-21-shared-gradients.en.png)
+![Repeated IDs accumulate into shared rows, followed by one SGD update.](assets/03-21-shared-gradients.en.png){width=100%}
 
-**Figure 03.21-2 — Four position contributions form three shared parameter gradients.** Each contribution already contains the mean factor `1/4`. The lower table shows the original values, gradients, and updated values; every column uses the same fixture. .
+**Figure 03.21-2 — Four position contributions form three shared parameter gradients.** Each contribution already contains the mean factor $\frac{1}{4}$. The lower table shows the original values, gradients, and updated values; every column uses the same fixture. .
 
 ### Syntax and state before coding
 
@@ -5865,7 +5801,7 @@ Before implementation, the deliberate `NotImplementedError` means the learner re
 
 **Is this four separate updates?** Four supervised positions contribute to one mean loss, one backward, and one joint parameter update. A parameter's gradient includes all applicable contributions before it changes.
 
-**Why can two identical positions add yet the average stay unchanged when duplicated?** Each additional contribution increases the sum, while the mean denominator increases proportionally when the whole batch is duplicated. Here each contribution contains `1/4`; the shared-row gradient adds its two contributions. Arbitrary changed batches need not give the same mean or gradient.
+**Why can two identical positions add yet the average stay unchanged when duplicated?** Each additional contribution increases the sum, while the mean denominator increases proportionally when the whole batch is duplicated. Here each contribution contains $\frac{1}{4}$; the shared-row gradient adds its two contributions. Arbitrary changed batches need not give the same mean or gradient.
 
 **Does clearing `.grad` erase learned values?** No. It resets derivative buffers only. The next forward uses the already updated parameter values.
 
@@ -5877,9 +5813,7 @@ Before implementation, the deliberate `NotImplementedError` means the learner re
 
 **Can I reconstruct the reasoning independently?** Optional checkpoints: explain the four-position denominator; derive `2a` and `2c`; explain why all gradients must use the old state; distinguish previous-step accumulation from repeated IDs; explain snapshots and return timing. Preparation and supplied checks do not claim these explanations have been demonstrated.
 
-<a id="section-03-22"></a>
-
-## 03.22 Persistent Training over Ordered Batches
+## 03.22 Persistent Training over Ordered Batches {#section-03-22}
 
 Real training does not revisit just one fixed batch. An ordered schedule lets us follow different batches through the same persistent parameters. It also reveals why a rising loss history can reflect changing data rather than a broken update.
 
@@ -5897,24 +5831,24 @@ Work through the example before editing 03_22_batch_training_loop.py. The number
 | `context_length`, $T$ | Positive Python integer | Positions in each input/target row |
 | `learning_rate`, $\eta$ | Nonnegative Python float | Multiplier passed unchanged to each step |
 
-`N` is the source length, `D` the vector width, and `V` the candidate count. Let `K = len(batch_starts)`. For update index `k`, `B_k = len(batch_starts[k])`. Batches may have different sample counts. For example, `[[0,1],[3,4]]` means two updates, each with two samples. `[[0],[3,4]]` means two updates with one and two samples respectively. `K` counts updates; each `B_k` counts samples within that update.
+$N$ is the source length, $D$ the vector width, and $V$ the candidate count. Let $K=$ `len(batch_starts)`. For update index $k$, $B_k=$ `len(batch_starts[k])`. Batches may have different sample counts. For example, `[[0,1],[3,4]]` means two updates, each with two samples. `[[0],[3,4]]` means two updates with one and two samples respectively. $K$ counts updates; each $B_k$ counts samples within that update.
 
-Assume `N>=T+1`, every inner list is nonempty, starts satisfy `0<=start<=N-T-1`, IDs are valid, floating dtypes/devices match, parameters have separate storage, and gradient mode is normal. Repeated starts are permitted. The **outer** schedule may be empty. Input validation is not assigned.
+Assume $N\ge T+1$, every inner list is nonempty, starts satisfy $0\le\texttt{start}\le N-T-1$, IDs are valid, floating dtypes/devices match, parameters have separate storage, and gradient mode is normal. Repeated starts are permitted. The **outer** schedule may be empty. Input validation is not assigned.
 
-Return a fresh `losses: list[float]`, length `K`, preserving update order. Original parameters retain their final values; do not return replacement tensors. Source IDs, the nested schedule, caller gradient mode, and random state stay unchanged. The last step's gradients remain stored. An empty schedule returns `[]`, calls neither helper, and preserves existing parameter values and gradient buffers.
+Return a fresh `losses: list[float]`, length $K$, preserving update order. Original parameters retain their final values; do not return replacement tensors. Source IDs, the nested schedule, caller gradient mode, and random state stay unchanged. The last step's gradients remain stored. An empty schedule returns `[]`, calls neither helper, and preserves existing parameter values and gradient buffers.
 
 ### Changing batches and persistent parameters
 
-For update `k`, let its start list be $S_k$, sample count $B_k$, and sample index $b$. For $k=0,\ldots,K-1$, $b=0,\ldots,B_k-1$, and $t=0,\ldots,T-1$:
+For update $k$, let its start list be $S_k$, sample count $B_k$, and sample index $b$. For $k=0,\ldots,K-1$, $b=0,\ldots,B_k-1$, and $t=0,\ldots,T-1$:
 
 $$
 (X_k)_{b,t}=\texttt{token\_ids}[S_k[b]+t],\qquad
 (Y_k)_{b,t}=\texttt{token\_ids}[S_k[b]+t+1]
 $$
 
-Both tensors have shape `[B_k,T]`. Targets are already shifted by one. Reuse `make_next_token_batch(token_ids, start_positions, context_length)` rather than writing the slicing logic again.
+Both tensors have shape $[B_k,T]$. Targets are already shifted by one. Reuse `make_next_token_batch(token_ids, start_positions, context_length)` rather than writing the slicing logic again.
 
-Let $\theta_k=(E_k,W_k,\beta_k)$ be the parameters after `k` updates, before the next update. For the mathematical candidate distribution from those parameters:
+Let $\theta_k=(E_k,W_k,\beta_k)$ be the parameters after $k$ updates, before the next update. For the mathematical candidate distribution from those parameters:
 
 $$
 \mathcal L_k=\mathcal L(\theta_k;X_k,Y_k)
@@ -5937,9 +5871,9 @@ K=\operatorname{len}(\texttt{batch\_starts}),\qquad
 M=T\sum_{k=0}^{K-1} B_k
 $$
 
-`M` counts processed supervision positions, including repeated windows and overlaps. It is not a count of unique source IDs, new generated tokens, or the number of vocabulary entries.
+$M$ counts processed supervision positions, including repeated windows and overlaps. It is not a count of unique source IDs, new generated tokens, or the number of vocabulary entries.
 
-![An explicit source-window schedule feeds successive updates on the same parameter objects.](assets/03-22-batch-schedule.en.png)
+![An explicit source-window schedule feeds successive updates on the same parameter objects.](assets/03-22-batch-schedule.en.png){width=100%}
 
 **Figure 03.22-1 — Read the two update rows from top to bottom.** Each row lists its source starts, constructed inputs and targets, old/new parameter state, and one returned loss. The first row produces the state used by the second. .
 
@@ -5954,9 +5888,9 @@ context_length = 2
 learning_rate = 0.1
 ```
 
-Initial parameters are `E=[[1],[2]]`, `W=[[1,0]]`, and `beta=[0,0]`, so `D=1,V=2`. There are `K=2` updates, `B_0=B_1=2` samples per update, and `M=2*(2+2)=8` processed supervision positions. The source has seven IDs; overlapping windows legitimately give eight processed positions.
+Initial parameters are `E=[[1],[2]]`, `W=[[1,0]]`, and `beta=[0,0]`, so $D=1,V=2$. There are $K=2$ updates, $B_0=B_1=2$ samples per update, and $M=2(2+2)=8$ processed supervision positions. The source has seven IDs; overlapping windows legitimately give eight processed positions.
 
-#### First batch: starts [0,1], state theta_0
+#### First batch: starts [0,1], state $\theta_{0}$
 
 Start zero gives input `[0,1]`, target `[1,0]`. Start one gives input `[1,0]`, target `[0,1]`:
 
@@ -5971,7 +5905,7 @@ This matches 03.21's full example. Flat score rows are `[1,0],[2,0],[2,0],[1,0]`
 [1.3132616875, 0.1269280110, 0.1269280110, 1.3132616875]
 ```
 
-Their mean is `L_0=0.7200948493`. The old-state gradients are:
+Their mean is $L_0=0.7200948493$. The old-state gradients are:
 
 ```text
 G_E    = [[ 0.3655292893],[-0.0596014610]]
@@ -5990,7 +5924,7 @@ losses = [0.7200948493]
 
 The append happens after the helper returns, but the number describes the state **before** its update. Do not recompute it with the new parameters.
 
-#### Second batch: starts [3,4], state theta_1
+#### Second batch: starts [3,4], state $\theta_{1}$
 
 Start three gives input `[1,1]`, target `[1,0]`. Start four gives input `[1,0]`, target `[0,1]`:
 
@@ -5999,7 +5933,7 @@ X_1=\begin{bmatrix}1&1\\1&0\end{bmatrix},\qquad
 Y_1=\begin{bmatrix}1&0\\0&1\end{bmatrix}
 $$
 
-The source includes a `1→1` pair; these targets are correct. Use $\theta_1$ from the preceding update. Input one now gives scores `[1.9259552757,0.0800048704]`; input zero gives `[0.9091220465,0.0543250245]`. For example, candidate zero for input one is `2.0059601461*0.9753673633 - 0.0305927828 ≈ 1.9259552757`.
+The source includes a $1\to 1$ pair; these targets are correct. Use $\theta_1$ from the preceding update. Input one now gives scores `[1.9259552757,0.0800048704]`; input zero gives `[0.9091220465,0.0543250245]`. For example, candidate zero for input one is $2.0059601461\times 0.9753673633 - 0.0305927828 \approx  1.9259552757$.
 
 | q | Input ID | Target ID | Selected probability | Position loss |
 | --- | --- | --- | --- | --- |
@@ -6023,7 +5957,7 @@ G_W    = [[0.4653389228,-0.4653389228]]
 G_beta = [0.3231313141,-0.3231313141]
 ```
 
-For instance, the last position's score gradient is approximately `[0.1753931145,-0.1753931145]`. Multiplying by `W_1.T` gives its input-zero table gradient `0.1753931145*(0.9753673633-0.0246326367) ≈ 0.1667523248`. Three input-one positions contribute to their shared row. The complete chain-rule derivation is retained in 03.21; this wrapper delegates it to the step helper.
+For instance, the last position's score gradient is approximately `[0.1753931145,-0.1753931145]`. Multiplying by $W_1^{\mathsf T}$ gives its input-zero table gradient $0.1753931145\times (0.9753673633-0.0246326367) \approx  0.1667523248$. Three input-one positions contribute to their shared row. The complete chain-rule derivation is retained in 03.21; this wrapper delegates it to the step helper.
 
 After the second update, the same original tensors hold $\theta_2$:
 
@@ -6034,7 +5968,7 @@ beta_2 = [-0.0629059142,0.0629059142]
 losses = [0.7200948493,0.8737345841]
 ```
 
-Return this two-item history. For example, `E_2[0,0] = 0.9634470711 - 0.1*0.1667523248 ≈ 0.9467718386`. The caller already holds the final parameter tensors. A separate final evaluation is not a third update or an extra history item.
+Return this two-item history. For example, $(E_2)_{0,0}=0.9634470711-0.1\times0.1667523248\approx0.9467718386$. The caller already holds the final parameter tensors. A separate final evaluation is not a third update or an extra history item.
 
 ### Why the returned loss history can rise
 
@@ -6045,7 +5979,7 @@ $$
 \texttt{losses}[1]=\mathcal L(\theta_1;X_1,Y_1)
 $$
 
-Batch B contains a harder `1→1` target for the current model. Comparing `0.720095` with `0.873735` alone cannot isolate the effect of the parameter update. For this illustration, recompute each fixed batch separately at the same successive states:
+Batch B contains a harder $1\to 1$ target for the current model. Comparing `0.720095` with `0.873735` alone cannot isolate the effect of the parameter update. For this illustration, recompute each fixed batch separately at the same successive states:
 
 | Parameter state | Fixed batch A | Fixed batch B |
 | --- | --- | --- |
@@ -6055,7 +5989,7 @@ Batch B contains a harder `1→1` target for the current model. Comparing `0.720
 
 Both fixed-batch columns decrease **in this example**, while the recorded history moves from A at $\theta_0$ to B at $\theta_1$. The same-batch comparisons here are illustrative recomputations, not held-out validation. A small step does not guarantee every batch's loss decreases in general. Later lessons define a fixed evaluation protocol and a separate validation split.
 
-![Fixed-batch loss curves and the mixed-batch recorded history measure different paths.](assets/03-22-loss-comparisons.en.png)
+![Fixed-batch loss curves and the mixed-batch recorded history measure different paths.](assets/03-22-loss-comparisons.en.png){width=100%}
 
 **Figure 03.22-2 — The horizontal axis counts completed updates.** The two solid curves each keep their data fixed while parameters change. The orange dashed history joins A at update count zero to B at count one. It has two entries; the final state at count two has no automatic history entry. .
 
@@ -6106,9 +6040,9 @@ Before implementation, `NotImplementedError` marks an open learner core. A compl
 
 ### Reader questions and understanding checkpoints
 
-**Is a batch the whole source sequence?** No. The source is `[N]`; an inner start list selects several length-`T` windows to form `[B_k,T]`. The outer schedule specifies which batch is used at each update.
+**Is a batch the whole source sequence?** No. The source is `[N]`; an inner start list selects several length-$T$ windows to form $[B_k,T]$. The outer schedule specifies which batch is used at each update.
 
-**Does a repeated input ID with different targets mean bad alignment?** Not necessarily. Our source includes both `1→0` and `1→1`. The current-ID baseline must share one distribution for input one across those occurrences. A contextual model can later distinguish occurrences using prior context, while data targets remain the observed next IDs.
+**Does a repeated input ID with different targets mean bad alignment?** Not necessarily. Our source includes both $1\to 0$ and $1\to 1$. The current-ID baseline must share one distribution for input one across those occurrences. A contextual model can later distinguish occurrences using prior context, while data targets remain the observed next IDs.
 
 **Should I initialize parameters inside the loop?** No. Preserve the recurrence: the next batch uses what the preceding update learned. A separate call also continues from the current values supplied by its caller.
 
@@ -6118,11 +6052,9 @@ Before implementation, `NotImplementedError` marks an open learner core. A compl
 
 **Can I compare a mixed history as validation?** These entries use changing training data and changing parameter states. A fixed evaluation set at a given state is a different measurement. If batch sizes vary, averaging batch means also needs deliberate weighting; full evaluation is later work.
 
-Optional independent checkpoints: distinguish `N`, `K`, `B_k`, and `T`; construct both batches by hand; trace old-state loss timing and shared parameter continuity; explain the mixed-history rise, empty schedule, and zero rate. Try an explanation first, then check it against a small trace.
+Optional independent checkpoints: distinguish $N$, $K$, $B_k$, and $T$; construct both batches by hand; trace old-state loss timing and shared parameter continuity; explain the mixed-history rise, empty schedule, and zero rate. Try an explanation first, then check it against a small trace.
 
-<a id="section-03-23"></a>
-
-## 03.23 Fixed-Parameter Batch Loss Evaluation
+## 03.23 Fixed-Parameter Batch Loss Evaluation {#section-03-23}
 
 To compare model states, we need a measurement that does not train while measuring. Evaluation holds the parameters fixed and combines the losses from all selected positions. When batches have different sizes, weighting by positions is what makes that combined result mean what we intend.
 
@@ -6139,17 +6071,17 @@ Work through the example before editing 03_23_evaluate_batches.py. The numbered 
 | `batch_starts` | Nonempty `list[list[int]]` | One nonempty start list per evaluation batch |
 | `context_length`, $T$ | Positive integer | Supervised positions per sample |
 
-There is no `learning_rate`: the evaluator reads the supplied parameter state. Parameters may have `requires_grad=True` or `False`; preserve those flags. Assume valid IDs, compatible floating dtypes/devices, `N>=T+1`, valid starts `0<=start<=N-T-1`, and finite scores in the checks' supported numerical range. No input validation is assigned.
+There is no `learning_rate`: the evaluator reads the supplied parameter state. Parameters may have `requires_grad=True` or `False`; preserve those flags. Assume valid IDs, compatible floating dtypes/devices, $N\ge T+1$, valid starts $0\le\texttt{start}\le N-T-1$, and finite scores in the checks' supported numerical range. No input validation is assigned.
 
 Return one Python float: total position loss divided by total position count. Preserve parameter values/storage/dtype/device/trainability, existing gradient-buffer objects and values, source IDs, nested schedule, caller gradient mode, and random state. Do not backward, clear gradients, update parameters, or call `batch_train_step`/`train_batches`.
 
-Different batches may have different `B_k`. Every scheduled occurrence counts, including repeated starts and overlapping windows. Evaluation grouping can change without changing the result when it covers the same position occurrences at the same parameter state. Changing or duplicating only some occurrences changes their weighting and can change the metric.
+Different batches may have different $B_k$. Every scheduled occurrence counts, including repeated starts and overlapping windows. Evaluation grouping can change without changing the result when it covers the same position occurrences at the same parameter state. Changing or duplicating only some occurrences changes their weighting and can change the metric.
 
 ### A single fixed parameter state
 
-Let $\theta=(E,W,\beta)$ stay fixed across all `K` evaluation batches. Batch `k` has $B_k$ rows, $T$ positions per row, and $n_k=B_kT$ supervised positions. The builder supplies aligned inputs $X_k$ and targets $Y_k$.
+Let $\theta=(E,W,\beta)$ stay fixed across all $K$ evaluation batches. Batch $k$ has $B_k$ rows, $T$ positions per row, and $n_k=B_kT$ supervised positions. The builder supplies aligned inputs $X_k$ and targets $Y_k$.
 
-Indices are `k=0,...,K-1`, `b=0,...,B_k-1`, `t=0,...,T-1`, `d=0,...,D-1`, and candidate `v,j=0,...,V-1`. For each position, the score distribution and target loss are:
+Indices are $k=0,\ldots,K-1$, $b=0,\ldots,B_k-1$, $t=0,\ldots,T-1$, $d=0,\ldots,D-1$, and candidate $v,j=0,\ldots,V-1$. For each position, the score distribution and target loss are:
 
 $$
 Z_{k,b,t,v}=\sum_d E[X_{k,b,t},d]W_{d,v}+\beta_v,\qquad
@@ -6171,7 +6103,7 @@ $$
 
 This equality follows by multiplying each batch mean by its own count: $n_k\overline{\mathcal L}_k=\sum_{b,t}\ell_{k,b,t}$. Sum those position-loss sums, then divide once by the total count. All positions are included equally; no padding, ignored IDs, class weights, or label smoothing are used.
 
-In code, `target_ids.numel()` supplies `n_k`, `loss.item()*batch_positions` reconstructs the batch's loss sum, and two Python accumulators hold the total sum and count.
+In code, `target_ids.numel()` supplies $n_k$, `loss.item()*batch_positions` reconstructs the batch's loss sum, and two Python accumulators hold the total sum and count.
 
 For comparison, equal weighting of batch means gives:
 
@@ -6179,9 +6111,9 @@ $$
 \mathcal L_{\mathrm{batches}}=\frac1K\sum_k\overline{\mathcal L}_k
 $$
 
-In that metric, one position in batch `k` gets weight $1/(Kn_k)$, whereas our objective gives every position weight $1/M$. Equal-size batches make these formulas coincide. Unequal sizes generally give different values; accidental equality for particular losses does not make the objectives identical.
+In that metric, one position in batch $k$ gets weight $1/(Kn_k)$, whereas our objective gives every position weight $1/M$. Equal-size batches make these formulas coincide. Unequal sizes generally give different values; accidental equality for particular losses does not make the objectives identical.
 
-![Fixed parameters feed each batch mean, which is converted to a sum and aggregated by position count.](assets/03-23-evaluation-flow.en.png)
+![Fixed parameters feed each batch mean, which is converted to a sum and aggregated by position count.](assets/03-23-evaluation-flow.en.png){width=100%}
 
 **Figure 03.23-1 — Follow the two batch rows into the final aggregation.** Both rows read the same parameters. Their counts multiply the returned means before summation. The final denominator is six positions. .
 
@@ -6198,7 +6130,7 @@ W = [[1,0]]
 beta = [0,0]
 ```
 
-Here `N=7,T=2,D=1,V=2`. The first batch has one sample; the second has two. Parameters stay at this initial state throughout. In particular, the second batch does **not** use the updated parameters from 03.22's example.
+Here $N=7,T=2,D=1,V=2$. The first batch has one sample; the second has two. Parameters stay at this initial state throughout. In particular, the second batch does **not** use the updated parameters from 03.22's example.
 
 #### Batch A: start [0], B=1, n=2
 
@@ -6265,11 +6197,11 @@ $$
 \approx0.8218031397
 $$
 
-It overweights each position in the smaller batch relative to a position in the larger batch. Under equal batch weights, the two A positions each receive `1/4` and the four B positions each receive `1/8`. Under the requested position mean, all six receive `1/6`. Using rounded display values may slightly change final digits; checks and figures calculate with full precision.
+It overweights each position in the smaller batch relative to a position in the larger batch. Under equal batch weights, the two A positions each receive $\frac{1}{4}$ and the four B positions each receive $\frac{1}{8}$. Under the requested position mean, all six receive $\frac{1}{6}$. Using rounded display values may slightly change final digits; checks and figures calculate with full precision.
 
-![The same six losses receive different weights under equal batch weights and equal position weights.](assets/03-23-position-weights.en.png)
+![The same six losses receive different weights under equal batch weights and equal position weights.](assets/03-23-position-weights.en.png){width=100%}
 
-**Figure 03.23-2 — Read down each position column.** Its loss is unchanged; the weight differs between the two aggregation rows. Each displayed result is the sum of `weight*position_loss`. Only the position-equal row implements this assignment's objective. .
+**Figure 03.23-2 — Read down each position column.** Its loss is unchanged; the weight differs between the two aggregation rows. Each displayed result is the sum of $\mathrm{weight}\times\mathrm{position\_loss}$. Only the position-equal row implements this assignment's objective. .
 
 ### Evaluation state and no-grad scope
 
@@ -6341,9 +6273,7 @@ Lesson 03.23 checks passed.
 
 Optional independent checkpoints: derive the count-weighted mean; explain `numel()` and mean-to-sum conversion; distinguish no-grad, trainability, existing gradients, and later module mode; explain fixed-data comparisons and held-out sources. Try an explanation first, then check it against a small trace.
 
-<a id="section-03-24"></a>
-
-## 03.24 Connect the small baseline
+## 03.24 Connect the small baseline {#section-03-24}
 
 The pieces of the small language-model baseline are ready to work together. One run will encode text, train on an explicit schedule, evaluate the final parameters, and decode a continuation. Following this path end to end will help us see both what the baseline can do and why the next chapter must add context.
 
@@ -6357,9 +6287,9 @@ $$
 \theta=(E,W,\beta),\qquad E\in\mathbb R^{256\times1},\quad W\in\mathbb R^{1\times256},\quad\beta\in\mathbb R^{256}.
 $$
 
-E is the embedding table, W the vocabulary projection, beta the bias. V=256
-comes from byte IDs 0–255; D=1 is a teaching choice. Supplied initialization uses
-ones for E and zeros for W/beta; all three tensors are trainable.
+$E$ is the embedding table, $W$ the vocabulary projection, $\beta$ the bias. $V=256$
+comes from byte IDs 0–255; $D=1$ is a teaching choice. Supplied initialization uses
+ones for $E$ and zeros for $W$/$\beta$; all three tensors are trainable.
 
 Every input position independently looks up and scores its current ID:
 
@@ -6367,29 +6297,29 @@ $$
 h_{b,t}=E[X_{b,t}],\qquad z_{b,t}=h_{b,t}W+\beta,\qquad p_{b,t}=\operatorname{softmax}(z_{b,t}).
 $$
 
-b indexes batch samples, t window positions and v vocabulary candidates. Targets Y are already shifted by one from X; do not shift them again.
+$b$ indexes batch samples, $t$ window positions and $v$ vocabulary candidates. Targets $Y$ are already shifted by one from $X$; do not shift them again.
 
-Training batch k computes a mean next-token loss and one update:
+Training batch $k$ computes a mean next-token loss and one update:
 
 $$
 L_k=-\frac1{B_kT}\sum_{b=0}^{B_k-1}\sum_{t=0}^{T-1}\log p_{\theta_k}(Y_{k,b,t}\mid X_{k,b,t}),
 \qquad\theta_{k+1}=\theta_k-\eta\nabla_\theta L_k.
 $$
 
-eta is `learning_rate`, T is `context_length`. 03.21/03.22 already implement
-these operations. `history[k]` records pre-update L_k; the final parameters are
-at theta_K.
+$\eta$ is `learning_rate`, $T$ is `context_length`. 03.21/03.22 already implement
+these operations. `history[k]` records pre-update $L_{k}$; the final parameters are
+at $\theta_{K}$.
 
-Evaluation keeps theta_K fixed and aggregates all selected positions:
+Evaluation keeps $\theta_{K}$ fixed and aggregates all selected positions:
 
 $$
 L_{eval}=\frac{\sum_j n_j\overline L_j(\theta_K)}{\sum_j n_j},\qquad n_j=B_jT.
 $$
 
-j indexes evaluation batches. 03.23 owns target weighting and no-grad;
+$j$ indexes evaluation batches. 03.23 owns target weighting and no-grad;
 it neither updates parameters nor clears existing gradients.
 
-Generation also keeps theta_K fixed and selects one new ID at a time:
+Generation also keeps $\theta_{K}$ fixed and selects one new ID at a time:
 
 $$
 x_{new}=\arg\max_{v\in\{0,\ldots,255\}}p_{\theta_K}(v\mid x_{last}).
@@ -6398,9 +6328,9 @@ $$
 The current lookup baseline conditions only on the last input ID. Passing a
 growing prefix does not create attention; Chapter 04 introduces earlier context.
 
-![One run shares one set of parameters](assets/03-24-baseline-pipeline.en.png)
+![One run shares one set of parameters](assets/03-24-baseline-pipeline.en.png){width=100%}
 
-Read the top row in execution order, then follow final theta_2 into both lower
+Read the top row in execution order, then follow final $\theta_{2}$ into both lower
 stages. Arrows show data/state transfer, not evaluation-driven updates.
 .
 
@@ -6419,17 +6349,17 @@ def run_baseline(
 
 | Input | Type and meaning | Fixture |
 | --- | --- | --- |
-| text | Nonempty ASCII str, encoded into N byte IDs; N>=T+1 | `"ababab"` |
+| text | Nonempty ASCII str, encoded into $N$ byte IDs; $N\ge T+1$ | `"ababab"` |
 | train_starts | Nonempty list of nonempty start lists; one inner list per batch | `[[0,2]]` |
 | eval_starts | Nonempty nested evaluation start schedule | `[[1,3]]` |
-| context_length | Positive T, input and shifted-target positions per window | `2` |
-| learning_rate | Nonnegative eta, passed only to training | `0.2` |
+| context_length | Positive $T$, input and shifted-target positions per window | `2` |
+| learning_rate | Nonnegative $\eta$, passed only to training | `0.2` |
 | updates | Nonnegative integer **repeat count for the entire train_starts schedule**, retaining the existing parameter name | `2` |
 
-Every start satisfies `0 <= start <= N-T-1`. Assume valid inputs; validation is
+Every start satisfies $0\le\texttt{start}\le N-T-1$. Assume valid inputs; validation is
 not a separate learner task.
 
-If `train_starts` has M batches, actual parameter-update count is
+If `train_starts` has $M$ batches, actual parameter-update count is
 
 $$
 K=\texttt{updates}\times M,
@@ -6472,18 +6402,18 @@ X=[[97,98],[97,98]], Y=[[98,97],[98,97]]
 B=2, T=2; both shapes [2,2]
 ```
 
-Initially E rows are `[1]` and W/beta zero, so all 256 logits at each position
-are zero. Every candidate probability is 1/256; every target loss is
+Initially $E$ rows are `[1]` and $W$/$\beta$ zero, so all 256 logits at each position
+are zero. Every candidate probability is $1/256$; every target loss is
 
 $$
 -\log(1/256)=\log256\approx5.5451774445.
 $$
 
 The mean of four identical losses is still 5.5451774445; neither multiply nor
-divide it by four again. 03.22 records this loss and updates to theta_1. The second batch uses theta_1 and records 5.3469056593 before updating to theta_2. Two batches × two windows × two targets process eight position occurrences,
+divide it by four again. 03.22 records this loss and updates to $\theta_{1}$. The second batch uses $\theta_{1}$ and records 5.3469056593 before updating to $\theta_{2}$. Two batches × two windows × two targets process eight position occurrences,
 including repeated data.
 
-**Evaluate final theta_2.** `eval_starts=[[1,3]]` gives:
+**Evaluate final $\theta_{2}$.** `eval_starts=[[1,3]]` gives:
 
 ```text
 start1: X=[98,97], Y=[97,98]
@@ -6492,9 +6422,9 @@ start3: X=[98,97], Y=[97,98]
 
 These four targets under the final state yield `eval_loss≈5.1473975533`. This is not a third history entry; it occurs after all training updates.
 
-![Schedule, state and loss-recording time](assets/03-24-training-trace.en.png)
+![Schedule, state and loss-recording time](assets/03-24-training-trace.en.png){width=100%}
 
-Theta_0/theta_1 feed training updates and their losses enter history. Theta_2
+$\theta_{0}$/$\theta_{1}$ feed training updates and their losses enter history. $\theta_{2}$
 feeds separate fixed evaluation. Different starts still use the same short
 text, not independent validation. .
 
@@ -6619,7 +6549,7 @@ learned merge stage over those bytes; the model accepts integer IDs from either
 representation. A byte-only model is a teaching choice, not a model restriction. The complete prepared pretraining lab in `scripts/pretrain_lab.py` already
 reuses the Chapter 02 BPE training, encoding and vocabulary serialization helpers.
 
-For a concrete connection, freeze just the learned rule `(97,98)->256`:
+For a concrete connection, freeze just the learned rule $(97,98)\to 256$:
 
 ```text
 text "ababab"
@@ -6633,10 +6563,10 @@ A BPE version must adapt all of these together:
 
 1. **Encoding:** call the frozen `encode_bpe`; train rules on training data only,
    then reuse identical rules for evaluation and generation prompts.
-2. **Model dimensions:** use `V=len(vocab)` for this contiguous vocabulary;
-   E is `[V,D]`, W `[D,V]`, bias `[V]`. The current hardcoded 256 rows cannot
+2. **Model dimensions:** use $V=$ `len(vocab)` for this contiguous vocabulary;
+   $E$ is `[V,D]`, $W$ `[D,V]`, bias `[V]`. The current hardcoded 256 rows cannot
    represent ID 256.
-3. **Windows and accounting:** starts and T refer to token positions after BPE. Here N=3, T=2 allows only start 0, whereas byte N=6, T=2 permits starts 0..3. The original byte schedules cannot simply be reused. Uniform initial loss
+3. **Windows and accounting:** starts and $T$ refer to token positions after BPE. Here $N$=3, $T$=2 allows only start 0, whereas byte $N$=6, $T$=2 permits starts 0..3. The original byte schedules cannot simply be reused. Uniform initial loss
    changes from ln 256 to ln 257.
 4. **Decoding:** map each generated ID through `vocab`, join the resulting bytes,
    then decode. `bytes([256])` is invalid because 256 is an ID, not one byte value. The strict `decode_bpe` serves valid UTF-8 round trips; generated text still
@@ -6686,7 +6616,7 @@ is 98. Here 97 identifies the byte token for `a`, and 98 identifies the one for
 `b`. Neither ID says how many tokens exist. The sequence contains six tokens:
 
 \[
-N = \operatorname{len}(\texttt{token\_ids}) = 6.
+$N$ = \operatorname{len}(\texttt{token\_ids}) = 6.
 \]
 
 For the actual one-dimensional tensor, `token_ids.numel()` also gives 6.
@@ -6728,9 +6658,9 @@ same passed table. They are not two separately constructed training datasets.
 
 ### A closer look at one batch versus batch size B
 
-**Question:** “Is the batch size 2, or is B=1 and T=2? I am getting the counts mixed up.”
+**Question:** “Is the batch size 2, or is B=1 and $T$=2? I am getting the counts mixed up.”
 
-For the preceding example, **B=2 and T=2**. The outer list in
+For the preceding example, **B=2 and $T$=2**. The outer list in
 `train_starts=[[0,2]]` contains one batch description; that does not make B=1.
 “One batch” counts groups. “Batch size B” counts samples within one group. In this exercise, each sample is one input window with its shifted target window.
 
@@ -6749,32 +6679,32 @@ sample 1, start 2          97      98
 ```
 
 Read vertically to count samples B; read horizontally to count input token
-positions T within a sample. The equal row contents come from the repeated text;
+positions $T$ within a sample. The equal row contents come from the repeated text;
 the rows still originate at different source positions.
 
 \[
 B=\operatorname{len}([0,2])=2,\qquad
-T=\texttt{context\_length}=2,\qquad
-\operatorname{shape}(\texttt{input\_ids})=[B,T]=[2,2].
+$T$=\texttt{context\_length}=2,\qquad
+\operatorname{shape}(\texttt{input\_ids})=[B,$T$]=[2,2].
 \]
 
 The nested schedule can now be read without conflating these counts:
 
-| Schedule | Scheduled batch updates | B within each batch | T within each sample |
+| Schedule | Scheduled batch updates | B within each batch | $T$ within each sample |
 | --- | --- | --- | --- |
 | `train_starts=[[0,2]]` | 1 | 2 | 2 |
 | `training_schedule=[[0,2],[0,2]]` | 2 | 2 | 2 |
 
 Repeating the schedule makes the model process two batches in succession; it
-does not stack their rows into a single B=4 batch. To obtain **B=1, T=2**, one
+does not stack their rows into a single B=4 batch. To obtain **B=1, $T$=2**, one
 batch would instead have a single start, for example `[0]`, and its input matrix
 would be `[[97,98]]`, shape `[1,2]`. The corresponding one-batch schedule is
 `[[0]]`.
 
-#### Follow-up: identifying T and B
+#### Follow-up: identifying $T$ and B
 
-**A useful restatement:** “`context_length` determines T, and B is the
-length of this list.” The T correspondence is correct. For B, specify that
+**A useful restatement:** “`context_length` determines $T$, and B is the
+length of this list.” The $T$ correspondence is correct. For B, specify that
 “this list” means the **inner list of starts for one batch**.
 
 ```python
@@ -6782,7 +6712,7 @@ context_length = 2
 train_starts = [[0, 2]]
 ```
 
-Here `T=context_length=2` and `B=len(train_starts[0])=2`, giving the two-row,
+Here $T=2$ (`context_length`) and $B=2$ (`len(train_starts[0])`), giving the two-row,
 two-column input matrix illustrated above. The outer `len(train_starts)=1`
 counts scheduled batches, not samples within a batch.
 
@@ -6790,23 +6720,19 @@ counts scheduled batches, not samples within a batch.
 
 A complete loop can update parameters and generate text. Its restricted use of context is now visible rather than hypothetical. The next chapter replaces that restriction with learned attention over a causally permitted prefix.
 
-<a id="chapter-04"></a>
-
-# 04 Build a causal Transformer
+# 04 Build a causal Transformer {#chapter-04}
 
 Attention is an operation on positions, not an unexplained synonym for understanding. Queries compare with keys; the resulting weights combine values. The tensor layouts tell us which positions are compared and which features are transformed. Causal visibility then prevents a training position from reading its future answer.
 
 We build the decoder one responsibility at a time: registered parameters, Q/K/V projections, scaled attention, masking, heads, position information, residual paths, normalization and feed-forward transformations. A shape and a matrix entry are shown separately because confusing them can make an incorrect transpose look plausible. The chapter ends by connecting the components to the familiar training and generation loops.
 
-<a id="section-04-01"></a>
-
-## 04.01 Why context matters
+## 04.01 Why context matters {#section-04-01}
 
 Chapter 03 connected training, evaluation, and generation. This lesson begins to exchange information between positions within a sequence.
 
 ### From supplying positions to using earlier inputs
 
-Connect this to [03.08: trainable embeddings](#section-03-08): **E is the embedding matrix, and E[0] is the embedding vector for token ID 0.** The example's `[0,0]` is a hand-chosen vector value with dimension D=2.
+Connect this to [03.08: trainable embeddings](#section-03-08): **$E$ is the embedding matrix, and $E$[0] is the embedding vector for token ID 0.** The example's `[0,0]` is a hand-chosen vector value with dimension $D=2$.
 
 The new material aggregates embeddings from several positions into a contextual representation. First recall Chapter 03: look up token IDs as embedding vectors and project those vectors into logits. For one sample at position $t$, this can be written as:
 
@@ -6818,11 +6744,11 @@ Here $x_t$ is the current token ID, $E$ is the shared embedding table, $u_t$ is 
 
 For example, `[0, 1]` and `[2, 1]` both end in ID `1`, so the old model reads `E[1]` at both final positions. Putting two positions in a tensor does not automatically make the final position read the earlier one.
 
-**The window length T controls how many input positions are supplied; the computation controls which of them each output can use.** Increasing `context_length` alone does not add contextual interaction to a position-wise lookup model.
+**The window length $T$ controls how many input positions are supplied; the computation controls which of them each output can use.** Increasing `context_length` alone does not add contextual interaction to a position-wise lookup model.
 
 We begin with a method that is easy to calculate by hand: at each position, average its own embedding and all earlier embeddings in the window. Call the result the contextual state $h_t$. A later output layer could project $h_t$ into logits; this assignment implements only the function that produces these states.
 
-Distinguish their roles: $u_t=E[x_t]$ is the current token's embedding; $h_t$ aggregates embeddings at visible positions into a contextual representation. Both are D-dimensional vectors. With E fixed, equal IDs retrieve equal embeddings, while the aggregated $h_t$ can change with the preceding inputs.
+Distinguish their roles: $u_t=E[x_t]$ is the current token's embedding; $h_t$ aggregates embeddings at visible positions into a contextual representation. Both are $D$-dimensional vectors. With $E$ fixed, equal IDs retrieve equal embeddings, while the aggregated $h_t$ can change with the preceding inputs.
 
 ### Read the formula first
 
@@ -6837,9 +6763,9 @@ $$
 | $t$ | Current output-position index, starting at 0 |
 | $j$ | Input-position index traversed by the sum, from 0 through $t$ |
 | $x_j$ | Token ID stored at input position $j$ |
-| $E[x_j]$ | D-dimensional vector retrieved for that ID |
+| $E[x_j]$ | $D$-dimensional vector retrieved for that ID |
 | $t+1$ | Number of visible positions from 0 through $t$ |
-| $h_t$ | D-dimensional vector formed by averaging corresponding coordinates |
+| $h_t$ | $D$-dimensional vector formed by averaging corresponding coordinates |
 
 The summation symbol adds a sequence of vectors. Expand the first three positions:
 
@@ -6849,11 +6775,11 @@ h_1=\frac{E[x_0]+E[x_1]}{2},\qquad
 h_2=\frac{E[x_0]+E[x_1]+E[x_2]}{3}.
 $$
 
-The divisor counts **positions contributing to the mean**, not coordinates within a vector. Even with D=8, position $t=1$ divides by 2. Every coordinate uses the same position count, so D is preserved.
+The divisor counts **positions contributing to the mean**, not coordinates within a vector. Even with $D=8$, position $t=1$ divides by 2. Every coordinate uses the same position count, so $D$ is preserved.
 
 “Causal” means that a computation depends only on its own and earlier inputs: $h_0$ cannot use $x_1$. This restriction still applies when the entire training window is already in memory; otherwise a next-token prediction could read its target directly.
 
-![Visible-position weights and different contextual states for the same current token](assets/04-01-context-baseline.en.png)
+![Visible-position weights and different contextual states for the same current token](assets/04-01-context-baseline.en.png){width=100%}
 
 Read the figure by output row $t$ and input column $j$. The first row, `[1, 0]`, uses only the first input; the second, `[1/2, 1/2]`, averages the first two inputs. The orange zero blocks a future position. The right-hand panels apply the same embedding table to two sequences. Both end in ID 1, but their averaged states differ. Each coefficient multiplies a whole vector.
 
@@ -6869,11 +6795,11 @@ def prefix_mean(embedding_table: torch.Tensor, input_ids: torch.Tensor) -> torch
 
 | Variable | Type and shape | Meaning |
 | --- | --- | --- |
-| `embedding_table` | Floating tensor `[V, D]` | Shared lookup table for V tokens, with D coordinates per row |
-| `input_ids` | `torch.long` tensor `[B, T]` | B samples, each with T input positions |
+| `embedding_table` | Floating tensor `[V, D]` | Shared lookup table for $V$ tokens, with $D$ coordinates per row |
+| `input_ids` | `torch.long` tensor `[B, T]` | $B$ samples, each with $T$ input positions |
 | Return value | Floating tensor `[B, T, D]` | One prefix-mean vector for each position of each sample |
 
-Assume T>0, IDs in `0` through `V-1`, and compatible input devices. Preserve the embedding's floating dtype and device, leave both inputs unchanged, and retain the autograd path to `embedding_table`.
+Assume $T$>0, IDs in `0` through `V-1`, and compatible input devices. Preserve the embedding's floating dtype and device, leave both inputs unchanged, and retain the autograd path to `embedding_table`.
 
 IDs can come from a byte tokenizer, BPE, or another fixed tokenizer. This function only looks up and aggregates vectors; 0, 1, and 2 are three toy IDs chosen for hand calculation.
 
@@ -6885,12 +6811,12 @@ $$
 
 Here $b$ selects a sample, $t$ an output position, and $d$ a vector coordinate. Only $j$ moves through the prefix of that same sample. Neither samples nor different feature coordinates are mixed.
 
-Our fixture is deliberately small, with B=T=D=2, but these axes have different meanings. A tensor `[B,T,D]=[2,3,4]` would represent two samples, three positions per sample, and four coordinates per position; its divisors would be `[1,2,3]`.
+Our fixture is deliberately small, with $B=T=D=2$, but these axes have different meanings. A tensor `[B,T,D]=[2,3,4]` would represent two samples, three positions per sample, and four coordinates per position; its divisors would be `[1,2,3]`.
 
 ### Classroom question: what do the two numbers in `E[0] = [0, 0]` mean?
 
 `E` is the embedding lookup table. `E[0]` retrieves **the row for token ID 0**. The whole vector on the right, `[0, 0]`, contains two coordinates, so its
-dimension is D=2. It represents one token, not two tokens.
+dimension is $D=2$. It represents one token, not two tokens.
 
 | Token ID (row to select) | First coordinate | Second coordinate | Retrieved vector |
 | --- | --- | --- | --- |
@@ -6906,27 +6832,27 @@ the token occurs twice.
 
 Temporarily picture a two-dimensional vector as a point in a plane: these
 three tokens sit at `(0,0)`, `(2,0)`, and `(0,4)`. This is an analogy for
-coordinates, not a physical location. With D=3, one token would have three
+coordinates, not a physical location. With $D=3$, one token would have three
 coordinates; increasing the dimension does not increase the token count.
 
 **The fixture's coordinates are chosen by hand for easy arithmetic. No
 human-readable meaning is assigned to each dimension.** A zero does not mean
 “no meaning,” and the first coordinate does not necessarily represent grammar
-while the second represents another fixed property. If E is trainable, loss
+while the second represents another fixed property. If $E$ is trainable, loss
 gradients adjust its coordinates so that the whole vector becomes useful for
 prediction. Individual coordinates generally have no predetermined semantic
 names.
 
 The relationship to understand first is **one token ID → one retrieved vector
-→ D trainable numerical coordinates**. D=2 is a fixture choice; it does not
-limit vocabulary size V or the number of input positions T.
+→ $D$ trainable numerical coordinates**. $D=2$ is a fixture choice; it does not
+limit vocabulary size $V$ or the number of input positions $T$.
 
 ### Classroom question: how do the shapes in `embedding_table[input_ids]` fit?
 
 Consider why `embdded = embedding_table[input_ids]` works when
 the two input shapes differ so much. This is integer-tensor indexing: each
 integer in `input_ids` specifies a row of the embedding table and is replaced
-by that entire D-dimensional row vector. Looking up rows by ID does not require
+by that entire $D$-dimensional row vector. Looking up rows by ID does not require
 the two input shapes to match.
 
 First retrieve one row: `embedding_table[1]` gives `[2,0]`, shape `[D]=[2]`. Then retrieve a sequence: `embedding_table[[0,1]]` selects rows 0 and 1 in
@@ -6947,12 +6873,12 @@ input_ids [B,T] = [2,2]          embedded [B,T,D] = [2,2,2]
 ```
 
 Precisely, `embedded[b,t,:] = embedding_table[input_ids[b,t],:]`. For example, `input_ids[1,0]=2`, so
-`embedded[1,0,:]=embedding_table[2,:]=[0,4]`. The B and T structure is
-preserved, and each position gains D vector coordinates. For this lookup,
+`embedded[1,0,:]=embedding_table[2,:]=[0,4]`. The $B$ and $T$ structure is
+preserved, and each position gains $D$ vector coordinates. For this lookup,
 the result shape is **index-tensor shape + selected-row shape**:
 `[B,T] + [D] → [B,T,D]`.
 
-V=3 counts the available table rows; it is not a new axis that must appear
+$V=3$ counts the available table rows; it is not a new axis that must appear
 in the output. Here IDs 0, 1, and 2 are selected, with ID 1 selected at two
 positions, producing four vectors rather than a single copy of the three-row
 table. A table `[100,8]` and ID tensor `[2,3]` would give `[2,3,8]`: two
@@ -6981,7 +6907,7 @@ input_ids = [
 ]
 ```
 
-V=3, D=2, B=2, T=2. The value **2 in `input_ids[1,0]` is a token ID**, not a count of two tokens.
+$V=3$, $D=2$, $B=2$, $T=2$. The value **2 in `input_ids[1,0]` is a token ID**, not a count of two tokens.
 
 Lookup produces shape `[B,T,D]=[2,2,2]`:
 
@@ -7035,9 +6961,9 @@ sample 1: [[0, 4], [2, 4]]
 
 Next prepare divisors `[1,2]`: divide the whole vector at position 0 by 1 and the whole vector at position 1 by 2.
 
-![Lookup, prefix sums, and division broadcast along positions](assets/04-01-prefix-broadcast.en.png)
+![Lookup, prefix sums, and division broadcast along positions](assets/04-01-prefix-broadcast.en.png){width=100%}
 
-Each row within a box is a D-dimensional vector; the panels preserve sample and position structure. The central counts are shared across samples. The arithmetic is `prefix sums / counts = prefix means`; counts come from the position count T, not from the numerical values of the prefix sums.
+Each row within a box is a $D$-dimensional vector; the panels preserve sample and position structure. The central counts are shared across samples. The arithmetic is `prefix sums / counts = prefix means`; counts come from the position count $T$, not from the numerical values of the prefix sums.
 
 #### Why reshape counts to `[1,T,1]`?
 
@@ -7049,9 +6975,9 @@ divisors:    [1, T, 1]
 result:      [B, T, D]
 ```
 
-Broadcasting reuses values along size-one axes. The first 1 shares the same counts across samples; the last 1 shares each position's divisor across its coordinates. The T axes align position by position.
+Broadcasting reuses values along size-one axes. The first 1 shares the same counts across samples; the last 1 shares each position's divisor across its coordinates. The $T$ axes align position by position.
 
-Dividing directly by `[T]` aligns from the right. Because T=D=2 in this fixture, the computation may run without an error while applying `[1,2]` to **feature coordinates** instead. The second sample's prefix sum `[2,4]` would incorrectly become `[2/1,4/2]=[2,2]`; the correct result is `[2/2,4/2]=[1,2]`. A runnable shape does not establish correct semantics.
+Dividing directly by `[T]` aligns from the right. Because $T=D=2$ in this fixture, the computation may run without an error while applying `[1,2]` to **feature coordinates** instead. The second sample's prefix sum `[2,4]` would incorrectly become `[2/1,4/2]=[2,2]`; the correct result is `[2/2,4/2]=[1,2]`. A runnable shape does not establish correct semantics.
 
 ### Guided implementation
 
@@ -7061,8 +6987,8 @@ Each statement in this function uses four spaces of indentation. This tensor rou
 
 1. **Look up vectors as `embedded`.** Use the indexing expression `embedding_table[input_ids]`. The ID shape `[B,T]` becomes `[B,T,D]`, with the values shown above. Average vectors rather than integer IDs.
 2. **Compute `prefix_sums`.** Call `.cumsum(dim=1)` on the lookup tensor. Axis 1 is the middle position axis; the result still has shape `[B,T,D]`. The fixture's second sample ends in `[2,4]`. Axis 0 would mix samples; axis 2 would mix features. Neither implements the formula.
-3. **Read T and construct `counts`.** `input_ids.shape[1]` gives the number of positions. `torch.arange(start, end)` includes its start and excludes its end, so use start 1 and end `T+1` to obtain 1 through T. Supply `device=embedded.device` and `dtype=embedded.dtype` to match the vectors. Here counts should be floating `[1,2]`, not `[0,1]`, which would divide the first position by zero.
-4. **Arrange the divisors.** Call `.reshape(1, T, 1)` on `counts`, optionally naming the result `divisors`. Reshaping reorganizes the same two values; it does not create more visible positions. In `[1,2,1]`, the middle 2 is T, not a separate count for each of two samples.
+3. **Read $T$ and construct `counts`.** `input_ids.shape[1]` gives the number of positions. `torch.arange(start, end)` includes its start and excludes its end, so use start 1 and end `T+1` to obtain 1 through $T$. Supply `device=embedded.device` and `dtype=embedded.dtype` to match the vectors. Here counts should be floating `[1,2]`, not `[0,1]`, which would divide the first position by zero.
+4. **Arrange the divisors.** Call `.reshape(1, T, 1)` on `counts`, optionally naming the result `divisors`. Reshaping reorganizes the same two values; it does not create more visible positions. In `[1,2,1]`, the middle 2 is $T$, not a separate count for each of two samples.
 5. **Divide and return.** Use `/` for element-wise division of `prefix_sums` by `divisors`; broadcasting produces `[B,T,D]`. Use `return` to hand the result to the caller, still indented by four spaces. Printing does not replace returning.
 
 Keep the graph through lookup, accumulation, and division. Do not call `.detach()`, convert through NumPy, or wrap a result with `torch.tensor(existing_tensor)`. The averaging rule introduces no new trainable parameters, but the embedding table can still receive gradients from a subsequent loss.
@@ -7081,11 +7007,11 @@ A correct implementation should finish with:
 Lesson 04.01 checks passed.
 ```
 
-The supplied driver checks the complete numerical fixture above; whether backpropagation through its sum leaves a gradient on E; whether changing the second input preserves the first output; and whether a one-position input returns its own embedding.
+The supplied driver checks the complete numerical fixture above; whether backpropagation through its sum leaves a gradient on $E$; whether changing the second input preserves the first output; and whether a one-position input returns its own embedding.
 
 These check numerical behavior, causal dependence, and basic gradient connectivity, not model quality. `E.grad is not None` does not establish every exact gradient value.
 
-Optional hand calculation: for a loss L on one $h_t$, the direct gradient coefficient for a visible input vector is $1/(t+1)$; a future position has coefficient 0. If several positions retrieve the same embedding row, its gradient accumulates contributions from several paths. For this fixture's `H.sum()`, every coordinate of E's three rows has gradient 1.5, 1, and 1.5 respectively.
+Optional hand calculation: for a loss $L$ on one $h_t$, the direct gradient coefficient for a visible input vector is $1/(t+1)$; a future position has coefficient 0. If several positions retrieve the same embedding row, its gradient accumulates contributions from several paths. For this fixture's `H.sum()`, every coordinate of $E$'s three rows has gradient 1.5, 1, and 1.5 respectively.
 
 ### What averaging preserves and loses
 
@@ -7103,15 +7029,13 @@ Fixed averaging also assigns the same weight to every visible position, without 
 
 After implementation, independently explain why `dim=1` is correct, why counts use `[1,T,1]`, and why changing the second token leaves the first output unchanged. Record your explanation separately from code-check results.
 
-Next, [04.02: registered parameters and model modules](#section-04-02) organizes `nn.Module`; Q/K/V projections and attention follow.
+Next, [04.02: registered parameters and model modules](#section-04-02) organizes `nn.Module`; $Q$/$K$/$V$ projections and attention follow.
 
 ### API references and classroom record
 
 See official [cumsum](https://docs.pytorch.org/docs/stable/generated/torch.cumsum.html), [arange](https://docs.pytorch.org/docs/stable/generated/torch.arange.html), and [PyTorch 2.0 broadcasting rules](https://docs.pytorch.org/docs/2.0/notes/broadcasting.html). The first two are rolling API references; the calls used here were also checked in the existing PyTorch 2.0 runtime. Next lesson: [04.02](#section-04-02).
 
-<a id="section-04-02"></a>
-
-## 04.02 Registered parameters and modules
+## 04.02 Registered parameters and modules {#section-04-02}
 
 This lesson uses familiar calculations to introduce organizing parameters and computation with `nn.Module`.
 
@@ -7119,7 +7043,7 @@ This lesson uses familiar calculations to introduce organizing parameters and co
 
 Chapter 03 passed the embedding table, output weight, and bias separately. As models grow, one model object can own these parameters, make them discoverable by an optimizer, and provide a common saving/loading interface. `nn.Module` is PyTorch's model base class; registration brings submodules and their parameters into the model's management.
 
-Lesson 04.01 studied aggregation across positions. Here a familiar position-wise embedding-to-logits computation illustrates module organization; this `TokenModel` contract has no prefix-mean step. Later Q/K/V and attention lessons introduce contextual computation within the module framework.
+Lesson 04.01 studied aggregation across positions. Here a familiar position-wise embedding-to-logits computation illustrates module organization; this `TokenModel` contract has no prefix-mean step. Later $Q$/$K$/$V$ and attention lessons introduce contextual computation within the module framework.
 
 ### Formulas, symbols, and shapes
 
@@ -7129,18 +7053,18 @@ $$
 
 | Symbol or variable | Shape | Meaning |
 | --- | --- | --- |
-| X / `input_ids` | Long `[B,T]` | B samples with T token IDs each |
-| E / `self.embedding.weight` | Floating `[V,D]` | Embedding table for V tokens |
+| $X$ / `input_ids` | Long `[B,T]` | $B$ samples with $T$ token IDs each |
+| $E$ / `self.embedding.weight` | Floating `[V,D]` | Embedding table for $V$ tokens |
 | U | Floating `[B,T,D]` | Retrieved embedding at each position |
-| W / `self.head.weight` | Floating `[V,D]` | One output-weight row for each candidate token |
-| β / `self.head.bias` | Floating `[V]` | One bias per candidate token |
-| Z / return value | Floating `[B,T,V]` | Raw scores for all V candidates at every position |
+| $W$ / `self.head.weight` | Floating `[V,D]` | One output-weight row for each candidate token |
+| $\beta$ / `self.head.bias` | Floating `[V]` | One bias per candidate token |
+| $Z$ / return value | Floating `[B,T,V]` | Raw scores for all $V$ candidates at every position |
 
-`nn.Linear(D,V)` transforms the last dimension D into V while preserving B and T. It stores weights as `[out_features,in_features]=[V,D]`, opposite to Chapter 03's handwritten `[D,V]` weight. Hence the transpose in the formula; calling `self.head(U)` performs the corresponding computation.
+`nn.Linear(D,V)` transforms the last dimension $D$ into $V$ while preserving $B$ and $T$. It stores weights as `[out_features,in_features]=[V,D]`, opposite to Chapter 03's handwritten `[D,V]` weight. Hence the transpose in the formula; calling `self.head(U)` performs the corresponding computation.
 
-![Lookup, output layer, and parameter count within a module](assets/04-02-registered-model.en.png)
+![Lookup, output layer, and parameter count within a module](assets/04-02-registered-model.en.png){width=100%}
 
-Read the figure as one sample with two input positions. Embedding stores six numbers; Linear stores six weights and three biases; the output has three scores per position. P=15 counts trainable scalars, not output positions or parameter tensors.
+Read the figure as one sample with two input positions. Embedding stores six numbers; Linear stores six weights and three biases; the output has three scores per position. $P=15$ counts trainable scalars, not output positions or parameter tensors.
 
 ### Read the supplied class
 
@@ -7155,18 +7079,18 @@ class TokenModel(nn.Module):
 ```
 
 - `class TokenModel(nn.Module)` defines a class inheriting PyTorch's model base class.
-- `__init__` runs when constructing an instance. `vocab_size` is positive integer V; `width` is positive integer D.
+- `__init__` runs when constructing an instance. `vocab_size` is positive integer $V$; `width` is positive integer $D$.
 - `self` is the current model instance. `self.embedding` and `self.head` are its two submodules.
 - `super().__init__()` initializes the parent, establishing internal parameter/submodule management.
 - `nn.Embedding(V,D)` creates the table; `self.embedding(input_ids)` retrieves rows of its `.weight`.
-- `nn.Linear(D,V)` creates the output weight and bias; `self.head(vectors)` maps each D-vector to V logits.
+- `nn.Linear(D,V)` creates the output weight and bias; `self.head(vectors)` maps each $D$-vector to $V$ logits.
 - `forward` describes how existing submodules transform inputs. Normally call `model(input_ids)`; PyTorch's module-call mechanism executes `forward`.
 
 Initialization creates model state; repeated calls use the existing parameters. Creating fresh layers inside every forward would prevent continuous training of the same parameter set.
 
 ### Complete worked trace: lookup to three scores
 
-This lesson uses a different hand-picked fixture from 04.01. The supplied driver sets the values of E and W separately to:
+This lesson uses a different hand-picked fixture from 04.01. The supplied driver sets the values of $E$ and $W$ separately to:
 
 ```text
 E = [[1,0],       W = [[1,0],       β = [0,0,0]
@@ -7178,7 +7102,7 @@ X = [[0,2]]       B=1, T=2, V=3, D=2
 
 The two input IDs are 0 and 2. Lookup retrieves `[1,0]` and `[1,1]`, giving U shape `[1,2,2]`.
 
-For the first position, dot `[1,0]` with each of W's three rows and add the zero biases:
+For the first position, dot `[1,0]` with each of $W$'s three rows and add the zero biases:
 
 $$
 z_0=[1\times1+0\times0,\;1\times0+0\times1,\;1\times1+0\times1]
@@ -7194,7 +7118,7 @@ $$
 
 Return `[[[1,0,1],[1,1,2]]]`, shape `[1,2,3]`. These are logits; later loss or generation steps process them as needed.
 
-E and W merely have equal fixture values. The driver's `copy_` copies values; the tensors remain independent parameters rather than tied instances of one parameter.
+$E$ and $W$ merely have equal fixture values. The driver's `copy_` copies values; the tensors remain independent parameters rather than tied instances of one parameter.
 
 ### Discovering registered parameters
 
@@ -7221,10 +7145,10 @@ Distinguish three actions: `forward` computes outputs; `backward()` on the loss 
 Open 04_02_registered_model.py. Preserve the supplied constructor and driver. Fill only the learner region in `forward`, removing the placeholder `raise`.
 
 1. **Retrieve embeddings.** Inside the method, indent by eight spaces and call `self.embedding(input_ids)`. A local name such as `embedded` holds shape `[B,T,D]`, from input shape `[B,T]`. The fixture yields `[[[1,0],[1,1]]]`.
-2. **Compute logits.** At the same indentation, pass the vectors to `self.head`. Its final-axis projection preserves B and T. The fixture yields `[[[1,0,1],[1,1,2]]]`, shape `[B,T,V]`.
+2. **Compute logits.** At the same indentation, pass the vectors to `self.head`. Its final-axis projection preserves $B$ and $T$. The fixture yields `[[[1,0,1],[1,1,2]]]`, shape `[B,T,V]`.
 3. **Return the result.** Use `return` with eight-space indentation to hand back raw logits. Keep the tensor and its graph connected so the caller can compute a loss and gradients.
 
-The dot after `self` accesses an attribute of this model; parentheses after a module name call that module on its input. No explicit B/T loops, softmax, parameter updates, or `backward()` calls are needed in this method.
+The dot after `self` accesses an attribute of this model; parentheses after a module name call that module on its input. No explicit $B$/$T$ loops, softmax, parameter updates, or `backward()` calls are needed in this method.
 
 ### Run and understanding checks
 
@@ -7244,11 +7168,9 @@ The driver checks exact fixture logits, the scalar parameter count 15, gradient 
 
 After implementation, explain why both parameter matrices have shape `[V,D]` while outputs have shape `[B,T,V]`, and why a forward call alone does not change weights. Record explanations separately from code-check results; optional review does not block normal advancement.
 
-Next is [04.03: Q/K/V projections](#section-04-03). Official [Module](https://docs.pytorch.org/docs/stable/generated/torch.nn.Module.html) and [Linear](https://docs.pytorch.org/docs/main/generated/torch.nn.Linear.html) links are rolling references; the basic behavior here was checked in the existing PyTorch 2.0 runtime. The computation and original driver were preserved, with only status and the missing end marker restored.
+Next is [04.03: $Q$/$K$/$V$ projections](#section-04-03). Official [Module](https://docs.pytorch.org/docs/stable/generated/torch.nn.Module.html) and [Linear](https://docs.pytorch.org/docs/main/generated/torch.nn.Linear.html) links are rolling references; the basic behavior here was checked in the existing PyTorch 2.0 runtime. The computation and original driver were preserved, with only status and the missing end marker restored.
 
-<a id="section-04-03"></a>
-
-## 04.03 Query, key and value projections
+## 04.03 Query, key and value projections {#section-04-03}
 
 ### Method sources
 
@@ -7256,21 +7178,21 @@ The query/key/value projections used here follow the attention formulation of [V
 
 ### Begin with the linear transformation you know
 
-Q, K, and V use familiar vector transformations: **multiply the same input x by three separate weight matrices to obtain three representations.** Here “projection” means a linear transformation; it need not be an orthogonal geometric projection.
+$Q$, $K$, and $V$ use familiar vector transformations: **multiply the same input x by three separate weight matrices to obtain three representations.** Here “projection” means a linear transformation; it need not be an orthogonal geometric projection.
 
 Lesson 04.01 assigned fixed equal weights to visible positions. Attention aims to assign weights based on content, requiring representations for matching and content to transmit after matching.
 
 | Name | Role here |
 | --- | --- |
-| Query, Q | The representation an output position uses to seek related inputs |
-| Key, K | The representation an input position presents for query matching |
+| Query, $Q$ | The representation an output position uses to seek related inputs |
+| Key, $K$ | The representation an input position presents for query matching |
 | Value, values | The content later aggregated using attention weights |
 
-“Seeking” and “matching” describe computational roles; the vectors themselves contain numbers. Coordinates have no assigned grammar labels, and no literal natural-language question is written at each position. The value tensor V and the earlier vocabulary-size symbol V are different; code uses `values` to distinguish them.
+“Seeking” and “matching” describe computational roles; the vectors themselves contain numbers. Coordinates have no assigned grammar labels, and no literal natural-language question is written at each position. The value tensor $V$ and the earlier vocabulary-size symbol $V$ are different; code uses `values` to distinguish them.
 
 ### Formulas and shapes first
 
-X in the formulas corresponds to argument `x`:
+$X$ in the formulas corresponds to argument `x`:
 
 $$
 Q=XW_Q,\qquad K=XW_K,\qquad V_{\mathrm{values}}=XW_V.
@@ -7286,15 +7208,15 @@ $$
 | Second return k | Floating `[B,T,d]` | Key vectors |
 | Third return values | Floating `[B,T,dv]` | Value vectors |
 
-B counts samples, T positions, D input coordinates, d query/key coordinates, and dv value coordinates. Queries and keys will be dotted together, requiring equal width; values can have another width dv. Each weight is shared across all samples and positions. Inputs and weights have matching floating dtype and device.
+$B$ counts samples, $T$ positions, $D$ input coordinates, d query/key coordinates, and $d_v$ value coordinates. Queries and keys will be dotted together, requiring equal width; values can have another width $d_v$. Each weight is shared across all samples and positions. Inputs and weights have matching floating dtype and device.
 
 **x already contains vectors, not token IDs.** Apply matrix multiplication directly rather than looking up embeddings again. The caller supplies these weights, with no bias in this exercise; a complete model can register them using the mechanisms from 04.02.
 
-![Figure 1: three projection branches showing tensor shapes only](assets/04-03-qkv-projection.en.png)
+![Figure 1: three projection branches showing tensor shapes only](assets/04-03-qkv-projection.en.png){width=100%}
 
 **Figure 1 shows shapes (sizes) only.** Every card explicitly says `shape = ...`; parenthesized numbers specify axis sizes. For example, q's `shape = (1,2,1)` means one sample, two positions, and one coordinate per query vector. These are not three numbers stored inside q.
 
-All three arrows begin at the same x. The middle cards show wq/wk/wv shapes; the right cards show the corresponding output shapes. B and T remain, while the final width changes from D to d or dv. Actual tensor entries appear in the separate numerical figure below.
+All three arrows begin at the same x. The middle cards show wq/wk/wv shapes; the right cards show the corresponding output shapes. $B$ and $T$ remain, while the final width changes from $D$ to d or $d_v$. Actual tensor entries appear in the separate numerical figure below.
 
 ### Which axis does matrix multiplication contract?
 
@@ -7304,13 +7226,13 @@ $$
 [B,T,D]\;@\;[D,d]\;\longrightarrow\;[B,T,d].
 $$
 
-The matching D axes participate in a sum; B and T are preserved. For one output coordinate:
+The matching $D$ axes participate in a sum; $B$ and $T$ are preserved. For one output coordinate:
 
 $$
 Q_{b,t,r}=\sum_{f=0}^{D-1}X_{b,t,f}(W_Q)_{f,r}.
 $$
 
-b selects the sample, t the position, r the output coordinate, and f traverses the D input coordinates. This sum does not traverse other positions, so **projection adds no cross-position aggregation**. If x already contains context, projection retains that source information without reading new positions itself.
+b selects the sample, t the position, r the output coordinate, and f traverses the $D$ input coordinates. This sum does not traverse other positions, so **projection adds no cross-position aggregation**. If x already contains context, projection retains that source information without reading new positions itself.
 
 The preceding lesson's `nn.Linear` stores `[out_features,in_features]` weights; this function receives matrices laid out for direct right multiplication, `[in_features,out_features]`. An equivalent `nn.Linear(D,d,bias=False)` would store the transpose of this exercise's wq.
 
@@ -7329,11 +7251,11 @@ B=1, T=2, D=2, d=1, dv=2
 
 `[1,2]` and `[3,4]` are floating vectors at two positions; their elements are coordinate values.
 
-![Figure 2: actual entries for sample b=0 and the three matrix products](assets/04-03-qkv-values.en.png)
+![Figure 2: actual entries for sample $b=0$ and the three matrix products](assets/04-03-qkv-values.en.png){width=100%}
 
-**Figure 2 shows numerical entries only.** Square brackets contain the numbers used by the computation. Its three rows are `x @ wq`, `x @ wk`, and `x @ wv`. To make the matrix products readable, it expands only the single sample b=0, omitting the outer batch wrapper. Figure 1 still specifies the full tensors' three-dimensional shapes.
+**Figure 2 shows numerical entries only.** Square brackets contain the numbers used by the computation. Its three rows are `x @ wq`, `x @ wk`, and `x @ wv`. To make the matrix products readable, it expands only the single sample $b=0$, omitting the outer batch wrapper. Figure 1 still specifies the full tensors' three-dimensional shapes.
 
-For example, q's complete contents are `[[[1],[3]]]`, while Figure 2 displays the two rows of sample b=0: entry 1 in the first row and entry 3 in the second. Its full `shape` remains `(1,2,1)`. **Shape describes organization; entries describe what is stored.**
+For example, q's complete contents are `[[[1],[3]]]`, while Figure 2 displays the two rows of sample $b=0$: entry 1 in the first row and entry 3 in the second. Its full `shape` remains `(1,2,1)`. **Shape describes organization; entries describe what is stored.**
 
 The first projection gives:
 
@@ -7362,9 +7284,9 @@ $$
 
 Thus values is `[[[1,2],[3,4]]]`, shape `[1,2,2]`. This hand-picked wv preserves the numbers; a general trainable wv transforms them. Likewise, selecting the first coordinate for q and the second for k is a property of this fixture, not a general rule. Learned projections can combine all input coordinates.
 
-### How do Q/K determine matching, and why project V separately?
+### How do $Q$/$K$ determine matching, and why project $V$ separately?
 
-The next lesson dots query position i with key position j:
+The next lesson dots query position $i$ with key position $j$:
 
 $$
 s_{ij}=q_i\cdot k_j.
@@ -7377,7 +7299,7 @@ QK^\top=\begin{bmatrix}1\times2&1\times4\\3\times2&3\times4\end{bmatrix}
 =\begin{bmatrix}2&4\\6&12\end{bmatrix}.
 $$
 
-This displays one sample's two-dimensional score table; the actual batched shape is `[1,2,2]`. Row i is the query position and column j the matched position. Later, normalized scores become weights for combining values. Separate matching and transmitted-content representations can learn different coordinate combinations.
+This displays one sample's two-dimensional score table; the actual batched shape is `[1,2,2]`. Row i is the query position and column $j$ the matched position. Later, normalized scores become weights for combining values. Separate matching and transmitted-content representations can learn different coordinate combinations.
 
 These are unmasked scores, not probabilities. Lesson 04.04 covers scaling, softmax, and weighted values; 04.05 enforces causal masking. This assignment returns only the three projections.
 
@@ -7416,40 +7338,38 @@ A correct implementation should print:
 Lesson 04.03 checks passed.
 ```
 
-The supplied driver checks the three fixture values, verifies that `q.sum()+k.sum()+v.sum()` gives gradient 2 at every x coordinate, and changes to B=2, T=3, D=5, d=2, dv=4 to check query/value shapes.
+The supplied driver checks the three fixture values, verifies that `q.sum()+k.sum()+v.sum()` gives gradient 2 at every x coordinate, and changes to $B=2$, $T=3$, $D=5$, $d=2$, $d_v=4$ to check query/value shapes.
 
-After implementation, explain why Q/K have the same width while values may differ, and why every branch starts from x. These review prompts are not additional gates to normal progress.
+After implementation, explain why $Q$/$K$ have the same width while values may differ, and why every branch starts from x. These review prompts are not additional gates to normal progress.
 
 The [original paper, §3.2](https://arxiv.org/html/1706.03762v7#S3.SS2) describes queries, keys, values, and learned projections. See the verification appendix. Next: [04.04, scaled dot-product attention](#section-04-04).
 
 Shapes and entries now have separate figures; shapes use explicitly labeled tuples, while entries use matrices with the sample scope stated. Fixture numbers, formulas, and exercise interfaces remain aligned.
 
-<a id="section-04-04"></a>
-
-## 04.04 Scaled dot-product attention
+## 04.04 Scaled dot-product attention {#section-04-04}
 
 ### Method sources
 
 Scaled dot-product attention and the square-root key-dimension factor are described in [Vaswani et al., 2017; R04](https://arxiv.org/abs/1706.03762), Section 3.2.1. This section derives a small instance rather than reproducing the paper’s experiments.
 
-Keep the original check fixture fixed: **B=1, Tq=1, Tk=2, d=2, dv=1**. Count vectors separately from numbers per vector, then follow the same inputs through the calculation.
+Keep the original check fixture fixed: **$B=1$, $T_q=1$, $T_k=2$, $d=2$, $d_v=1$**. Count vectors separately from numbers per vector, then follow the same inputs through the calculation.
 
 ### From three projections to information aggregation
 
-The preceding lesson prepared Q, K, and values without adding cross-position interaction. Now each query compares with all supplied keys and combines the corresponding values:
+The preceding lesson prepared $Q$, $K$, and values without adding cross-position interaction. Now each query compares with all supplied keys and combines the corresponding values:
 
 $$
 \boxed{O=\operatorname{softmax}_{\text{keys}}\!\left(\frac{QK^\top}{\sqrt d}\right)V_{\mathrm{values}}}
 $$
 
-Separate the raw matches R, scaled scores S, normalized weights A, and output O:
+Separate the raw matches $R$, scaled scores $S$, normalized weights A, and output O:
 
 $$
 R=QK^\top,\qquad S=R/\sqrt d,\qquad
 A=\operatorname{softmax}_{\text{keys}}(S),\qquad O=AV_{\mathrm{values}}.
 $$
 
-Q/K/values contain floating vectors. d counts query/key coordinates; dv counts value coordinates. Each row of A allocates one query's weight among input positions, rather than predicting a next token over the vocabulary.
+$Q$/$K$/values contain floating vectors. d counts query/key coordinates; $d_v$ counts value coordinates. Each row of A allocates one query's weight among input positions, rather than predicting a next token over the vocabulary.
 
 This lesson implements a general **unmasked attention kernel**. Lesson 04.05 adds causal masking.
 
@@ -7461,43 +7381,43 @@ def attention(q: torch.Tensor, k: torch.Tensor, values: torch.Tensor) -> tuple[t
 
 | Argument or result | Type and full shape | Meaning |
 | --- | --- | --- |
-| `q` | Floating `(...,Tq,d)` | Tq queries, d coordinates each |
-| `k` | Floating `(...,Tk,d)` | Tk keys, d coordinates each |
-| `values` | Floating `(...,Tk,dv)` | Tk value vectors, aligned with keys |
+| `q` | Floating `(...,Tq,d)` | $T_q$ queries, d coordinates each |
+| `k` | Floating `(...,Tk,d)` | $T_k$ keys, d coordinates each |
+| `values` | Floating `(...,Tk,dv)` | $T_k$ value vectors, aligned with keys |
 | `weights` / A | Floating `(...,Tq,Tk)` | Weights over keys for each query |
-| `output` / O | Floating `(...,Tq,dv)` | One aggregated dv-vector per query |
+| `output` / O | Floating `(...,Tq,dv)` | One aggregated $d_v$-vector per query |
 
-Return **`output, weights`** in that order. The `...` denotes matching leading batch-like axes; initially read it as B. Queries/keys share width d, keys/values share position count Tk, and floating dtypes/devices are compatible. Preserve input values and autograd paths.
+Return **`output, weights`** in that order. The `...` denotes matching leading batch-like axes; initially read it as $B$. Queries/keys share width $d$, keys/values share position count $T_k$, and floating dtypes/devices are compatible. Preserve input values and autograd paths.
 
-#### A closer look at how can I know whether K needs transposing?
+#### A closer look at how can I know whether $K$ needs transposing?
 
-A bare `torch.Tensor` annotation does not specify the dimensions of Q, K and V. That annotation cannot establish their layout. The exercise now states the contract directly in `attention`'s docstring: q `(...,Tq,d)`, k `(...,Tk,d)`, values `(...,Tk,dv)`, including intermediate and return shapes.
+The learner noted that a bare `torch.Tensor` annotation did not say what the $Q$/$K$/$V$ dimensions were. That annotation cannot establish their layout. The exercise now states the contract directly in `attention`'s docstring: q `(...,Tq,d)`, k `(...,Tk,d)`, values `(...,Tk,dv)`, including intermediate and return shapes.
 
-For a matrix product `(m,n) @ (n,p)`, the inner axes match. Storing each key as a row gives `(Tq,d) @ (Tk,d)`, while scoring each query against each key requires `(Tq,d) @ (d,Tk)`. For example, q `(3,4)` and k `(5,4)` require K to become `(4,5)`, producing `(3,5)`. If Tk=d=2 happens to allow both numeric sizes, their row/column meanings still distinguish the correct computation.
+For a matrix product `(m,n) @ (n,p)`, the inner axes match. Storing each key as a row gives `(Tq,d) @ (Tk,d)`, while scoring each query against each key requires `(Tq,d) @ (d,Tk)`. For example, q `(3,4)` and k `(5,4)` require $K$ to become `(4,5)`, producing `(3,5)`. If $T_k=d=2$ happens to allow both numeric sizes, their row/column meanings still distinguish the correct computation.
 
-Self-attention usually has Tq=Tk=T; this general function also supports different counts. The hand calculation uses one query and two keys to expose what the weights mean.
+Self-attention usually has $T_q=T_k=T$; this general function also supports different counts. The hand calculation uses one query and two keys to expose what the weights mean.
 
 ### Count first: one sample, one query, two key/value pairs
 
-Keep the original check fixture fixed, with d=2 and dv=1. Count the actual entries in each horizontal vector:
+Keep the original check fixture fixed, with $d=2$ and $d_v=1$. Count the actual entries in each horizontal vector:
 
 | Object | How many vectors | Contents of each vector | Numbers per vector |
 | --- | --- | --- | --- |
-| Q | 1 query | [1,0] | 2, so d=2 |
-| K | 2 keys | [0,0] and [1.5537…,0] | 2 each, so d=2 |
-| V | 2 value vectors | [2] and [6] | 1 each, so dv=1 |
+| $Q$ | 1 query | [1,0] | 2, so $d=2$ |
+| $K$ | 2 keys | [0,0] and [1.5537…,0] | 2 each, so $d=2$ |
+| $V$ | 2 value vectors | [2] and [6] | 1 each, so $d_v=1$ |
 
 Here 1.5537… denotes the full value $\sqrt2\ln3$. Only its displayed decimal is shortened; the actual input is not replaced by four decimal places.
 
-![One sample contains one query and two key/value pairs; count vectors separately from coordinates](assets/04-04-first-inputs.en.png)
+![One sample contains one query and two key/value pairs; count vectors separately from coordinates](assets/04-04-first-inputs.en.png){width=100%}
 
-The whole outer frame is one input sample, so B=1. Purple contains one query; blue and orange each identify a paired K and V row. Horizontal rulers count numbers per vector; headings count vectors. **Two V rows do not imply dv=2. Each V row contains one number, so dv=1.**
+The whole outer frame is one input sample, so $B=1$. Purple contains one query; blue and orange each identify a paired $K$ and $V$ row. Horizontal rulers count numbers per vector; headings count vectors. **Two $V$ rows do not imply $d_v=2$. Each $V$ row contains one number, so $d_v=1$.**
 
 The same query compares with two keys: two comparisons, not two queries. These produce two positional weights, then combine two value vectors into one output for this query.
 
 Read each full-shape entry by counting: q `(1,1,2)` means 1 sample, 1 query, 2 numbers per query; k `(1,2,2)` means 1 sample, 2 keys, 2 numbers per key; values `(1,2,1)` means 1 sample, 2 value vectors, 1 number per vector.
 
-Keep this input throughout the main lesson. The earlier multi-query, dv=4 visual extension remains at the end, after the original example.
+Keep this input throughout the main lesson. The earlier multi-query, $d_v=4$ visual extension remains at the end, after the original example.
 
 ### Step 1: match each query with each key
 
@@ -7515,9 +7435,9 @@ $$
 R_{b,i,j}=\sum_{r=0}^{d-1}Q_{b,i,r}K_{b,j,r}.
 $$
 
-i selects a query, j a key, and r the matching coordinate. Each entry is one query/key dot product; each row contains one query's matches with all Tk keys.
+i selects a query, j a key, and r the matching coordinate. Each entry is one query/key dot product; each row contains one query's matches with all $T_k$ keys.
 
-In the original assignment fixture below, Tk=d=2, so numeric shapes remain `(1,2,2)` after transposition, but axis roles and tensor entries still change. Follow symbolic axes rather than only whether size numbers change.
+In the original assignment fixture below, $T_k=d=2$, so numeric shapes remain `(1,2,2)` after transposition, but axis roles and tensor entries still change. Follow symbolic axes rather than only whether size numbers change.
 
 ### Step 2: why divide by a square root?
 
@@ -7541,7 +7461,7 @@ A_{b,i,j}=\frac{\exp(S_{b,i,j})}
 {\sum_{\ell=0}^{T_k-1}\exp(S_{b,i,\ell})}.
 $$
 
-For fixed b and i, the denominator spans all key positions. The result remains `(...,Tq,Tk)`, with nonnegative entries and row sums of 1. Normalizing across an axis does not remove it. The final axis here is Tk, hence `dim=-1`.
+For fixed b and i, the denominator spans all key positions. The result remains `(...,Tq,Tk)`, with nonnegative entries and row sums of 1. Normalizing across an axis does not remove it. The final axis here is $T_k$, hence `dim=-1`.
 
 Normalizing across queries would make different queries compete and change the intended meaning. Equal scores within a row correctly produce uniform weights.
 
@@ -7552,7 +7472,7 @@ $$
 O_{b,i,c}=\sum_{j=0}^{T_k-1}A_{b,i,j}(V_{\mathrm{values}})_{b,j,c}.
 $$
 
-c selects a value coordinate; j is the position being aggregated. The same positional weights apply to all coordinates of each value vector. There is one output per query, preserving Tq, and its width is dv because the content comes from values. This is where cross-position aggregation occurs.
+c selects a value coordinate; j is the position being aggregated. The same positional weights apply to all coordinates of each value vector. There is one output per query, preserving $T_q$, and its width is $d_v$ because the content comes from values. This is where cross-position aggregation occurs.
 
 ### Complete worked trace: one query, two candidate positions
 
@@ -7590,7 +7510,7 @@ $$
 A=\left[\frac1{1+3},\frac3{1+3}\right]=[0.25,0.75].
 $$
 
-![The same query compares with two keys, producing two weights through dot products and scaling](assets/04-04-first-weights.en.png)
+![The same query compares with two keys, producing two weights through dot products and scaling](assets/04-04-first-weights.en.png){width=100%}
 
 Both branches start from the same q0. Blue produces 0 and orange ln(3); their exponentials are 1 and 3, summing to 4. The positional weights are therefore 25% and 75%. Branch count represents comparisons, leaving the number of queries unchanged.
 
@@ -7603,9 +7523,9 @@ $$
 
 With the full tensor structure, `output = [[[5]]]`, shape `(1,1,1)`, and `weights = [[[0.25,0.75]]]`, shape `(1,1,2)`. Giving 75% to the second value puts the output closer to 6. These matching weights do not select a token from the vocabulary.
 
-![Multiply each positional weight by its paired value and sum the contributions into one output](assets/04-04-first-output.en.png)
+![Multiply each positional weight by its paired value and sum the contributions into one output](assets/04-04-first-output.en.png){width=100%}
 
-Blue 0.25 multiplies blue v0=[2]; orange 0.75 multiplies orange v1=[6]. Summing both contributions gives [5]. Each V row has one coordinate and the output retains one coordinate. One query produces one output; the full output.shape is `(1,1,1)`.
+Blue 0.25 multiplies blue v0=[2]; orange 0.75 multiplies orange v1=[6]. Summing both contributions gives [5]. Each $V$ row has one coordinate and the output retains one coordinate. One query produces one output; the full output.shape is `(1,1,1)`.
 
 ### Guided implementation
 
@@ -7613,8 +7533,8 @@ Open 04_04_scaled_attention.py. Edit only the learner region of `attention`, rem
 
 1. **Transpose the keys.** Call `.transpose(-2,-1)` on `k`, optionally naming the result `k_transposed`. Shape changes from `(...,Tk,d)` to `(...,d,Tk)`. The fixture matrix changes from `[[0,0],[a,0]]` to `[[0,a],[0,0]]`.
 2. **Compute and scale scores.** Use `@` to multiply q by transposed keys, then divide by `math.sqrt(q.shape[-1])`. A local name such as `scores` holds shape `(...,Tq,Tk)`; the fixture gives `[[[0,ln(3)]]]`.
-3. **Obtain weights.** Apply `torch.softmax(..., dim=-1)` to the scores, optionally naming the result `weights`. Normalize across Tk while preserving shape; the fixture gives `[[[0.25,0.75]]]`. Use the supplied softmax operation.
-4. **Aggregate values.** Multiply weights by `values` with `@`, optionally naming the result `output`. Contract Tk; the fixture gives `[[[5]]]`, shape `(...,Tq,dv)`.
+3. **Obtain weights.** Apply `torch.softmax(..., dim=-1)` to the scores, optionally naming the result `weights`. Normalize across $T_k$ while preserving shape; the fixture gives `[[[0.25,0.75]]]`. Use the supplied softmax operation.
+4. **Aggregate values.** Multiply weights by `values` with `@`, optionally naming the result `output`. Contract $T_k$; the fixture gives `[[[5]]]`, shape `(...,Tq,dv)`.
 5. **Return as specified.** Return output followed by weights, separated by a comma to form a tuple. The caller uses `output, weights = attention(...)`; preserve this order.
 
 Keep the tensor graph intact: do not detach, convert through NumPy, or recreate output tensors. Preserve q/k/values. This function creates no projection weights and performs no parameter update.
@@ -7633,9 +7553,9 @@ Expected success output:
 Lesson 04.04 checks passed.
 ```
 
-The driver checks the fixture output and weights, confirms a finite gradient on q, and uses an equal-score case B=2, Tq=3, Tk=5, d=4, dv=7 to check output shape, row weight sums, and output values.
+The driver checks the fixture output and weights, confirms a finite gradient on q, and uses an equal-score case $B=2$, $T_q=3$, $T_k=5$, $d=4$, $d_v=7$ to check output shape, row weight sums, and output values.
 
-Review prompts: why does softmax preserve shape? Why does the first product contract d and the second Tk? Explanations or hand calculations remain separate from code-check evidence.
+Review prompts: why does softmax preserve shape? Why does the first product contract d and the second $T_k$? Explanations or hand calculations remain separate from code-check evidence.
 
 Source: [Attention Is All You Need, §3.2.1](https://arxiv.org/html/1706.03762v7#S3.SS2.SSS1).
 
@@ -7643,9 +7563,9 @@ Source: [Attention Is All You Need, §3.2.1](https://arxiv.org/html/1706.03762v7
 
 This separate extension does not change the original main-lesson inputs. It retains the preceding explanations of projection widths, transposition and four-coordinate value vectors.
 
-#### Draw d and dv as the number of columns in each row
+#### Draw d and $d_v$ as the number of columns in each row
 
-The query/key width is **the number of entries in each Q or K row**; the value width is **the number of entries in each V row**. Use an additional fixture chosen to expose matrix transformations: B=1, T=3, d=2, dv=4. Display sample b=0 only. This does not replace the original assignment fixture in the main lesson.
+The query/key width is **the number of entries in each $Q$ or $K$ row**; the value width is **the number of entries in each $V$ row**. Use an additional fixture chosen to expose matrix transformations: $B=1$, $T=3$, $d=2$, $d_v=4$. Display sample $b=0$ only. This does not replace the original assignment fixture in the main lesson.
 
 ```text
 a = sqrt(2)*ln(2), c = sqrt(2)*ln(3)
@@ -7654,13 +7574,13 @@ K = [[0,0], [a,0], [0,c]]                  shape = (3,2)
 V = [[0,0,6,12], [6,12,0,0], [12,6,12,6]] shape = (3,4)
 ```
 
-![Actual Q, K and V grids with coordinate counts and aligned positions](assets/04-04-qkv-matrices.en.png)
+![Actual $Q$, $K$ and $V$ grids with coordinate counts and aligned positions](assets/04-04-qkv-matrices.en.png){width=100%}
 
-Metadata bands label shapes; horizontal rulers explicitly identify d=2 or dv=4. Cells contain entries, while small numbers above them are column indices. Each horizontal row is one vector: q2=[1,1] has two entries; v2=[12,6,12,6] has four. Numerical constants a and c are approximately 0.9803 and 1.5537, chosen to give simple weights later.
+Metadata bands label shapes; horizontal rulers explicitly identify $d=2$ or $d_v=4$. Cells contain entries, while small numbers above them are column indices. Each horizontal row is one vector: q2=[1,1] has two entries; v2=[12,6,12,6] has four. Numerical constants a and c are approximately 0.9803 and 1.5537, chosen to give simple weights later.
 
-Matching row colors identify the same sequence position: k0 aligns with v0, k1 with v1, and k2 with v2. Q and K multiply corresponding coordinates and sum them, requiring equal row widths. V participates in a weighted sum of whole vectors: its position count must align with K, while its coordinate count may differ.
+Matching row colors identify the same sequence position: k0 aligns with v0, k1 with v1, and k2 with v2. $Q$ and $K$ multiply corresponding coordinates and sum them, requiring equal row widths. $V$ participates in a weighted sum of whole vectors: its position count must align with $K$, while its coordinate count may differ.
 
-Projection output columns determine these widths. With the right-multiplication convention from 04.03 and input width D:
+Projection output columns determine these widths. With the right-multiplication convention from 04.03 and input width $D$:
 
 $$
 \begin{aligned}
@@ -7670,21 +7590,21 @@ V_{\mathrm{values}}&=XW_v,&\quad W_v&\in\mathbb R^{D\times d_v}.
 \end{aligned}
 $$
 
-Here Q/K can project to width 2 and V to width 4. These are learned coordinates; do not assign fixed hand-written semantic meanings to individual columns. Full q/k shapes are `(1,3,2)` and values is `(1,3,4)`.
+Here $Q$/$K$ can project to width 2 and $V$ to width 4. These are learned coordinates; do not assign fixed hand-written semantic meanings to individual columns. Full q/k shapes are `(1,3,2)` and values is `(1,3,4)`.
 
 The [original assignment's full-shape diagram](#section-04-04) remains paired with its one-query/two-key example in the main lesson. The additional fixture explains matrix geometry; the original fixture matches the supplied checks.
 
-#### Transpose a K row, then calculate one score
+#### Transpose a $K$ row, then calculate one score
 
-![Transpose a K row into a column; a highlighted query row and key column produce one score](assets/04-04-qk-matmul.en.png)
+![Transpose a $K$ row into a column; a highlighted query row and key column produce one score](assets/04-04-qk-matmul.en.png){width=100%}
 
-In the upper panel, orange k1=[a,0] moves from row 1 of K to column 1 of its transpose, preserving the coordinate order. Shape changes from `(3,2)` to `(2,3)`. The lower panel follows purple q2=[1,1] and the orange key column to orange R[2,1]. Comparing q2 with all three keys gives:
+In the upper panel, orange k1=[a,0] moves from row 1 of $K$ to column 1 of its transpose, preserving the coordinate order. Shape changes from `(3,2)` to `(2,3)`. The lower panel follows purple q2=[1,1] and the orange key column to orange R[2,1]. Comparing q2 with all three keys gives:
 
 $$
 R_{2,:}=[1\times0+1\times0,\;1\times a+1\times0,\;1\times0+1\times c]=[0,a,c].
 $$
 
-A query/key dot product contracts two coordinates into one score. Comparing three keys produces three scores. R therefore has T=3 key-position columns, rather than the original d=2 coordinate columns.
+A query/key dot product contracts two coordinates into one score. Comparing three keys produces three scores. $R$ therefore has $T=3$ key-position columns, rather than the original $d=2$ coordinate columns.
 
 #### Follow the same query into a four-coordinate output
 
@@ -7695,9 +7615,9 @@ S_{2,:}=[0,a,c]/\sqrt2=[0,\ln2,\ln3],\qquad
 A_{2,:}=\frac{[1,2,3]}{1+2+3}=[1/6,2/6,3/6].
 $$
 
-![Scaling, row normalization, and multiplying weights by whole value vectors](assets/04-04-av-matmul.en.png)
+![Scaling, row normalization, and multiplying weights by whole value vectors](assets/04-04-av-matmul.en.png){width=100%}
 
-The upper panel displays every matrix from S through exp(S) to A. In the lower panel, the purple weight row covers three positions, multiplying the blue, orange and green whole V rows. The four result columns retain V's four coordinates.
+The upper panel displays every matrix from $S$ through exp($S$) to A. In the lower panel, the purple weight row covers three positions, multiplying the blue, orange and green whole $V$ rows. The four result columns retain $V$'s four coordinates.
 
 $$
 \begin{aligned}
@@ -7707,11 +7627,9 @@ o_2&=\frac16[0,0,6,12]+\frac26[6,12,0,0]+\frac36[12,6,12,6]\\
 \end{aligned}
 $$
 
-The same positional weight applies to all four coordinates in its value vector; there is no new set of attention weights per column. Width d=2 has already been contracted during matching. Each output row still has dv=4 entries. Matrix dimensions are `(3,3) @ (3,4) → (3,4)`; restoring the batch axis gives output.shape `(1,3,4)`.
+The same positional weight applies to all four coordinates in its value vector; there is no new set of attention weights per column. Width $d=2$ has already been contracted during matching. Each output row still has $d_v=4$ entries. Matrix dimensions are `(3,3) @ (3,4) → (3,4)`; restoring the batch axis gives output.shape `(1,3,4)`.
 
-<a id="section-04-05"></a>
-
-## 04.05 Causal visibility and isolation
+## 04.05 Causal visibility and isolation {#section-04-05}
 
 ### Method sources
 
@@ -7719,17 +7637,17 @@ The decoder’s prevention of attention to subsequent positions is described in 
 
 ### Why restrict visibility?
 
-Assume the already-tokenized sequence A, B, C, D. Training inputs and targets are shifted by one position:
+Assume the already-tokenized sequence A, $B$, C, $D$. Training inputs and targets are shifted by one position:
 
-| Query position i | Current input | Target for this row | Input positions this row may read |
+| Query position $i$ | Current input | Target for this row | Input positions this row may read |
 | --- | --- | --- | --- |
-| 0 | A | B | 0: A |
-| 1 | B | C | 0, 1: A, B |
-| 2 | C | D | 0, 1, 2: A, B, C |
+| 0 | A | $B$ | 0: A |
+| 1 | $B$ | C | 0, 1: A, $B$ |
+| 2 | C | $D$ | 0, 1, 2: A, $B$, C |
 
-Position i should predict the next item from its known prefix. Although training supplies the entire input, row 0 cannot read B at input position 1: that would put its answer into the computation. **Position i itself remains visible because this row predicts position i+1.** Visibility concerns input positions; the target tensor is used to calculate the loss.
+Position i should predict the next item from its known prefix. Although training supplies the entire input, row 0 cannot read $B$ at input position 1: that would put its answer into the computation. **Position i itself remains visible because this row predicts position $i$+1.** Visibility concerns input positions; the target tensor is used to calculate the loss.
 
-Lesson 04.04 compares queries with all supplied keys. Here q, k, and values belong to the same sequence, aligned at the same starting position, with T queries and T keys. Allow only j≤i. This lesson covers that square layout; offset cached positions and rectangular visibility are treated later.
+Lesson 04.04 compares queries with all supplied keys. Here q, k, and values belong to the same sequence, aligned at the same starting position, with $T$ queries and $T$ keys. Allow only j≤i. This lesson covers that square layout; offset cached positions and rectangular visibility are treated later.
 
 ### Formula first: mask before normalization
 
@@ -7739,7 +7657,7 @@ $$
 S_{b,i,j}=\frac{\sum_{r=0}^{d-1}Q_{b,i,r}K_{b,j,r}}{\sqrt d}.
 $$
 
-Define boolean mask M: **True means blocked**, False means retained.
+Define boolean mask $M$: **True means blocked**, False means retained.
 
 $$
 M_{i,j}=(j>i),\qquad
@@ -7767,9 +7685,9 @@ $$
 
 Future positions contribute zero to numerator and denominator; allowed positions renormalize automatically. Masking and softmax preserve the score shape. This order follows the original Transformer's decoder self-attention. [Original paper, §3.2.3](https://arxiv.org/html/1706.03762v7#S3.SS2.SSS3)
 
-![Boolean blocking mask, filled scores, and normalized weights](assets/04-05-causal-mask.en.png)
+![Boolean blocking mask, filled scores, and normalized weights](assets/04-05-causal-mask.en.png){width=100%}
 
-Metadata bands identify each **two-dimensional matrix shape**; cells contain **actual boolean entries, scores, or weights**. Row i selects the query and column j the key. Orange marks future positions, green allowed positions; text and entries also identify the meaning without relying on color. Scores and weights display sample b=0, retaining B in their full tensors. M itself is a two-dimensional table.
+Metadata bands identify each **two-dimensional matrix shape**; cells contain **actual boolean entries, scores, or weights**. Row i selects the query and column $j$ the key. Orange marks future positions, green allowed positions; text and entries also identify the meaning without relying on color. Scores and weights display sample $b=0$, retaining $B$ in their full tensors. $M$ itself is a two-dimensional table.
 
 ### Interface and dimensions
 
@@ -7779,15 +7697,15 @@ def causal_attention(q: torch.Tensor, k: torch.Tensor, values: torch.Tensor) -> 
 
 | Argument or result | Type and shape | Meaning |
 | --- | --- | --- |
-| `q` | Floating `(...,T,d)` | T queries with d coordinates each |
-| `k` | Floating `(...,T,d)` | T keys from the same sequence |
-| `values` | Floating `(...,T,dv)` | T value vectors aligned with keys |
+| `q` | Floating `(...,T,d)` | $T$ queries with d coordinates each |
+| `k` | Floating `(...,T,d)` | $T$ keys from the same sequence |
+| `values` | Floating `(...,T,dv)` | $T$ value vectors aligned with keys |
 | `scores` / `scores_masked` | Floating `(...,T,T)` | Scores for every query/key pair |
 | `future_mask` | Boolean `(T,T)` | True identifies a future key to block |
 | `weights` | Floating `(...,T,T)` | Weights over keys for each query |
 | `output` | Floating `(...,T,dv)` | An aggregated vector per query |
 
-Return **`output, weights`** in that order. T is positive; inputs have equal lengths and aligned starting positions. d and dv may differ. The `...` denotes matching leading axes: initially B, later possibly including head axis H. Inputs use compatible floating types/devices and finite values. Preserve inputs and autograd paths.
+Return **`output, weights`** in that order. $T$ is positive; inputs have equal lengths and aligned starting positions. d and $d_v$ may differ. The `...` denotes matching leading axes: initially $B$, later possibly including head axis $H$. Inputs use compatible floating types/devices and finite values. Preserve inputs and autograd paths.
 
 Suppress leading axes to read the two matrix products:
 
@@ -7796,7 +7714,7 @@ $$
 (T,T)\;@\;(T,d_v)\longrightarrow(T,d_v).
 $$
 
-The first contracts d, the second key-position T. The left T retained by the second product is the query position. Equal axis sizes do not make their meanings interchangeable.
+The first contracts d, the second key-position $T$. The left $T$ retained by the second product is the query position. Equal axis sizes do not make their meanings interchangeable.
 
 ### Classroom debugging: why does masked_fill report 3 versus 2?
 
@@ -7809,9 +7727,9 @@ submitted: K^T @ Q : (2,3) @ (3,2) -> (2,2)
 required:  Q @ K^T : (3,2) @ (2,3) -> (3,3)
 ```
 
-Matrix multiplication sums over the adjacent inner dimensions and retains the two outer dimensions. The first expression is legal, but sums over positions and leaves two coordinate axes. Attention needs one score for each query-position/key-position pair: row i and column j must contain the dot product of q[i] and k[j], summed over their two coordinates. That requires the second expression, retaining the two position axes. Transposing K and choosing the operand order are both necessary.
+Matrix multiplication sums over the adjacent inner dimensions and retains the two outer dimensions. The first expression is legal, but sums over positions and leaves two coordinate axes. Attention needs one score for each query-position/key-position pair: row $i$ and column $j$ must contain the dot product of q[i] and k[j], summed over their two coordinates. That requires the second expression, retaining the two position axes. Transposing $K$ and choosing the operand order are both necessary.
 
-The submitted full `scores` shape is `(1,2,2)`, while `feature_mask` is `(1,3,3)`. In the final axis, 2 and 3 are neither equal nor singleton dimensions, so broadcasting fails. **Keep T=3 and d=2; repair the score product.** Changing `length` to 2 would mask coordinate pairs rather than positions and break aggregation over three value rows.
+The submitted full `scores` shape is `(1,2,2)`, while `feature_mask` is `(1,3,3)`. In the final axis, 2 and 3 are neither equal nor singleton dimensions, so broadcasting fails. **Keep $T=3$ and $d=2$; repair the score product.** Changing `length` to 2 would mask coordinate pairs rather than positions and break aggregation over three value rows.
 
 Follow this repair sequence inside `causal_attention`, retaining four-space indentation:
 
@@ -7830,13 +7748,13 @@ values               (1,3,1)
 output               (1,3,1)
 ```
 
-For this same fixture, q and k contain only zeros, so all nine correct score entries are zero. The [blocking-mask figure](#section-04-05) shows the three-by-three tables: masking and softmax give rows `[1,0,0]`, `[1/2,1/2,0]`, and `[1/3,1/3,1/3]`. Applying them to values `[2,4,8]` gives `2`, `(2+4)/2=3`, and `(2+4+8)/3=14/3`. These are contents; the output shape is `(1,3,1)`.
+For this same fixture, q and k contain only zeros, so all nine correct score entries are zero. The [blocking-mask figure](#section-04-05) shows the three-by-three tables: masking and softmax give rows `[1,0,0]`, `[1/2,1/2,0]`, and `[1/3,1/3,1/3]`. Applying them to values `[2,4,8]` gives `2`, $\frac{2+4}{2}=3$, and $\frac{2+4+8}{3}=\frac{14}{3}$. These are contents; the output shape is `(1,3,1)`.
 
 Review reproduced the actual failure.
 
-### Mask the same Q/K/V and see multi-coordinate values
+### Mask the same $Q$/$K$/$V$ and see multi-coordinate values
 
-To expose d and dv, reuse the additional visual fixture from 04.04: B=1, T=3, d=2, dv=4, showing sample b=0. Keep this separate from the original zero-q/k check fixture in the next section; assignment inputs are unchanged.
+To expose d and $d_v$, reuse the additional visual fixture from 04.04: $B=1$, $T=3$, $d=2$, $d_v=4$, showing sample $b=0$. Keep this separate from the original zero-q/k check fixture in the next section; assignment inputs are unchanged.
 
 ```text
 a = sqrt(2)*ln(2), c = sqrt(2)*ln(3)
@@ -7845,9 +7763,9 @@ K = [[0,0], [a,0], [0,c]]                  shape = (3,2)
 V = [[0,0,6,12], [6,12,0,0], [12,6,12,6]] shape = (3,4)
 ```
 
-![Two matching coordinates per Q/K row and four coordinates per V row](assets/04-04-qkv-matrices.en.png)
+![Two matching coordinates per $Q$/$K$ row and four coordinates per $V$ row](assets/04-04-qkv-matrices.en.png){width=100%}
 
-Horizontal rulers show two entries per Q/K row and four per V row. k0 aligns with v0, k1 with v1, and k2 with v2. Query/key dot products require matching coordinate counts; mixing whole V rows only requires aligned positions, so dv may differ from d. The preceding lesson's [full transpose and two-product walkthrough](#section-04-04) shows the transformations.
+Horizontal rulers show two entries per $Q$/$K$ row and four per $V$ row. k0 aligns with v0, k1 with v1, and k2 with v2. Query/key dot products require matching coordinate counts; mixing whole $V$ rows only requires aligned positions, so $d_v$ may differ from d. The preceding lesson's [full transpose and two-product walkthrough](#section-04-04) shows the transformations.
 
 Scaled scores, causal weights, and output are:
 
@@ -7856,18 +7774,18 @@ S=\begin{bmatrix}0&\ln2&0\\0&0&\ln3\\0&\ln2&\ln3\end{bmatrix},\qquad
 A_{\mathrm{causal}}=\begin{bmatrix}1&0&0\\1/2&1/2&0\\1/6&2/6&3/6\end{bmatrix}.
 $$
 
-![Mask the same Q/K/V, then combine four-coordinate value vectors](assets/04-05-qkv-causal.en.png)
+![Mask the same $Q$/$K$/$V$, then combine four-coordinate value vectors](assets/04-05-qkv-causal.en.png){width=100%}
 
-The upper panel moves from the boolean True-as-blocked table to filled scores and weights. The lower panel multiplies these weights by the entire V matrix. Metadata labels sizes; cells contain entries. Row 0 reads only v0, row 1 reads the first two vectors, and row 2 still reads all three.
+The upper panel moves from the boolean True-as-blocked table to filled scores and weights. The lower panel multiplies these weights by the entire $V$ matrix. Metadata labels sizes; cells contain entries. Row 0 reads only v0, row 1 reads the first two vectors, and row 2 still reads all three.
 
 $$
 O_{\mathrm{causal}}=A_{\mathrm{causal}}V_{\mathrm{values}}
 =\begin{bmatrix}0&0&6&12\\3&6&3&6\\8&7&7&5\end{bmatrix}.
 $$
 
-For example, row 1 is `(v0+v1)/2=[3,6,3,6]`. Each positional weight applies across all four coordinates of its value vector. Masking does not change dv=4 into d=2; the full output shape remains `(1,3,4)`. Causal restrictions change readable positions while V's coordinate width survives into the output.
+For example, row 1 is $\frac{v_0+v_1}{2}=[3,6,3,6]$. Each positional weight applies across all four coordinates of its value vector. Masking does not change $d_v=4$ into $d=2$; the full output shape remains `(1,3,4)`. Causal restrictions change readable positions while $V$'s coordinate width survives into the output.
 
-### Complete worked trace: T=3 and values 2, 4, 8
+### Complete worked trace: $T=3$ and values 2, 4, 8
 
 Use the actual driver's inputs:
 
@@ -7878,7 +7796,7 @@ values = [[[2], [4], [8]]]          shape = (1,3,1)
 B=1, T=3, d=2, dv=1
 ```
 
-These are chosen explanatory inputs, not training results. Zero queries and keys give zero dot products and scaled scores. Displaying sample b=0:
+These are chosen explanatory inputs, not training results. Zero queries and keys give zero dot products and scaled scores. Displaying sample $b=0$:
 
 $$
 S=\begin{bmatrix}0&0&0\\0&0&0\\0&0&0\end{bmatrix},\qquad
@@ -7908,7 +7826,7 @@ $$
 
 Row 0 reads one value, row 1 the first two, and row 2 all three. Allowed weights are uniform here because all allowed scores are zero; learned attention need not be uniform.
 
-![Matrix-product dimensions, weighted values, and future-value isolation](assets/04-05-causal-isolation.en.png)
+![Matrix-product dimensions, weighted values, and future-value isolation](assets/04-05-causal-isolation.en.png){width=100%}
 
 Separate metadata bands show both operand dimensions and the result dimension; brackets contain entries. The lower comparison changes only position 2 while the first two output rows stay fixed. Full output tensors remain three-dimensional.
 
@@ -7947,11 +7865,11 @@ $$
 
 The original driver backpropagates from row 0 and checks that later values receive zero gradient. This verifies isolation in this attention kernel. The complete model must keep all other layers and data paths causal as well; later assembly lessons check that.
 
-### Classroom Q&A: does a deeper feature map still have causal positions?
+### Classroom $Q$&A: does a deeper feature map still have causal positions?
 
 **Question:** The first attention calculation can use a causal mask. After features have mixed, have the original sequence order and receptive-field anchors disappeared? How can later layers use the same triangle?
 
-**Distinguish position from content.** For hidden states `H` shaped `(B,T,D)`, T indexes sequence positions and D indexes coordinates within each representation. Mixing coordinates or gathering context changes the contents of a vector. It does not move its output to a different position. For a fixed batch sample, `h_i^(ell)` denotes the vector at position i after layer ell. It can summarize multiple tokens while retaining that position index.
+**Distinguish position from content.** For hidden states `H` shaped `(B,T,D)`, $T$ indexes sequence positions and $D$ indexes coordinates within each representation. Mixing coordinates or gathering context changes the contents of a vector. It does not move its output to a different position. For a fixed batch sample, $h_i^{(\ell)}$ denotes the vector at position $i$ after layer ell. It can summarize multiple tokens while retaining that position index.
 
 The attention operation makes this explicit, with the batch axis suppressed:
 
@@ -7962,25 +7880,25 @@ V^{(\ell)}=H^{(\ell)}W_v^{(\ell)},\qquad
 O_i^{(\ell)}=\sum_{j=0}^{i} A_{i,j}^{(\ell)}V_j^{(\ell)}.
 $$
 
-Projection multiplies feature coordinates, keeping T rows. The weighted sum contracts key position j; query position i survives as the output row. Thus `(T,T) @ (T,dv) -> (T,dv)` retains one output per query. A representation at row 1 can include inputs 0 and 1 without becoming a new row or exchanging places with row 0. Positional encoding supplies positional signals to computations; the retained row index itself follows from these tensor operations.
+Projection multiplies feature coordinates, keeping $T$ rows. The weighted sum contracts key position $j$; query position $i$ survives as the output row. Thus `(T,T) @ (T,dv) -> (T,dv)` retains one output per query. A representation at row 1 can include inputs 0 and 1 without becoming a new row or exchanging places with row 0. Positional encoding supplies positional signals to computations; the retained row index itself follows from these tensor operations.
 
-![Position-aligned dependencies through two causal layers and a forbidden backward leak](assets/04-05-causal-depth.en.png)
+![Position-aligned dependencies through two causal layers and a forbidden backward leak](assets/04-05-causal-depth.en.png){width=100%}
 
-Read each column as one unchanged sequence position. Each box is a D-coordinate vector, with tensor shape in the separate metadata line. Box labels list **possible input dependencies, not numerical vector entries**. Gray/teal arrows run from an earlier layer's position j to the next layer's position i, only when j≤i. The orange strip shows what removing the second layer's mask would permit: future input x2 reaches the earlier output through an already contextualized state at position 2.
+Read each column as one unchanged sequence position. Each box is a $D$-coordinate vector, with tensor shape in the separate metadata line. Box labels list **possible input dependencies, not numerical vector entries**. Gray/teal arrows run from an earlier layer's position $j$ to the next layer's position $i$, only when j≤i. The orange strip shows what removing the second layer's mask would permit: future input x2 reaches the earlier output through an already contextualized state at position 2.
 
-For three inputs A, B, C, possible dependencies are:
+For three inputs A, $B$, C, possible dependencies are:
 
 | Position | Input state | After one causal layer | After two causal layers |
 | --- | --- | --- | --- |
 | 0 | A | A | A |
-| 1 | B | A, B | A, B |
-| 2 | C | A, B, C | A, B, C |
+| 1 | $B$ | A, $B$ | A, $B$ |
+| 2 | C | A, $B$, C | A, $B$, C |
 
 These are dependency bounds, not claims that a vector literally stores the listed tokens or that all dependencies must be nonzero. Later layers build new features from contextualized features. With full-prefix attention, the first layer can already access its entire prefix; depth need not enlarge that maximum temporal span. The representation's position remains anchored at i, and its readable range must never extend beyond i.
 
-**Why mask every layer?** If layer 2 is unmasked, its row 0 can read layer 1's row 1, which may contain B. The path `B -> h_1^(1) -> h_0^(2)` makes B available while position 0 is supposed to predict B from A. Reading a representation of a future token can leak the answer just as reading that token directly can. Applying the first mask does not make every later row safe for every earlier query.
+**Why mask every layer?** If layer 2 is unmasked, its row 0 can read layer 1's row 1, which may contain $B$. The path $B\to h_1^{(1)}\to h_0^{(2)}$ makes $B$ available while position 0 is supposed to predict $B$ from A. Reading a representation of a future token can leak the answer just as reading that token directly can. Applying the first mask does not make every later row safe for every earlier query.
 
-The dependency argument is inductive. Let `D(h)` denote the set of input positions that a representation may depend on. Inputs at row i initially depend only on i; fixed positional signals add no dependencies on future input tokens. If every previous row j depends only on its prefix, and the next row i reads only rows j≤i, then:
+The dependency argument is inductive. Let $\mathcal D(h)$ denote the set of input positions that a representation may depend on. Inputs at row $i$ initially depend only on i; fixed positional signals add no dependencies on future input tokens. If every previous row $j$ depends only on its prefix, and the next row $i$ reads only rows j≤i, then:
 
 $$
 \mathcal D(h_i^{(0)})\subseteq\{i\},\qquad
@@ -7993,9 +7911,9 @@ The query, keys, values and their attention weights all use only those permitted
 
 #### A complete two-layer numerical counterexample
 
-Reuse the original values `[2,4,8]`. At **both** attention calculations choose q=k=0, shape `(1,3,2)`, and use scalar values, shape `(1,3,1)`. Feed the first output into the second calculation as its `values`. This is a handpicked attention-only example without residual connections or normalization, not a complete trained Transformer.
+Reuse the original values `[2,4,8]`. At **both** attention calculations choose $q=k=0$, shape `(1,3,2)`, and use scalar values, shape `(1,3,1)`. Feed the first output into the second calculation as its `values`. This is a handpicked attention-only example without residual connections or normalization, not a complete trained Transformer.
 
-All allowed scores are equal, so each masked calculation has the same weights A. Removing the second mask instead produces uniform full-sequence weights U. Display sample b=0, with each matrix's shape stated separately:
+All allowed scores are equal, so each masked calculation has the same weights A. Removing the second mask instead produces uniform full-sequence weights U. Display sample $b=0$, with each matrix's shape stated separately:
 
 $$
 A=\begin{bmatrix}1&0&0\\1/2&1/2&0\\1/3&1/3&1/3\end{bmatrix},\qquad
@@ -8026,28 +7944,28 @@ $$
 
 Both full outputs have shape `(1,3,1)`; shapes alone cannot detect this causal failure. Change only the future input 8 to 800: the first output becomes `[2,3,806/3]`. With both masks the second output is `[2,5/2,821/9]`, retaining its first two entries. Without the second mask, all three outputs become `821/9`, including row 0: a direct numerical demonstration of future leakage.
 
-**What is reused?** The visibility rule j≤i repeats in each aligned, length-preserving self-attention layer. The actual Q/K/V, scores, weights and features are recomputed per layer, not reused. The equal weight matrices in this toy example come only from its chosen zero queries/keys.
+**What is reused?** The visibility rule j≤i repeats in each aligned, length-preserving self-attention layer. The actual $Q$/$K$/$V$, scores, weights and features are recomputed per layer, not reused. The equal weight matrices in this toy example come only from its chosen zero queries/keys.
 
 **Where does this explanation apply?** Ordinary decoder self-attention preserves the aligned position axis; it does not introduce a time stride or reorder rows. If an architecture pools, permutes, or offsets positions, visibility must follow actual position correspondence rather than blindly reusing a same-sized triangle. During cached single-token inference, all supplied keys may already be in the permitted prefix, so an explicit square mask may be unnecessary; the causal restriction still applies. This exercise covers square, aligned training inputs. Within one such matrix the last query row has no later key to block, while earlier rows do.
 
 The decoder stack's masked self-attention and its position-wise feed-forward transformations are described in the [original Transformer paper, §§3.1–3.3](https://arxiv.org/html/1706.03762v7#S3.SS2.SSS3). The dependency proof and numerical counterexample above are the lesson's worked explanation.
 
-### Classroom Q&A: can the number of channels shrink?
+### Classroom $Q$&A: can the number of channels shrink?
 
 **Question:** Can an intermediate layer reduce its channel count? Wouldn't that leave fewer elements?
 
-Yes: reducing feature width D leaves fewer feature coordinates per position. For a tensor `(B,T,D)`, it does not by itself reduce the T positions. The preceding depth diagram chose equal D across its illustrated layers for convenience; its causal argument does not require equal feature widths at every layer.
+Yes: reducing feature width $D$ leaves fewer feature coordinates per position. For a tensor `(B,T,D)`, it does not by itself reduce the $T$ positions. The preceding depth diagram chose equal $D$ across its illustrated layers for convenience; its causal argument does not require equal feature widths at every layer.
 
-Take B=1, T=3, input width 4 and output width 2. Apply the same right-multiplied projection to each position, with batch axis suppressed in the displayed matrices:
+Take $B=1$, $T=3$, input width 4 and output width 2. Apply the same right-multiplied projection to each position, with batch axis suppressed in the displayed matrices:
 
 $$
 Z=XW,\qquad
 (3,4)\;@\;(4,2)\longrightarrow(3,2).
 $$
 
-![Feature-width reduction with row positions preserved and sizes separate from entries](assets/04-05-feature-width.en.png)
+![Feature-width reduction with row positions preserved and sizes separate from entries](assets/04-05-feature-width.en.png){width=100%}
 
-The metadata bands state matrix shapes. Cells contain handpicked feature values, not token IDs. Matching row colors track the same position before and after projection; W's rows index input features rather than positions. The full batched shape changes from `(1,3,4)` to `(1,3,2)`.
+The metadata bands state matrix shapes. Cells contain handpicked feature values, not token IDs. Matching row colors track the same position before and after projection; $W$'s rows index input features rather than positions. The full batched shape changes from `(1,3,4)` to `(1,3,2)`.
 
 ```text
 X = [[1, 2, 3, 4],       W = [[1,0],       Z = [[ 4, 6],
@@ -8058,7 +7976,7 @@ X = [[1, 2, 3, 4],       W = [[1,0],       Z = [[ 4, 6],
 
 Each row uses the same rule: `[a,b,c,d] -> [a+c,b+d]`. Row 0 becomes `[1+3,2+4]=[4,6]`; row 1 becomes `[5+7,6+8]=[12,14]`; row 2 becomes `[9+11,10+12]=[20,22]`. The number of scalar entries falls from 12 to 6, while all three position rows survive. Each new row depends only on its corresponding old row, so this projection adds no new cross-position dependency.
 
-Such compression is generally not lossless over arbitrary input vectors: `[1,2,3,4]` and `[2,2,2,4]` both map to `[4,6]` under this W, so the original cannot be uniquely reconstructed. A learned narrow projection can still retain useful task information. Reduced feature detail does not imply that sequence positions have disappeared.
+Such compression is generally not lossless over arbitrary input vectors: `[1,2,3,4]` and `[2,2,2,4]` both map to `[4,6]` under this $W$, so the original cannot be uniquely reconstructed. A learned narrow projection can still retain useful task information. Reduced feature detail does not imply that sequence positions have disappeared.
 
 If queries and keys then both have shape `(1,3,2)`, their score product is still:
 
@@ -8067,13 +7985,13 @@ $$
 (3,2)\;@\;(2,3)\longrightarrow(3,3).
 $$
 
-The two coordinate axes are contracted; the three query positions and three key positions remain. Use query/key width d=2 for scaling by its square root, and retain a `(3,3)` causal mask. Q and K must share their matching width; the value width may still differ. A compressed future-position representation can continue to contain future information, so narrower channels do not remove the need for causal visibility in later layers.
+The two coordinate axes are contracted; the three query positions and three key positions remain. Use query/key width $d=2$ for scaling by its square root, and retain a `(3,3)` causal mask. $Q$ and $K$ must share their matching width; the value width may still differ. A compressed future-position representation can continue to contain future information, so narrower channels do not remove the need for causal visibility in later layers.
 
-Reducing **T**, such as `(1,3,4) -> (1,2,4)`, instead changes the position count. If positions are pooled or merged, their source ranges and allowed reads need an explicit definition; merely resizing an old triangle is insufficient. This course's current attention exercises preserve aligned positions.
+Reducing **$T$**, such as `(1,3,4) -> (1,2,4)`, instead changes the position count. If positions are pooled or merged, their source ranges and allowed reads need an explicit definition; merely resizing an old triangle is insufficient. This course's current attention exercises preserve aligned positions.
 
 ### Learn two operations before implementing the core
 
-`triu(diagonal=1)` retains the first diagonal above the main diagonal and everything above it, zeroing other entries. Starting with an all-True boolean `(T,T)` table, `.triu(1)` produces M. The 1 is a diagonal offset, not an element count. `.triu(0)` also marks the main diagonal True; because True means blocked here, use 1.
+`triu(diagonal=1)` retains the first diagonal above the main diagonal and everything above it, zeroing other entries. Starting with an all-True boolean `(T,T)` table, `.triu(1)` produces $M$. The 1 is a diagonal offset, not an element count. `.triu(0)` also marks the main diagonal True; because True means blocked here, use 1.
 
 `tensor.masked_fill(mask, value)` returns a tensor with True positions replaced by value and other entries retained. Use `masked_fill` without a trailing underscore to avoid an in-place modification. Here `float("-inf")` supplies floating negative infinity. The boolean mask belongs on the same device as the scores.
 
@@ -8086,8 +8004,8 @@ This boolean convention comes from **masked_fill's contract**: fill where True. 
 After 04.04, open 04_05_causal_mask.py. Edit only the learner region of `causal_attention`, removing its placeholder `raise`. `torch` and `math` are already imported. Each statement uses four-space indentation inside this function; no new loop or conditional is needed.
 
 1. **Compute scaled scores.** As in 04.04, multiply q by `k.transpose(-2,-1)` and divide by `math.sqrt(q.shape[-1])`, saving `scores`. Shape is `(...,T,T)`; all fixture entries are zero.
-2. **Read the position count.** Read T from `q.shape[-2]`, using a local name such as `length`. The final axis is d; the next-to-last is T. Here length is 3; do not hard-code it.
-3. **Construct the future mask.** Create a `(length,length)` table with `torch.ones`, specifying `dtype=torch.bool` and `device=q.device`, then call `.triu(1)` and save `future_mask`. The fixture should match M above, True only strictly above the main diagonal.
+2. **Read the position count.** Read $T$ from `q.shape[-2]`, using a local name such as `length`. The final axis is d; the next-to-last is $T$. Here length is 3; do not hard-code it.
+3. **Construct the future mask.** Create a `(length,length)` table with `torch.ones`, specifying `dtype=torch.bool` and `device=q.device`, then call `.triu(1)` and save `future_mask`. The fixture should match $M$ above, True only strictly above the main diagonal.
 4. **Fill the scores.** Call `.masked_fill(future_mask, float("-inf"))` on `scores`, saving `scores_masked`. Shape remains `(...,T,T)`; only future cells become negative infinity.
 5. **Compute weights.** Apply `torch.softmax(..., dim=-1)` to `scores_masked`, saving `weights`. Fixture rows are `[1,0,0]`, `[0.5,0.5,0]`, and `[1/3,1/3,1/3]`.
 6. **Aggregate and return.** Compute `output` with `weights @ values`, shape `(...,T,dv)`, then return `output, weights` in that order. Both statements retain four-space indentation. Fixture output is `[[[2],[3],[14/3]]]`.
@@ -8122,15 +8040,13 @@ Expected success output:
 Lesson 04.05 checks passed.
 ```
 
-The original driver checks `[2,3,14/3]`, exactly zero future weights, unit row sums, unchanged first two rows after changing a future value, and zero gradients from row 0 to future values. Instructor preparation additionally checks T=1, different leading axes, and unequal feature widths; these do not complete the learner core.
+The original driver checks `[2,3,14/3]`, exactly zero future weights, unit row sums, unchanged first two rows after changing a future value, and zero gradients from row 0 to future values. Instructor preparation additionally checks $T=1$, different leading axes, and unequal feature widths; these do not complete the learner core.
 
 Review prompts: why keep the diagonal? Why `.triu(1)` rather than `.triu(0)`? Why is replacing scores with zero insufficient? Explain or calculate after implementation, keeping understanding separate from code results.
 
 Source: [Original paper, §3.2.3](https://arxiv.org/html/1706.03762v7#S3.SS2.SSS3).
 
-<a id="section-04-06"></a>
-
-## 04.06 Multiple attention heads
+## 04.06 Multiple attention heads {#section-04-06}
 
 ### Method sources
 
@@ -8140,15 +8056,15 @@ Multi-head attention is defined in [Vaswani et al., 2017; R04](https://arxiv.org
 
 Lesson 04.05 calculates a row of positional weights for each query using one set of queries, keys and values. Multi-head attention performs this calculation separately in learned projection subspaces, then concatenates the results for each position.
 
-This exercise projects to total width D and divides it into H groups, each with width:
+This exercise projects to total width $D$ and divides it into $H$ groups, each with width:
 
 $$
 d_h=D/H,\qquad D=H d_h.
 $$
 
-H is a positive integer supplied as `heads` and must divide D. Heads partition projected features; every head retains all T positions. Different heads can have different weights, but their weights need not differ at every input or position. No head is assigned a fixed hand-written semantic responsibility.
+$H$ is a positive integer supplied as `heads` and must divide $D$. Heads partition projected features; every head retains all $T$ positions. Different heads can have different weights, but their weights need not differ at every input or position. No head is assigned a fixed hand-written semantic responsibility.
 
-The preceding lessons allow query/key width d and value width dv to differ. This exercise chooses an equal-width design: **Q, K and V each have per-head width dh=D/H**. The earlier general interfaces remain valid.
+The preceding lessons allow query/key width $d$ and value width $d_v$ to differ. This exercise chooses an equal-width design: **$Q$, $K$ and $V$ each have per-head width $d_h=D/H$**. The earlier general interfaces remain valid.
 
 Project independently, then select the corresponding columns for each head:
 
@@ -8157,7 +8073,7 @@ Q=XW_q,\quad K=XW_k,\quad V_{\mathrm{values}}=XW_v,
 \qquad W_q,W_k,W_v\in\mathbb R^{D\times D}.
 $$
 
-For each head h:
+For each head $h$:
 
 $$
 S^{(h)}=\frac{Q^{(h)}(K^{(h)})^\top}{\sqrt{d_h}},\qquad
@@ -8170,7 +8086,7 @@ O^{(h)}=A^{(h)}V^{(h)},\qquad
 Y=\operatorname{Concat}_{\text{features}}(O^{(0)},\ldots,O^{(H-1)})W_o.
 $$
 
-Concatenation restores D coordinates; `wo` mixes their information through a linear transformation. This exercise omits biases, dropout and later residual modules. [Original paper, §3.2.2](https://arxiv.org/html/1706.03762v7#S3.SS2.SSS2)
+Concatenation restores $D$ coordinates; `wo` mixes their information through a linear transformation. This exercise omits biases, dropout and later residual modules. [Original paper, §3.2.2](https://arxiv.org/html/1706.03762v7#S3.SS2.SSS2)
 
 ### Read the shape contract before choosing operations
 
@@ -8182,12 +8098,12 @@ def multihead(x: torch.Tensor, wq: torch.Tensor, wk: torch.Tensor, wv: torch.Ten
 
 | Argument/result | Type and shape | Meaning of the axes |
 | --- | --- | --- |
-| `x` | Floating `(B,T,D)` | B samples, T positions per sample, D numbers per position |
-| `wq` | Floating `(D,D)` | Input width D → total query width D |
-| `wk` | Floating `(D,D)` | Input width D → total key width D |
-| `wv` | Floating `(D,D)` | Input width D → total value width D |
-| `wo` | Floating `(D,D)` | Merged width D → output width D |
-| `heads` | Positive Python integer H | Number of groups; H divides D |
+| `x` | Floating `(B,T,D)` | $B$ samples, $T$ positions per sample, $D$ numbers per position |
+| `wq` | Floating `(D,D)` | Input width $D$ → total query width $D$ |
+| `wk` | Floating `(D,D)` | Input width $D$ → total key width $D$ |
+| `wv` | Floating `(D,D)` | Input width $D$ → total value width $D$ |
+| `wo` | Floating `(D,D)` | Merged width $D$ → output width $D$ |
+| `heads` | Positive Python integer $H$ | Number of groups; $H$ divides $D$ |
 | Return | One floating `(B,T,D)` tensor | One output per position; not a weights tuple |
 
 Use the preceding right-multiplication convention: `x @ wq` and the other projections are `(B,T,D) @ (D,D)` and do not transpose their weights. All floating inputs use compatible dtypes/devices; preserve inputs and autograd paths. Here x contains vectors, not token IDs.
@@ -8210,13 +8126,13 @@ $$
 I_4=\begin{bmatrix}1&0&0&0\\0&1&0&0\\0&0&1&0\\0&0&0&1\end{bmatrix}.
 $$
 
-Thus Q=K=V=x in this fixture. A trainable model learns separate projections; equal fixture values do not identify their definitions. T=3 and H=2 make the numerical shapes visibly different after swapping these axes.
+Thus $Q=K=V$=x in this fixture. A trainable model learns separate projections; equal fixture values do not identify their definitions. $T=3$ and $H=2$ make the numerical shapes visibly different after swapping these axes.
 
 ### Step 1: group each position's coordinates
 
 Independently project x to `q_flat`, `k_flat` and `v_flat`, each `(B,T,D)`. Every projection reads x directly; k is not projected from q.
 
-Split each position's D=4 entries into H=2 groups of dh=2 entries. At t0:
+Split each position's $D=4$ entries into $H=2$ groups of $d_h=2$ entries. At t0:
 
 ```text
 [1,0,0,1] → head 0: [1,0] ; head 1: [0,1]
@@ -8228,26 +8144,26 @@ $$
 q_{\mathrm{split}}[b,t,h,r]=q_{\mathrm{flat}}[b,t,h d_h+r].
 $$
 
-It adds grouping to the D coordinates without removing entries or adding samples/positions. Group K and V the same way.
+It adds grouping to the $D$ coordinates without removing entries or adding samples/positions. Group $K$ and $V$ the same way.
 
-![Full projected vectors, groups at each position, then all positions grouped by head](assets/04-06-multihead-attention.en.png)
+![Full projected vectors, groups at each position, then all positions grouped by head](assets/04-06-multihead-attention.en.png){width=100%}
 
-Blue consistently identifies head 0, orange head 1. Each left-hand row contains four coordinates of one position. The middle displays two head vectors separately at each position. On the right each head has a complete three-position matrix. Metadata labels shapes; cells contain entries. Left/middle show the sample b=0 layout, while right-hand matrices select `[b,h]`.
+Blue consistently identifies head 0, orange head 1. Each left-hand row contains four coordinates of one position. The middle displays two head vectors separately at each position. On the right each head has a complete three-position matrix. Metadata labels shapes; cells contain entries. Left/middle show the sample $b=0$ layout, while right-hand matrices select `[b,h]`.
 
 ### Step 2: why transpose(1,2)?
 
-After reshape, `(B,T,H,dh)` selects position t before head h. To let `causal_attention` treat each head as an independent leading group, rearrange to `(B,H,T,dh)`, selecting the head first and then all positions within it.
+After reshape, `(B,T,H,dh)` selects position $t$ before head $h$. To let `causal_attention` treat each head as an independent leading group, rearrange to `(B,H,T,dh)`, selecting the head first and then all positions within it.
 
 $$
 q_{\mathrm{heads}}[b,h,t,r]=q_{\mathrm{split}}[b,t,h,r].
 $$
 
-`.transpose(1,2)` swaps T and H. It has a different purpose from the attention helper's `k.transpose(-2,-1)`:
+`.transpose(1,2)` swaps $T$ and $H$. It has a different purpose from the attention helper's `k.transpose(-2,-1)`:
 
 | Operation | Axes exchanged | Purpose |
 | --- | --- | --- |
-| `.transpose(1,2)` after splitting | T and H | Group all positions of one head together |
-| K's `.transpose(-2,-1)` inside helper | T and dh | Turn key rows into columns for query/key dot products |
+| `.transpose(1,2)` after splitting | $T$ and $H$ | Group all positions of one head together |
+| $K$'s `.transpose(-2,-1)` inside helper | $T$ and $d_h$ | Turn key rows into columns for query/key dot products |
 
 Each head therefore receives:
 
@@ -8260,7 +8176,7 @@ Both heads retain all three positions, using different projected coordinate slic
 
 ### Step 3: independent causal attention per head
 
-The helper receives q/k/values shaped `(B,H,T,dh)`, treating B and H as leading axes. Transposing K's final axes produces `(B,H,dh,T)`:
+The helper receives q/k/values shaped `(B,H,T,dh)`, treating $B$ and $H$ as leading axes. Transposing $K$'s final axes produces `(B,H,dh,T)`:
 
 $$
 (B,H,T,d_h)\;@\;(B,H,d_h,T)\longrightarrow(B,H,T,T),
@@ -8270,7 +8186,7 @@ $$
 (B,H,T,T)\;@\;(B,H,T,d_h)\longrightarrow(B,H,T,d_h).
 $$
 
-The first product contracts dh; the second contracts key-position T. Neither sums across heads. The helper reads dh=2 from `q.shape[-1]`, scaling by sqrt(2), rather than sqrt(D)=2. The caller does not scale or mask a second time.
+The first product contracts $d_h$; the second contracts key-position $T$. Neither sums across heads. The helper reads $d_h=2$ from `q.shape[-1]`, scaling by $\sqrt2$, rather than $\sqrt D=2$. The caller does not scale or mask a second time.
 
 Define:
 
@@ -8281,7 +8197,7 @@ p=\frac1{1+e^r},\qquad
 \beta=\frac{e^r}{2+e^r}.
 $$
 
-Approximately p=0.330238, alpha=0.248255, beta=0.503490. These abbreviate numerical weights, not shapes.
+Approximately $p=0.330238$, $\alpha$=0.248255, $\beta$=0.503490. These abbreviate numerical weights, not shapes.
 
 The scaled, masked score matrices are:
 
@@ -8297,9 +8213,9 @@ A^{(0)}=\begin{bmatrix}1&0&0\\p&1-p&0\\\alpha&\alpha&\beta\end{bmatrix},\qquad
 A^{(1)}=\begin{bmatrix}1&0&0\\1/2&1/2&0\\\alpha&\alpha&\beta\end{bmatrix}.
 $$
 
-![Actual per-head inputs, masked scores, independent weights and outputs](assets/04-06-per-head-attention.en.png)
+![Actual per-head inputs, masked scores, independent weights and outputs](assets/04-06-per-head-attention.en.png){width=100%}
 
-Each horizontal lane is one complete head. Read its Q/K/V, scaled masked scores, softmax weights and output from left to right. Every matrix has a shape label; t0/t1/t2 remain sequence positions. Borders track the same position t1. Displayed decimals have four places; computation retains full precision.
+Each horizontal lane is one complete head. Read its $Q$/$K$/$V$, scaled masked scores, softmax weights and output from left to right. Every matrix has a shape label; t0/t1/t2 remain sequence positions. Borders track the same position t1. Displayed decimals have four places; computation retains full precision.
 
 At t1, head 0's query [0,1] has dot products 0 and 1 with the first two keys. Scaled scores [0, r] give weights [p,1-p] and output:
 
@@ -8322,7 +8238,7 @@ $$
 
 ### Step 4: merge each position's heads, then multiply by wo
 
-The helper returns `head_output`, shape `(B,H,T,dh)`. First `.transpose(1,2)` back to `(B,T,H,dh)`, placing all H results for one position together. Then reshape to `(B,T,D)`.
+The helper returns `head_output`, shape `(B,H,T,dh)`. First `.transpose(1,2)` back to `(B,T,H,dh)`, placing all $H$ results for one position together. Then reshape to `(B,T,D)`.
 
 $$
 \operatorname{merged}_{b,t,:}=\operatorname{Concat}
@@ -8331,7 +8247,7 @@ $$
 
 For example, concatenate t0's `[1,0]` and `[0,1]` into `[1,0,0,1]`. Concatenate features; do not turn three positions into six or average the heads.
 
-![Concatenate each position's head outputs into four coordinates, then apply output projection](assets/04-06-merge-heads.en.png)
+![Concatenate each position's head outputs into four coordinates, then apply output projection](assets/04-06-merge-heads.en.png){width=100%}
 
 The two left matrices each contain three rows and two columns. The right retains three rows and joins the blue/orange feature slices into four columns. The top labels reverse transposition/reshape shapes; the bottom states output-projection dimensions.
 
@@ -8361,7 +8277,7 @@ shape = (1,3,4)
 | q_flat, k_flat, v_flat | `(B,T,D)` | `(1,3,4)` |
 | q_split, k_split, v_split | `(B,T,H,dh)` | `(1,3,2,2)` |
 | q_heads, k_heads, v_heads | `(B,H,T,dh)` | `(1,2,3,2)` |
-| K transposed inside helper | `(B,H,dh,T)` | `(1,2,2,3)` |
+| $K$ transposed inside helper | `(B,H,dh,T)` | `(1,2,2,3)` |
 | scores/head_weights inside helper | `(B,H,T,T)` | `(1,2,3,3)` |
 | head_output | `(B,H,T,dh)` | `(1,2,3,2)` |
 | by_position | `(B,T,H,dh)` | `(1,3,2,2)` |
@@ -8374,7 +8290,7 @@ After completing 04.05, open 04_06_multihead_attention.py. Edit only the learner
 1. **Read dimensions.** Unpack the three entries of `x.shape` into `batch,length,width`, then calculate `head_width` using `width // heads`. `//` is integer division; the fixture gives 1, 3, 4 and 2.
 2. **Project independently.** Right-multiply x by `wq,wk,wv`, saving `q_flat,k_flat,v_flat`. Each shape is `(batch,length,width)`; identity fixture weights leave x unchanged.
 3. **Split the final width.** Call `.reshape(batch,length,heads,head_width)` on each, saving `q_split,k_split,v_split`. Shape becomes `(1,3,2,2)`, with two vectors of length 2 at each position.
-4. **Group positions by head.** Apply `.transpose(1,2)` to each split tensor, saving `q_heads,k_heads,v_heads`, shape `(1,2,3,2)`. This swaps T/H, not K's final axes.
+4. **Group positions by head.** Apply `.transpose(1,2)` to each split tensor, saving `q_heads,k_heads,v_heads`, shape `(1,2,3,2)`. This swaps $T$/$H$, not $K$'s final axes.
 5. **Call the existing attention.** Pass the three head tensors to `causal_attention`. Unpack `head_output` and `head_weights`; receive or ignore the latter locally. Fixture shapes are `(1,2,3,2)` and `(1,2,3,3)`. Do not scale, softmax or mask again.
 6. **Group heads by position again.** Apply `.transpose(1,2)` to `head_output`, saving `by_position`, shape `(1,3,2,2)`.
 7. **Merge head coordinates.** Use `.reshape(batch,length,width)` on `by_position`, saving `merged`, shape `(1,3,4)`. Each row concatenates heads in order. Do not skip the preceding transpose and reshape head-major data directly into the final output.
@@ -8396,23 +8312,21 @@ After implementing this lesson and its prerequisite, expect:
 Lesson 04.06 checks passed.
 ```
 
-The original driver uses random B=2, T=3, D=4 inputs. It checks H=2 output shape, first-position equality to input under identity projections and causality, H=1 equality to single-head causal attention, gradient connectivity, and unchanged earlier outputs after changing a future position. The fixed visual fixture serves hand calculation; the driver is unchanged.
+The original driver uses random $B=2$, $T=3$, $D=4$ inputs. It checks $H=2$ output shape, first-position equality to input under identity projections and causality, $H=1$ equality to single-head causal attention, gradient connectivity, and unchanged earlier outputs after changing a future position. The fixed visual fixture serves hand calculation; the driver is unchanged.
 
 The implementation uses `.view` for fresh projection outputs and `.reshape` after transposing head outputs; use these choices for the illustrated layouts.
 
-Review prompts: with fixed D, what happens to per-head width if H doubles? Why not reshape directly to `(B,H,T,dh)`? Why swap T/H back before merging? Code checks and independently explained/reconstructed reasoning remain separate.
+Review prompts: with fixed $D$, what happens to per-head width if $H$ doubles? Why not reshape directly to `(B,H,T,dh)`? Why swap $T$/$H$ back before merging? Code checks and independently explained/reconstructed reasoning remain separate.
 
 Source: [Original paper, §3.2.2](https://arxiv.org/html/1706.03762v7#S3.SS2.SSS2).
 
-<a id="section-04-07"></a>
-
-## 04.07 Learned absolute position vectors
+## 04.07 Learned absolute position vectors {#section-04-07}
 
 ### Method sources
 
 [Vaswani et al., 2017; R04](https://arxiv.org/abs/1706.03762), Section 3.5, discusses sinusoidal and learned positional representations. Our learned position table is a specific choice; length-generalization evidence is discussed by [Kazemnejad et al., 2023; R29](https://arxiv.org/abs/2305.19466), not guaranteed by adding positions.
 
-**Which positional encoding are we learning?** Positional encoding describes a purpose; the familiar sine/cosine formula is one particular construction. This assignment uses a **learned absolute position table**. The section “Two ways to produce a position vector” below compares them, works through the sinusoidal formula and explains length limits. Both supply a D-coordinate vector for a position, but obtain its coordinates differently. The exercise does not require writing the sinusoidal generator.
+**Which positional encoding are we learning?** Positional encoding describes a purpose; the familiar sine/cosine formula is one particular construction. This assignment uses a **learned absolute position table**. The section “Two ways to produce a position vector” below compares them, works through the sinusoidal formula and explains length limits. Both supply a $D$-coordinate vector for a position, but obtain its coordinates differently. The exercise does not require writing the sinusoidal generator.
 
 ### Start with the missing capability, before writing code
 
@@ -8427,19 +8341,19 @@ q_i=e_iW_q,\qquad k_j=e_jW_k,\qquad v_j=e_jW_v,\qquad
 s_{ij}=\frac{q_i k_j^\top}{\sqrt d}.
 $$
 
-Here e_i denotes the embedding of the token at position i, not an embedding of the integer i. Q/K/V projections use shared weights at all positions. In this score expression, **the key's index j is not itself an input feature**. Moving the same token to a different row moves its projected key and value; it does not by itself give that key different coordinates.
+Here $e_i$ denotes the embedding of the token at position $i$, not an embedding of the integer i. $Q$/$K$/$V$ projections use shared weights at all positions. In this score expression, **the key's index $j$ is not itself an input feature**. Moving the same token to a different row moves its projected key and value; it does not by itself give that key different coordinates.
 
 #### A fixed query cannot distinguish a paired reordering of its visible keys and values
 
-Compare two symbolic three-token inputs, `A B C` and `B A C`, and inspect only the **first layer's last query C**. The causal mask allows that row to read all three positions in either input. C has the same query in both cases. A and B exchange their keys and values together; C's pair is unchanged.
+Compare two symbolic three-token inputs, `A B C` and `B A C`, and inspect only the **first layer's last query C**. The causal mask allows that row to read all three positions in either input. C has the same query in both cases. A and $B$ exchange their keys and values together; C's pair is unchanged.
 
 | Visible token | Its key | Its value | Score and weight for the fixed query C |
 | --- | --- | --- | --- |
-| A | k_A | v_A | s_A, a_A |
-| B | k_B | v_B | s_B, a_B |
-| C | k_C | v_C | s_C, a_C |
+| A | $k_A$ | $v_A$ | $s_A$, $a_A$ |
+| $B$ | $k_B$ | $v_B$ | $s_B$, $a_B$ |
+| C | $k_C$ | $v_C$ | $s_C$, $a_C$ |
 
-After the swap, the score vector and its softmax weights swap their A/B entries. Their token-associated weights are unchanged because the softmax denominator contains the same three exponentials. The output is therefore:
+After the swap, the score vector and its softmax weights swap their A/$B$ entries. Their token-associated weights are unchanged because the softmax denominator contains the same three exponentials. The output is therefore:
 
 $$
 o_C=a_Av_A+a_Bv_B+a_Cv_C
@@ -8452,20 +8366,20 @@ The causal qualification matters. Earlier query rows see different prefixes, so 
 
 ### Give the computations an explicit position-dependent input
 
-This lesson chooses learned absolute position vectors. For a token at position i, form:
+This lesson chooses learned absolute position vectors. For a token at position $i$, form:
 
 $$
 h_i=e_i+p_i.
 $$
 
-The externally selected row p_i consistently corresponds to position i. It is a D-coordinate floating parameter vector, not the integer i written into every coordinate. Distinct positions have separately stored rows; those rows may learn distinct vectors. The model's computations then receive both token-dependent and position-dependent contributions:
+The externally selected row $p_i$ consistently corresponds to position $i$. It is a $D$-coordinate floating parameter vector, not the integer i written into every coordinate. Distinct positions have separately stored rows; those rows may learn distinct vectors. The model's computations then receive both token-dependent and position-dependent contributions:
 
 $$
 q_i=(e_i+p_i)W_q=e_iW_q+p_iW_q,\qquad
 k_j=(e_j+p_j)W_k=e_jW_k+p_jW_k.
 $$
 
-This distributive-law expansion is the mechanism: adding P changes the actual numbers used to form Q and K, hence their comparisons. It is not a label attached to a row but ignored during calculation. With the same additive input, values can change too, through `V=HWv`.
+This distributive-law expansion is the mechanism: adding $P$ changes the actual numbers used to form $Q$ and $K$, hence their comparisons. It is not a label attached to a row but ignored during calculation. With the same additive input, values can change too, through $V=HW_v$.
 
 For completeness, the unscaled score can be expanded into four interactions:
 
@@ -8479,7 +8393,7 @@ These terms combine content/content, content/position, position/content and posi
 
 #### Mechanism example: two equal tokens, followed all the way to attention weights
 
-This small mechanism illustration is deliberately separate from the assignment's row-selection fixture. Use B=1, T=2, D=d=2, one head, identity Q/K projections, and inspect the final query i=1. Both keys are visible under the same causal mask in both calculations.
+This small mechanism illustration is deliberately separate from the assignment's row-selection fixture. Use $B=1$, $T=2$, $D=d=2$, one head, identity $Q$/$K$ projections, and inspect the final query $i=1$. Both keys are visible under the same causal mask in both calculations.
 
 Without explicit positions, the two occurrences of token A have the same embedding:
 
@@ -8516,48 +8430,48 @@ a_{1,0}=\frac{\exp(1/\sqrt2)}{\exp(1/\sqrt2)+\exp(2/\sqrt2)}\approx0.330238,\qqu
 a_{1,1}\approx0.669762.
 $$
 
-![Actual features, query, scaled scores and weights with and without position vectors](assets/04-07-position-attention.en.png)
+![Actual features, query, scaled scores and weights with and without position vectors](assets/04-07-position-attention.en.png){width=100%}
 
-The figure shows sample b=0 and only the last score/weight row; shape labels are separate from entries. The two position rows use the same token embedding but now lead to different keys. The query changes as well. If V=H too, this query's output changes from `[1,0]` to approximately `[1,0.669762]`. No new token, position, or mask has been added; the comparisons changed because position-dependent values entered the computation.
+The figure shows sample $b=0$ and only the last score/weight row; shape labels are separate from entries. The two position rows use the same token embedding but now lead to different keys. The query changes as well. If $V=H$ too, this query's output changes from `[1,0]` to approximately `[1,0.669762]`. No new token, position, or mask has been added; the comparisons changed because position-dependent values entered the computation.
 
 These numbers are chosen to expose the mechanism, not trained results. The larger self-position weight is a consequence of this toy choice, not a rule that every head must prefer itself. The original Transformer describes adding position vectors before the attention stack and discusses both fixed and learned choices. [Original paper, §3.5](https://arxiv.org/html/1706.03762v7#S3.SS5)
 
 ### Why addition, and where does a position vector get its meaning?
 
-Addition keeps the input width D unchanged, so existing projections can consume it directly. Linear maps distribute over the sum, as shown above, allowing both contributions to influence attention. Concatenation would also be a possible design, but would change the width or require another projection. Addition is a modeling choice, not the only mathematically valid operation.
+Addition keeps the input width $D$ unchanged, so existing projections can consume it directly. Linear maps distribute over the sum, as shown above, allowing both contributions to influence attention. Concatenation would also be a possible design, but would change the width or require another projection. Addition is a modeling choice, not the only mathematically valid operation.
 
 A sum is not a lossless record of its two addends: in general h alone does not uniquely determine e and p. For example, `[1,0]+[0,1]` and `[0,0]+[1,1]` both give `[1,1]`. Do not justify addition by claiming it guarantees perfect separation or unique token/position pairs. The model jointly learns token vectors, position vectors and downstream weights for its prediction task; the representation need not be decoded back into the two original vectors.
 
-Position rows are parameters initialized once and reused. They are not sampled afresh at each forward pass. The number stored in each coordinate is not a preassigned linguistic rule. The row has a consistent role because input position i always selects p_i in the chosen coordinate system. A position-index vector filled with the scalar i could supply a signal too, but is a different, more constrained design; a learned D-vector supplies independently trainable coordinates.
+Position rows are parameters initialized once and reused. They are not sampled afresh at each forward pass. The number stored in each coordinate is not a preassigned linguistic rule. The row has a consistent role because input position $i$ always selects $p_i$ in the chosen coordinate system. A position-index vector filled with the scalar i could supply a signal too, but is a different, more constrained design; a learned $D$-vector supplies independently trainable coordinates.
 
-During language-model training, the target remains the next token. The loss backpropagates through attention and the addition. In `h=e+p`, the derivative with respect to each addend is the upstream derivative, so the selected position row receives gradients from the examples that used it and can be updated by the same optimizer. There is no separate required label saying what the correct position vector must be. Separately stored rows can receive different gradients; their numerical patterns acquire usefulness through that training.
+During language-model training, the target remains the next token. The loss backpropagates through attention and the addition. In $h=e+p$, the derivative with respect to each addend is the upstream derivative, so the selected position row receives gradients from the examples that used it and can be updated by the same optimizer. There is no separate required label saying what the correct position vector must be. Separately stored rows can receive different gradients; their numerical patterns acquire usefulness through that training.
 
 Absolute position means an index relative to the origin used for this input sequence, selected by `offset+t`. It does not necessarily mean a token's index in a whole original document. A learned absolute table does not itself ensure that neighboring vectors are close or that distance j-i is recovered exactly; later structured position schemes impose other relationships.
 
 ### Keep positional signals and causal visibility distinct
 
-A position vector answers which slot the input occupies; a causal mask restricts which key slots a query may read. P contains parameters, not the actual content of future tokens. Adding P does not enforce a no-future-read rule, and masking does not explicitly perform the P lookup. Our decoder uses both mechanisms for these different functions. The mask does carry structural ordering information, which is why the earlier single-layer example must be stated with its boundary.
+A position vector answers which slot the input occupies; a causal mask restricts which key slots a query may read. $P$ contains parameters, not the actual content of future tokens. Adding $P$ does not enforce a no-future-read rule, and masking does not explicitly perform the $P$ lookup. Our decoder uses both mechanisms for these different functions. The mask does carry structural ordering information, which is why the earlier single-layer example must be stated with its boundary.
 
-The earlier `[1,2]+[10,20]=[11,22]` trace proves only that the selected vectors were added correctly. It is an implementation check, not by itself a reason for the architecture. Return to that original assignment fixture below only after following the content → position addition → Q/K → scores → weights chain above. No new code task or understanding pass is recorded in this conceptual revisit.
+The earlier `[1,2]+[10,20]=[11,22]` trace proves only that the selected vectors were added correctly. It is an implementation check, not by itself a reason for the architecture. Return to that original assignment fixture below only after following the content → position addition → $Q$/$K$ → scores → weights chain above. No new code task or understanding pass is recorded in this conceptual revisit.
 
 ### Two ways to produce a position vector
 
-**Classroom question, edited:** Why does this assignment learn position vectors when the positional-encoding formula I remember contains sine, cosine and 2π? Does the same group of vectors apply regardless of input length, and what is the upper limit?
+**Classroom question, edited:** Why does this assignment learn position vectors when the positional-encoding formula I remember contains sine, cosine and $2\pi$? Does the same group of vectors apply regardless of input length, and what is the upper limit?
 
-First separate the position index from the vector it selects or generates. Position p is an integer such as 0, 1 or 2. Its representation PE(p) is a vector of D floating coordinates. Neither is a token ID. The same token at two positions can therefore receive different position vectors.
+First separate the position index from the vector it selects or generates. Position p is an integer such as 0, 1 or 2. Its representation PE(p) is a vector of $D$ floating coordinates. Neither is a token ID. The same token at two positions can therefore receive different position vectors.
 
 | Construction | Where do the coordinates come from? | Does training update those coordinates directly? |
 | --- | --- | --- |
-| Learned absolute position table, our exercise | Initialize a table P of shape `(M,D)` once; position p selects row P[p] | Yes, when P is registered as a trainable parameter and included in optimization |
-| Fixed sinusoidal absolute encoding | Evaluate a prescribed sine/cosine function at position p | No; downstream learned weights still learn how to use the fixed signal |
+| Learned absolute position table, our exercise | Initialize a table $P$ of shape `(M,D)` once; position $p$ selects row $P$[p] | Yes, when $P$ is registered as a trainable parameter and included in optimization |
+| Fixed sinusoidal absolute encoding | Evaluate a prescribed sine/cosine function at position $p$ | No; downstream learned weights still learn how to use the fixed signal |
 
-For both additive constructions, the input is `h = token_vector + position_vector`, with width D preserved. A fixed encoding can be precomputed into a table too; merely seeing a lookup does not establish whether the table is learned. “Positional encoding” and “positional embedding” are sometimes used with different naming conventions, so inspect how the values are produced rather than relying on the name alone.
+For both additive constructions, the input is `h = token_vector + position_vector`, with width $D$ preserved. A fixed encoding can be precomputed into a table too; merely seeing a lookup does not establish whether the table is learned. “Positional encoding” and “positional embedding” are sometimes used with different naming conventions, so inspect how the values are produced rather than relying on the name alone.
 
 The original Transformer paper explicitly discusses learned and fixed alternatives and uses the sinusoidal construction below. Our choice of a learned table builds directly on the trainable embedding operations already studied; it is a modeling choice, not an approximation to the sine formula. [Attention Is All You Need, Section 3.5](https://arxiv.org/html/1706.03762v7#S3.SS5)
 
 #### Read the sinusoidal formula one coordinate pair at a time
 
-For an even feature width D, let i run from 0 to D/2−1:
+For an even feature width $D$, let i run from 0 to $D$/2−1:
 
 $$
 PE(p,2i)=\sin\!\left(\frac{p}{10000^{2i/D}}\right),\qquad
@@ -8565,25 +8479,25 @@ PE(p,2i+1)=\cos\!\left(\frac{p}{10000^{2i/D}}\right).
 $$
 
 - p is the absolute position, typically `offset+t`, starting at 0.
-- D is the feature width, called d_model in the paper; it is not the current input length T.
-- i indexes a **pair of coordinates**. For D=4, i=0 fills coordinates 0 and 1, while i=1 fills coordinates 2 and 3. These are not different token positions.
+- $D$ is the feature width, called $d_{\mathrm{model}}$ in the paper; it is not the current input length $T$.
+- i indexes a **pair of coordinates**. For $D=4$, $i=0$ fills coordinates 0 and 1, while $i=1$ fills coordinates 2 and 3. These are not different token positions.
 - Both coordinates in a pair use the same angle. The pair contributes two numbers to **one position vector**, not two token vectors.
 - 10000 is a chosen base controlling the spread of wave frequencies. It is neither vocabulary size nor maximum context length.
 
-To remove the nested exponent from the first reading, name the denominator a_i and the angle θ_i:
+To remove the nested exponent from the first reading, name the denominator $a_i$ and the angle $\theta_i$:
 
 $$
 a_i=10000^{2i/D},\qquad \theta_i(p)=p/a_i,\qquad
 \big[PE(p,2i),PE(p,2i+1)\big]=[\sin\theta_i(p),\cos\theta_i(p)].
 $$
 
-Advancing p by one changes this pair's angle by 1/a_i radians. A larger a_i therefore makes its coordinates change more slowly. All positions use the same chosen set of speeds; each position inserts its own p.
+Advancing p by one changes this pair's angle by $1/a_i$ radians. A larger $a_i$ therefore makes its coordinates change more slowly. All positions use the same chosen set of speeds; each position inserts its own p.
 
-#### Where 2π enters, and what a period means
+#### Where $2\pi$ enters, and what a period means
 
-An angle of 2π radians is one complete turn, equivalent to 360 degrees. A quarter turn is π/2 radians. Following `[sin(θ),cos(θ)]` gives `[0,1]` at θ=0, `[1,0]` at θ=π/2, `[0,−1]` at θ=π, and `[0,1]` again at θ=2π. This explains the wave's cycle; a token position itself is still an integer index.
+An angle of $2\pi$ radians is one complete turn, equivalent to 360 degrees. A quarter turn is $\pi/2$ radians. Following $[\sin\theta,\cos\theta]$ gives `[0,1]` at $\theta=0$, `[1,0]` at $\theta=\pi/2$, `[0,−1]` at $\theta=\pi$, and `[0,1]` again at $\theta=2\pi$. This explains the wave's cycle; a token position itself is still an integer index.
 
-For the scaled angle p/a_i to advance by one full turn, p must advance by λ_i=2πa_i. Consequently, the formula can equivalently be written using a positional period λ_i:
+For the scaled angle $p/a_i$ to advance by one full turn, p must advance by $\lambda_i=2\pi a_i$. Consequently, the formula can equivalently be written using a positional period $\lambda_i$:
 
 $$
 \lambda_i=2\pi\,10000^{2i/D},\qquad
@@ -8591,17 +8505,17 @@ $$
 \cos\!\left(\frac{p}{a_i}\right)=\cos\!\left(\frac{2\pi p}{\lambda_i}\right).
 $$
 
-These are the same functions with different notation. The original paper's formula leaves 2π implicit inside the period. A tutorial that defines the period explicitly may display 2π in the argument. Do not interpret it as a maximum token count, or as an instruction to multiply every position by 2π without the matching period denominator.
+These are the same functions with different notation. The original paper's formula leaves $2\pi$ implicit inside the period. A tutorial that defines the period explicitly may display $2\pi$ in the argument. Do not interpret it as a maximum token count, or as an instruction to multiply every position by $2\pi$ without the matching period denominator.
 
-#### Complete fixed-function example: D=4, positions 0, 1 and 2
+#### Complete fixed-function example: $D=4$, positions 0, 1 and 2
 
-For i=0, `10000^(0/4)=1`; coordinates 0 and 1 are `sin(p),cos(p)`. For i=1, `10000^(2/4)=100`; coordinates 2 and 3 are `sin(p/100),cos(p/100)`. Thus:
+For $i=0$, $10000^{0/4}=1$; coordinates 0 and 1 are $\sin p,\cos p$. For $i=1$, $10000^{2/4}=100$; coordinates 2 and 3 are $\sin(p/100),\cos(p/100)$. Thus:
 
 $$
 PE(p)=[\sin(p),\cos(p),\sin(p/100),\cos(p/100)].
 $$
 
-At p=1, the first angle is 1 radian, about 57.30 degrees; the second is 0.01 radians, about 0.573 degrees. Evaluating the functions gives:
+At $p=1$, the first angle is 1 radian, about 57.30 degrees; the second is 0.01 radians, about 0.573 degrees. Evaluating the functions gives:
 
 $$
 PE(0)=[0,1,0,1],
@@ -8612,17 +8526,17 @@ PE(1)\approx[0.8415,0.5403,0.0100,0.99995],\qquad
 PE(2)\approx[0.9093,-0.4161,0.0200,0.99980].
 $$
 
-A three-position sequence therefore has a selected position matrix of shape `(T,D)=(3,4)`. The matrix contains three rows; each row has four coordinates. Increasing T adds rows rather than adding coordinates to each row.
+A three-position sequence therefore has a selected position matrix of shape `(T,D)=(3,4)`. The matrix contains three rows; each row has four coordinates. Increasing $T$ adds rows rather than adding coordinates to each row.
 
-![Two sinusoidal speeds and the corresponding actual D=4 vector entries](assets/04-07-sinusoidal-encoding.en.png)
+![Two sinusoidal speeds and the corresponding actual $D=4$ vector entries](assets/04-07-sinusoidal-encoding.en.png){width=100%}
 
-**How to read the figure:** The left plot follows coordinates 0 and 1 through one full cycle over about 6.28 positions. The right follows coordinates 2 and 3 through one cycle over about 628.32 positions: its horizontal scale is 100 times longer. Both mark p=1. The curves are continuous guides; the table evaluates integer token positions only. The cells below show rounded coordinate values, with matrix shape stated separately. In particular, position 6 is not a full 2π turn and does not equal position 0. One pair's periodicity is not an instruction to wrap the entire position vector or the model's context.
+**How to read the figure:** The left plot follows coordinates 0 and 1 through one full cycle over about 6.28 positions. The right follows coordinates 2 and 3 through one cycle over about 628.32 positions: its horizontal scale is 100 times longer. Both mark $p=1$. The curves are continuous guides; the table evaluates integer token positions only. The cells below show rounded coordinate values, with matrix shape stated separately. In particular, position 6 is not a full $2\pi$ turn and does not equal position 0. One pair's periodicity is not an instruction to wrap the entire position vector or the model's context.
 
 #### Why use sine and cosine at several speeds?
 
-Using just sin(p) loses distinctions even within one cycle: for example, sin(π/6)=sin(5π/6). Adding cos(p) distinguishes those two angles. The pair describes a phase around a circle, although it remains periodic. Combining pairs at several speeds supplies several scales of positional variation instead of relying on one repeating scalar. This is a structured representation, not a proof of infinitely many distinct floating-point vectors or of accurate predictions at arbitrary distances.
+Using just $\sin p$ loses distinctions even within one cycle: for example, $\sin(\pi/6)=\sin(5\pi/6)$. Adding $\cos p$ distinguishes those two angles. The pair describes a phase around a circle, although it remains periodic. Combining pairs at several speeds supplies several scales of positional variation instead of relying on one repeating scalar. This is a structured representation, not a proof of infinitely many distinct floating-point vectors or of accurate predictions at arbitrary distances.
 
-There is also an algebraic reason for the paired functions. For a fixed displacement Δ, define δ_i=Δ/a_i and θ=p/a_i. The addition identities give:
+There is also an algebraic reason for the paired functions. For a fixed displacement $\Delta$, define $\delta_i=\Delta/a_i$ and $\theta=p/a_i$. The addition identities give:
 
 $$
 \begin{bmatrix}\sin(\theta+\delta_i)\\\cos(\theta+\delta_i)\end{bmatrix}
@@ -8636,27 +8550,27 @@ $$
 PE(p)\cdot PE(q)=\sum_{i=0}^{D/2-1}\cos\!\left(\frac{p-q}{a_i}\right).
 $$
 
-This dot product depends on displacement p−q. These identities give a concrete motivation for the structure. Actual attention additionally mixes token content and learned Q/K projections, so its scores are not guaranteed to be this pure relative-distance function. The matrix and dot-product identities here are derivations from the displayed construction; they do not certify that a trained model has learned a particular positional behavior.
+This dot product depends on displacement p−q. These identities give a concrete motivation for the structure. Actual attention additionally mixes token content and learned $Q$/$K$ projections, so its scores are not guaranteed to be this pure relative-distance function. The matrix and dot-product identities here are derivations from the displayed construction; they do not certify that a trained model has learned a particular positional behavior.
 
 #### Does a different input length use the same vectors?
 
 **Yes: with model parameters held fixed, reuse the same position-to-vector mapping. Each position takes its own row.** A length change does not rescale the coordinate system to fit the new input. Both the learned table and the fixed function follow this rule:
 
-| Current input | Position rows used | Selected shape for D=4 |
+| Current input | Position rows used | Selected shape for $D=4$ |
 | --- | --- | --- |
-| T=3, offset=0 | P0, P1, P2 | `(3,4)` |
-| T=5, offset=0 | P0, P1, P2, P3, P4 | `(5,4)` |
-| T=2, offset=3 | P3, P4 | `(2,4)` |
+| $T=3$, offset=0 | P0, P1, P2 | `(3,4)` |
+| $T=5$, offset=0 | P0, P1, P2, P3, P4 | `(5,4)` |
+| $T=2$, offset=3 | P3, P4 | `(2,4)` |
 
 P1 names the same vector in the first two inputs; P3 in a continuation is the same vector as P3 in the longer full input. P0 and P1 name whole vectors, not their numerical contents. For fixed sinusoids, computing the same p again returns the same function value. For a learned table, an optimizer update can change P1 during training; the length comparison above holds for one unchanged parameter state. “Same mapping” does not mean all token positions use one identical vector, or that the contextualized output stays unchanged when additional tokens become visible.
 
-![Select different prefixes or continuation rows from one position table](assets/04-07-position-lengths.en.png)
+![Select different prefixes or continuation rows from one position table](assets/04-07-position-lengths.en.png){width=100%}
 
-**How to read the figure:** Each labeled cell names an entire D=4 vector, whose coordinates are not drawn. Green cells are selected. The top two rows reuse P1 even though T differs; the last row starts at P3 because offset=3. Table capacity M, selected row count T, and vector width D are separate quantities.
+**How to read the figure:** Each labeled cell names an entire $D=4$ vector, whose coordinates are not drawn. Green cells are selected. The top two rows reuse P1 even though $T$ differs; the last row starts at P3 because offset=3. Table capacity $M$, selected row count $T$, and vector width $D$ are separate quantities.
 
 #### What actually limits length?
 
-1. **Learned table capacity.** Our `position_table` has M rows, with valid indices 0 through M−1. The contract requires `offset + T <= M`. With M=8 and offset=0, T=8 is valid, but T=9 requests nonexistent P8. With offset=6, T=2 is valid; offset=7, T=2 is not. Selection does not automatically wrap back to P0. Adding untrained rows changes the model's parameters and does not by itself supply useful longer-context behavior.
+1. **Learned table capacity.** Our `position_table` has $M$ rows, with valid indices 0 through $M$−1. The contract requires `offset + T <= M`. With M=8 and offset=0, T=8 is valid, but T=9 requests nonexistent P8. With offset=6, T=2 is valid; offset=7, T=2 is not. Selection does not automatically wrap back to P0. Adding untrained rows changes the model's parameters and does not by itself supply useful longer-context behavior.
 2. **Sinusoidal function versus stored buffer.** The mathematical formula can be evaluated at positions beyond any particular training length; neither 2π nor 10000 is a positional-index ceiling. An implementation may nevertheless precompute only M rows and enforce that buffer's bounds. Generating additional rows extends the available fixed values; it does not require learning new positional parameters.
 3. **Usable model context.** Available vectors alone do not establish reliable language modeling at that length. Training coverage, position generalization, configured attention/mask/cache limits and memory/computation still matter. At very large positions, finite numerical precision also matters. Even a table row that exists may not have been trained adequately. Processing continuation chunks with T=1 does not remove the total-position bound `offset + T <= M` or the model's history limits.
 
@@ -8758,7 +8672,7 @@ Local position 0 uses P[1], and local position 1 uses P[2]:
 | 0 | 1 | `[1,2]` | `[10,20]` | `[11,22]` |
 | 1 | 2 | `[1,2]` | `[30,40]` | `[31,42]` |
 
-![Select the exact position rows and add their coordinate values](assets/04-07-position-embeddings.en.png)
+![Select the exact position rows and add their coordinate values](assets/04-07-position-embeddings.en.png){width=100%}
 
 Read the upper panel from P to the selected rows. Gray P[0] is unused; teal and orange identify the rows for t=0 and t=1. The lower panel displays sample b=0: all three numerical matrices have shape `(T,D)=(2,2)`. Metadata states sizes; colored cells contain values. The full input and output shapes remain `(1,2,2)`.
 
@@ -8798,22 +8712,22 @@ output               (B,T,D)
 
 The 0 specifies the new axis location, not a value to insert. The new 1 is a dimension size, not an extra token. Unsqueezing does not copy the table into a new trainable parameter or remove the gradient connection.
 
-![Insert a batch axis and share the same position rows across three samples](assets/04-07-position-broadcast.en.png)
+![Insert a batch axis and share the same position rows across three samples](assets/04-07-position-broadcast.en.png){width=100%}
 
-The top shows the actual selected entries before and after inserting the batch axis. The bottom illustrates the same addend applied to B=3 samples. These are three batch slices, not three sequence positions; each slice still has T=2 rows. Broadcasting does not require explicitly repeating the tensor. Every sample uses P[1] at t=0 and P[2] at t=1 because the interface supplies one shared offset.
+The top shows the actual selected entries before and after inserting the batch axis. The bottom illustrates the same addend applied to $B=3$ samples. These are three batch slices, not three sequence positions; each slice still has $T=2$ rows. Broadcasting does not require explicitly repeating the tensor. Every sample uses $P$[1] at $t=0$ and $P$[2] at $t=1$ because the interface supplies one shared offset.
 
 PyTorch also permits `(B,T,D)+(T,D)` by implicit leading-axis alignment. The explicit unsqueeze in this lesson makes the intended batch sharing visible; do not interpret it as the only mathematically valid addition syntax.
 
 ### Why gradients reach the position table
 
-Write `G` for the upstream gradient with the same shape as H. Since addition has derivative 1:
+Write `G` for the upstream gradient with the same shape as $H$. Since addition has derivative 1:
 
 $$
 \frac{\partial L}{\partial X_{b,t,c}}=G_{b,t,c},\qquad
 \frac{\partial L}{\partial P_{o+t,c}}=\sum_{b=0}^{B-1}G_{b,t,c}.
 $$
 
-Only selected P rows receive contributions from this operation. With the fixture and scalar loss `L=output.sum()`, all entries of G are 1. For B=1:
+Only selected $P$ rows receive contributions from this operation. With the fixture and scalar loss `L=output.sum()`, all entries of G are 1. For $B=1$:
 
 ```text
 x.grad = [[[1,1], [1,1]]]        shape = (1,2,2)
@@ -8822,7 +8736,7 @@ position_table.grad = [[0,0],
                        [1,1]]   shape = (3,2)
 ```
 
-P[0] was unused, so its gradient is zero. With B=3 and the same summed loss, the selected row gradients become `[3,3]` because three samples contribute; if the loss were averaged instead, its upstream gradients would be scaled accordingly. This is how trainable position vectors can receive learning signals. The addition itself does not update parameters.
+$P$[0] was unused, so its gradient is zero. With $B=3$ and the same summed loss, the selected row gradients become `[3,3]` because three samples contribute; if the loss were averaged instead, its upstream gradients would be scaled accordingly. This is how trainable position vectors can receive learning signals. The addition itself does not update parameters.
 
 Avoid `.detach()`, conversion to Python lists, or rebuilding a tensor with `torch.tensor(...)` from existing values inside this function. Those can sever the needed graph. Use ordinary slicing, unsqueeze and addition; do not wrap the calculation in no-grad mode.
 
@@ -8830,7 +8744,7 @@ Avoid `.detach()`, conversion to Python lists, or rebuilding a tensor with `torc
 
 Offset selects the absolute position of the first input row **in this call**. It does not shift token IDs, move entries in memory, or specify batch size.
 
-If five prefix inputs at absolute positions 0–4 have already been processed, the next newly supplied token occupies position 5. A one-token call then uses offset=5 and selects P[5]; two newly supplied consecutive tokens use P[5] and P[6]. The prediction produced at position 4 chooses a token for position 5; once that token is fed back as an input, it receives position 5. Do not confuse the target being predicted with the current input's position.
+If five prefix inputs at absolute positions 0–4 have already been processed, the next newly supplied token occupies position 5. A one-token call then uses offset=5 and selects $P$[5]; two newly supplied consecutive tokens use $P$[5] and $P$[6]. The prediction produced at position 4 chooses a token for position 5; once that token is fed back as an input, it receives position 5. Do not confuse the target being predicted with the current input's position.
 
 A fresh full prompt normally starts at offset=0. In this lesson's original fixture, offset=1 is chosen to exercise nonzero row selection. Cache implementation comes later; `add_positions` does not create or read a cache.
 
@@ -8838,7 +8752,7 @@ A fresh full prompt normally starts at offset=0. In this lesson's original fixtu
 
 Open 04_07_position_embeddings.py. Edit only `add_positions` between the learner markers, replacing the placeholder `raise`. Its function body uses four-space indentation. No loop, conditional, new import, projection, or optimizer is needed.
 
-1. **Read length and select position rows.** Read `x.shape[1]` into `length`. Use a slice starting at `offset` and stopping at `offset+length`, saving `selected`. This selects T whole rows, keeping every feature coordinate. Fixture: `(2,2)` containing `[[10,20],[30,40]]`.
+1. **Read length and select position rows.** Read `x.shape[1]` into `length`. Use a slice starting at `offset` and stopping at `offset+length`, saving `selected`. This selects $T$ whole rows, keeping every feature coordinate. Fixture: `(2,2)` containing `[[10,20],[30,40]]`.
 2. **Expose the shared batch axis.** Apply `.unsqueeze(0)` to `selected`, saving `position_batched`. Fixture shape becomes `(1,2,2)`; contents are `[[[10,20],[30,40]]]`. No values change and no manual repetition is needed.
 3. **Add and return.** Use elementwise `+` to combine `x` with `position_batched`, and return the resulting tensor at the same four-space indentation. Fixture: `[[[11,22],[31,42]]]`, shape `(1,2,2)`. Use ordinary addition rather than in-place `+=`; preserve both inputs and gradient paths.
 
@@ -8847,10 +8761,10 @@ The detailed function docstring and adjacent hints state the same contract and i
 ### Boundaries and links to earlier concepts
 
 - Token ID and absolute position are separate indexes. Token embeddings select by vocabulary ID; this table selects by offset+t.
-- Addition preserves T and D. It does not shrink channels, merge positions, concatenate heads, or change the causal mask.
-- Adding a position vector at row t is a local operation. P is a learned parameter, not a vector calculated from future tokens, so this addition does not introduce future-input leakage.
+- Addition preserves $T$ and $D$. It does not shrink channels, merge positions, concatenate heads, or change the causal mask.
+- Adding a position vector at row $t$ is a local operation. $P$ is a learned parameter, not a vector calculated from future tokens, so this addition does not introduce future-input leakage.
 - In the simple model being assembled, add these vectors at the input before the attention stack. Do not add the same table at every layer merely because causal visibility is enforced at every layer.
-- A learned table only supplies its allocated M rows; trained behavior at longer unseen positions is not guaranteed. Untrained allocated rows also do not imply successful length generalization.
+- A learned table only supplies its allocated $M$ rows; trained behavior at longer unseen positions is not guaranteed. Untrained allocated rows also do not imply successful length generalization.
 - Later rotary-position lessons modify queries and keys by a different mechanism. Do not assume they are the same as this addition or combine schemes without an explicit design.
 
 ### Run, checks and status
@@ -8867,15 +8781,13 @@ After implementation, expect:
 Lesson 04.07 checks passed.
 ```
 
-The unchanged supplied driver checks the exact offset=1 output, gradient connectivity to x, zero gradient for unused P[0], and broadcasting to B=3. No invalid-input exception contract or model-quality result is claimed.
+The unchanged supplied driver checks the exact offset=1 output, gradient connectivity to x, zero gradient for unused $P$[0], and broadcasting to $B=3$. No invalid-input exception contract or model-quality result is claimed.
 
-Optional understanding prompts: which table row serves local t=1 when offset=5? Why does `(1,T,D)` broadcast over B without adding positions? Why do selected P-row gradients sum across samples? An explanation or reconstruction is recorded separately from code passing.
+Optional understanding prompts: which table row serves local $t=1$ when offset=5? Why does `(1,T,D)` broadcast over $B$ without adding positions? Why do selected $P$-row gradients sum across samples? An explanation or reconstruction is recorded separately from code passing.
 
 Earlier classroom clarifications about position anchors, feature widths and causal visibility are linked from [04.05](#section-04-05). Next: [04.08, residuals, normalization and feed-forward layers](#section-04-08).
 
-<a id="section-04-08"></a>
-
-## 04.08 Residuals, LayerNorm and a position-wise FFN
+## 04.08 Residuals, LayerNorm and a position-wise FFN {#section-04-08}
 
 ### Method sources
 
@@ -8901,7 +8813,7 @@ R=AW_{\mathrm{down}}^{\top}+b_{\mathrm{down}},\quad
 Y=X+R.
 $$
 
-N is `normalized`, U is `expanded`, A is `activated`, R is `branch`, and Y is the returned output. No attention scores or softmax occur here.
+$N$ is `normalized`, U is `expanded`, A is `activated`, $R$ is `branch`, and $Y$ is the returned output. No attention scores or softmax occur here.
 
 ```python
 def pre_norm_ffn(x: torch.Tensor, norm: nn.Module, up: nn.Module, down: nn.Module) -> torch.Tensor:
@@ -8909,19 +8821,19 @@ def pre_norm_ffn(x: torch.Tensor, norm: nn.Module, up: nn.Module, down: nn.Modul
 
 | Argument or result | Type and shape | Meaning |
 | --- | --- | --- |
-| `x` | Floating tensor `(B,T,D)` | Existing hidden features, one D-vector per position |
+| `x` | Floating tensor `(B,T,D)` | Existing hidden features, one $D$-vector per position |
 | `norm` | Supplied `nn.LayerNorm(D)` | Normalize only the last feature axis; preserve `(B,T,D)` |
-| `up` | Supplied `nn.Linear(D,Dff)` | Map each D-vector to Dff coordinates |
-| `down` | Supplied `nn.Linear(Dff,D)` | Restore D coordinates before residual addition |
+| `up` | Supplied `nn.Linear(D,Dff)` | Map each $D$-vector to Dff coordinates |
+| `down` | Supplied `nn.Linear(Dff,D)` | Restore $D$ coordinates before residual addition |
 | Return | One floating tensor `(B,T,D)` | Original x plus the computed branch |
 
-D and Dff are positive widths. B counts samples and T positions. Dff is often wider than D, but the interface also permits a narrower intermediate width. In the file, **`F` is the imported `torch.nn.functional` module**, not an integer width; `F.gelu` names its activation function. We write Dff to avoid confusing these meanings.
+$D$ and Dff are positive widths. $B$ counts samples and $T$ positions. Dff is often wider than $D$, but the interface also permits a narrower intermediate width. In the file, **`F` is the imported `torch.nn.functional` module**, not an integer width; `F.gelu` names its activation function. We write Dff to avoid confusing these meanings.
 
 The module objects are already created and contain their parameters. For example, `norm(x)` calls that existing module on x; it does not construct a new LayerNorm. Use the supplied objects with compatible dtypes/devices, preserve x and all parameter values, and keep their autograd paths. No initialization, parameter replacement or optimizer step belongs in this function.
 
 ### LayerNorm: statistics inside each position
 
-For each sample b and position t, calculate over its D feature coordinates:
+For each sample $b$ and position $t$, calculate over its $D$ feature coordinates:
 
 $$
 \mu_{b,t}=\frac1D\sum_{c=0}^{D-1}X_{b,t,c},\qquad
@@ -8934,15 +8846,15 @@ $$
 N_{b,t,c}=\gamma_c\frac{X_{b,t,c}-\mu_{b,t}}{\sqrt{\sigma^2_{b,t}+\epsilon}}+\beta_c.
 $$
 
-The denominator uses **population variance**, dividing by D rather than D-1. In manual PyTorch 2.0 arithmetic, `var(..., unbiased=False)` or `correction=0` matches this choice. The assignment calls the supplied LayerNorm instead of implementing these statistics by hand. Gamma and beta each have shape `(D,)` and are shared across positions; the means and variances are computed separately at each position. [Official LayerNorm contract](https://docs.pytorch.org/docs/stable/generated/torch.nn.LayerNorm.html)
+The denominator uses **population variance**, dividing by $D$ rather than $D$-1. In manual PyTorch 2.0 arithmetic, `var(..., unbiased=False)` or `correction=0` matches this choice. The assignment calls the supplied LayerNorm instead of implementing these statistics by hand. Gamma and $\beta$ each have shape `(D,)` and are shared across positions; the means and variances are computed separately at each position. [Official LayerNorm contract](https://docs.pytorch.org/docs/stable/generated/torch.nn.LayerNorm.html)
 
-Epsilon is a small positive number in the normal model, added inside the square root to avoid a zero denominator. LayerNorm's default is `1e-5`. The worked check deliberately sets eps=0 for exact arithmetic on the nonconstant vector `[1,3]`; retain the module supplied by the caller rather than changing its epsilon.
+Epsilon is a small positive number in the normal model, added inside the square root to avoid a zero denominator. LayerNorm's default is `1e-5`. The worked check deliberately sets eps=0 for exact arithmetic on the nonconstant vector `[1,3]`; retain the module supplied by the caller rather than changing its $\epsilon$.
 
-The normalized values before gain/bias have variance `sigma²/(sigma²+eps)`. Thus neither positive epsilon nor arbitrary learned gain/bias implies that the final output must have exactly variance 1. Normalization also keeps the input's shape; it does not remove positions or channels.
+The normalized values before gain/bias have variance $\sigma^2/(\sigma^2+\epsilon)$. Thus neither positive $\epsilon$ nor arbitrary learned gain/bias implies that the final output must have exactly variance 1. Normalization also keeps the input's shape; it does not remove positions or channels.
 
 #### Hand calculation with the original input
 
-The first driver case uses B=1, T=1, D=2, Dff=5:
+The first driver case uses $B=1$, $T=1$, $D=2$, Dff=5:
 
 ```text
 x = [[[1,3]]]                   shape = (1,1,2)
@@ -8964,9 +8876,9 @@ $$
 N=[-1,1]/\sqrt{1+0}=[-1,1].
 $$
 
-![Normalize only the coordinates of the original one-position vector](assets/04-08-layernorm.en.png)
+![Normalize only the coordinates of the original one-position vector](assets/04-08-layernorm.en.png){width=100%}
 
-Cells contain the two coordinate values at b=0, t=0; shape metadata remains separate. The statistics box shows exactly which two values contribute. A later sequence with many rows applies this calculation separately to each row. Combining statistics over T would read other positions and could leak future inputs; `LayerNorm(D)` avoids that.
+Cells contain the two coordinate values at $b=0$, $t=0$; shape metadata remains separate. The statistics box shows exactly which two values contribute. A later sequence with many rows applies this calculation separately to each row. Combining statistics over $T$ would read other positions and could leak future inputs; `LayerNorm(D)` avoids that.
 
 ### The FFN changes feature width and applies a nonlinearity
 
@@ -8979,7 +8891,7 @@ activated            (B,T,Dff)
 branch / output      (B,T,D)
 ```
 
-The position count T stays fixed. The original fixture goes from width 2 to 5 and back to 2. Down must restore D so its result can be added coordinate by coordinate to the original input. There is no token pooling, head splitting or token-to-token attention in this branch.
+The position count $T$ stays fixed. The original fixture goes from width 2 to 5 and back to 2. Down must restore $D$ so its result can be added coordinate by coordinate to the original input. There is no token pooling, head splitting or token-to-token attention in this branch.
 
 `nn.Linear(in_features,out_features)` stores its weight as `(out_features,in_features)` and applies `input @ weight.T + bias`. Therefore:
 
@@ -8988,7 +8900,7 @@ $$
 (B,T,D_{\mathrm{ff}})\;@\;(D_{\mathrm{ff}},D)\longrightarrow(B,T,D).
 $$
 
-The actual stored `up.weight` is `(Dff,D)`, its bias is `(Dff,)`; `down.weight` is `(D,Dff)`, its bias is `(D,)`. The modules perform these transposes and bias additions internally. Call `up(...)` and `down(...)` directly in the assignment. Earlier Q/K/V exercises supplied already-oriented matrices for right multiplication; this is the storage convention of an `nn.Linear` object. [Official Linear contract](https://docs.pytorch.org/docs/stable/generated/torch.nn.Linear.html)
+The actual stored `up.weight` is `(Dff,D)`, its bias is `(Dff,)`; `down.weight` is `(D,Dff)`, its bias is `(D,)`. The modules perform these transposes and bias additions internally. Call `up(...)` and `down(...)` directly in the assignment. Earlier $Q$/$K$/$V$ exercises supplied already-oriented matrices for right multiplication; this is the storage convention of an `nn.Linear` object. [Official Linear contract](https://docs.pytorch.org/docs/stable/generated/torch.nn.Linear.html)
 
 #### GELU is elementwise, with unchanged shape
 
@@ -9007,13 +8919,13 @@ $$
 \operatorname{GELU}(1)\approx0.841345.
 $$
 
-![The exact-form GELU curve with values used in the lesson](assets/04-08-gelu.en.png)
+![The exact-form GELU curve with values used in the lesson](assets/04-08-gelu.en.png){width=100%}
 
 The main zero-branch check uses only the point at 0. Points at -1 and 1 explain the function and are used in the explicitly marked supplementary example below. GELU preserves every tensor axis and shape. Without a nonlinearity between the two affine maps, those two maps could be combined into a single affine map; that observation concerns the affine pair, not the whole block including LayerNorm.
 
 ### Residual addition: keep x and learn a correction
 
-Write the entire FFN branch as R(X):
+Write the entire FFN branch as $R$($X$):
 
 $$
 Y=X+R(X),\qquad
@@ -9033,9 +8945,9 @@ $$
 y=x+r(x),\qquad \frac{dy}{dx}=1+r'(x).
 $$
 
-For vectors, the Jacobian entry `(c,r)` is the derivative of branch output coordinate c with respect to input coordinate r. The identity matrix has 1 on its diagonal and 0 elsewhere; for D=2 it is `[[1,0],[0,1]]`. This is the vector version of the scalar derivative's direct 1 contribution.
+For vectors, the Jacobian entry `(c,r)` is the derivative of branch output coordinate c with respect to input coordinate $r$. The identity matrix has 1 on its diagonal and 0 elsewhere; for $D=2$ it is `[[1,0],[0,1]]`. This is the vector version of the scalar derivative's direct 1 contribution.
 
-I is the D-by-D identity matrix, and J_R is the branch Jacobian. This supplies a direct identity contribution to the gradient. It does not guarantee that every gradient in a complete model is bounded or cannot cancel.
+I is the $D$-by-$D$ identity matrix, and $J_R$ is the branch Jacobian. This supplies a direct identity contribution to the gradient. It does not guarantee that every gradient in a complete model is bounded or cannot cancel.
 
 In the original first check, **all up/down weights and biases are zero**. Wherever the shown LayerNorm is defined, this makes the branch identically zero with zero derivative. The complete trace is:
 
@@ -9050,15 +8962,15 @@ output      [[[1,3]]]             (1,1,2)
 
 The five zeros are five features at the same position. Since the whole branch derivative is zero, the residual Jacobian is I and `output.sum().backward()` gives `x.grad=[[[1,1]]]`. A branch merely having value zero at one input would not, on its own, imply a zero derivative; the zero weights in this check establish the stronger condition.
 
-![Trace the unchanged input path and the complete zero-branch computation](assets/04-08-residual-norm-ffn.en.png)
+![Trace the unchanged input path and the complete zero-branch computation](assets/04-08-residual-norm-ffn.en.png){width=100%}
 
-Read the branch across the top, then down through GELU and back through down. Its shapes and entries occupy separate areas. The orange path carries the original x directly to the plus node; it bypasses normalization. All entries show the original b=0, t=0 fixture.
+Read the branch across the top, then down through GELU and back through down. Its shapes and entries occupy separate areas. The orange path carries the original x directly to the plus node; it bypasses normalization. All entries show the original $b=0$, $t=0$ fixture.
 
 Pre-norm means `x + FFN(LN(x))`. Post-norm would instead apply normalization after the sum; they are different computations. This assignment uses the former. The placement of LayerNorm and its optimization implications are studied in [Xiong et al., ICML 2020](https://arxiv.org/abs/2002.04745). Do not normalize the final sum or add `normalized` in place of the original x.
 
 ### Supplement: the same input with a nonzero branch
 
-The zero branch is a useful residual check but does not display a nonzero GELU result. For this **separate arithmetic example**, retain x, norm, B, T, D and Dff from above. Change only the projection weights; keep both biases zero:
+The zero branch is a useful residual check but does not display a nonzero GELU result. For this **separate arithmetic example**, retain x, norm, $B$, $T$, $D$ and Dff from above. Change only the projection weights; keep both biases zero:
 
 ```text
 up.weight = [[1,0],          shape = (5,2)
@@ -9081,9 +8993,9 @@ branch     ≈ [-0.158655,0.841345]
 output     ≈ [0.841345,3.841345]
 ```
 
-![Actual matrix entries, both transposed weight sizes and the nonzero correction](assets/04-08-ffn-matrices.en.png)
+![Actual matrix entries, both transposed weight sizes and the nonzero correction](assets/04-08-ffn-matrices.en.png){width=100%}
 
-The figure displays the row-vector products `(1,2) @ (2,5) -> (1,5)` and `(1,5) @ (5,2) -> (1,2)`. Displayed decimals are rounded; calculations retain full precision. Full tensor shapes retain B=1 and T=1 throughout. This fixture does not replace or change the original supplied driver.
+The figure displays the row-vector products `(1,2) @ (2,5) -> (1,5)` and `(1,5) @ (5,2) -> (1,2)`. Displayed decimals are rounded; calculations retain full precision. Full tensor shapes retain $B=1$ and $T=1$ throughout. This fixture does not replace or change the original supplied driver.
 
 ### Five numbered implementation steps
 
@@ -9101,13 +9013,13 @@ The function docstring and numbered comments beside the learner region repeat th
 
 Every output row depends only on the matching input row in this sublayer. The shared module parameters are applied independently at each position; sharing parameters does not mean pooling input values. A later row can change without changing an earlier output here. If input rows already carry contextual features, the FFN can transform those features; it does not itself fetch another row.
 
-- Normalize only D with the supplied `LayerNorm(D)`. Normalizing over `(T,D)` changes the computation and can expose future inputs.
-- Preserve T when widths change. Dff is not a token count, a head count, or the functional-module alias F.
+- Normalize only $D$ with the supplied `LayerNorm(D)`. Normalizing over `(T,D)` changes the computation and can expose future inputs.
+- Preserve $T$ when widths change. Dff is not a token count, a head count, or the functional-module alias `F`.
 - Keep GELU between up and down. Up/down are affine maps including their supplied biases.
 - Do not create new `Linear` or `LayerNorm` objects inside the function; that would discard the supplied learned state.
 - Add branch to the original x. Adding it to normalized is a different residual path.
 - Keep gradients connected. Do not detach, rebuild tensors from lists, put the calculation in no-grad, or modify inputs/parameters in place.
-- Retain the caller's epsilon. eps=0 in the first hand-check is chosen for its nonconstant input; the normal default handles constant vectors and D=1 without division by zero.
+- Retain the caller's $\epsilon$. eps=0 in the first hand-check is chosen for its nonconstant input; the normal default handles constant vectors and $D=1$ without division by zero.
 
 ### Run, preparation evidence and current status
 
@@ -9123,15 +9035,13 @@ Expected after implementation:
 Lesson 04.08 checks passed.
 ```
 
-The unchanged original driver checks the exact LayerNorm example, zero-branch identity output and identity-path gradient, then compares a nonzero random B=2, T=4, D=3, Dff=7 case against the specified composition.
+The unchanged original driver checks the exact LayerNorm example, zero-branch identity output and identity-path gradient, then compares a nonzero random $B=2$, $T=4$, $D=3$, Dff=7 case against the specified composition.
 
 Preserve learner calculations and the original driver; only status and the missing end marker were adjusted. Earlier reference preparation and reviewed figures remain teaching support.
 
-Optional understanding prompts: why must down restore D? Which values contribute to one position's variance? Why is the residual added to x rather than normalized? How can a position-wise FFN process contextual information without newly reading another token?
+Optional understanding prompts: why must down restore $D$? Which values contribute to one position's variance? Why is the residual added to x rather than normalized? How can a position-wise FFN process contextual information without newly reading another token?
 
-<a id="section-04-09"></a>
-
-## 04.09 Assemble a causal decoder
+## 04.09 Assemble a causal decoder {#section-04-09}
 
 ### Method sources
 
@@ -9141,21 +9051,21 @@ The decoder attention components originate in [Vaswani et al., 2017; R04](https:
 
 So far, embedding lookup produces token features, position addition supplies slot-dependent features, causal multi-head attention exchanges information with visible positions, and a pre-norm FFN transforms each position's features. A language model needs these components connected to a vocabulary prediction at every input position.
 
-A decoder block refines an entire sequence representation without changing its `(B,T,D)` layout. A later block receives the contextual features produced by the preceding block. This is greater representation depth, not another batch, another head, another generated token, or a change in T. Blocks have the same architecture but separate trainable weights in this exercise.
+A decoder block refines an entire sequence representation without changing its `(B,T,D)` layout. A later block receives the contextual features produced by the preceding block. This is greater representation depth, not another batch, another head, another generated token, or a change in $T$. Blocks have the same architecture but separate trainable weights in this exercise.
 
 This is a **decoder-only** model: there is no separate encoder or encoder-to-decoder cross-attention. `TinyDecoder.forward` receives token IDs and returns raw logits. Loss calculation, optimizer updates and autoregressive sampling belong to the caller, introduced together in [04.10](#section-04-10).
 
 Prerequisites: [04.06 multi-head attention](#section-04-06), [04.07 position addition](#section-04-07), and [04.08 residual/normalization/FFN](#section-04-08). Their actual files are `04_06_multihead_attention.py`, `04_07_position_embeddings.py` and `04_08_residual_norm_ffn.py`. Finish 04.08 before running the assembled implementation.
 
-### Formulas before code: one sequence through L blocks
+### Formulas before code: one sequence through $L$ blocks
 
-Let X be integer input IDs, E the token embedding table, P the learned position table, and L the block count. For this interface, every call starts at offset=0:
+Let $X$ be integer input IDs, $E$ the token embedding table, $P$ the learned position table, and $L$ the block count. For this interface, every call starts at offset=0:
 
 $$
 H_0=E[X]+P_{0:T},\qquad H_0\in\mathbb R^{B\times T\times D}.
 $$
 
-The position slice is broadcast across B samples. It is added once before the block stack. For each block index ℓ=0,…, L−1:
+The position slice is broadcast across $B$ samples. It is added once before the block stack. For each block index ℓ=0,…, $L$−1:
 
 $$
 N_\ell=\operatorname{LN}_{1,\ell}(H_\ell),\qquad
@@ -9167,7 +9077,7 @@ R_\ell=\operatorname{LN}_{2,\ell}(U_\ell),\qquad
 H_{\ell+1}=U_\ell+\operatorname{FFN}_\ell(R_\ell).
 $$
 
-Every tensor above has shape `(B,T,D)`. Each LayerNorm uses the last D coordinates independently at each position. The attention branch mixes visible positions; the FFN branch changes features position by position. This supplied FFN has an internal width of 4D:
+Every tensor above has shape `(B,T,D)`. Each LayerNorm uses the last $D$ coordinates independently at each position. The attention branch mixes visible positions; the FFN branch changes features position by position. This supplied FFN has an internal width of 4D:
 
 $$
 \operatorname{FFN}_\ell(R)=
@@ -9179,7 +9089,7 @@ $$
 (B,T,4D)\ @\ (4D,D)\longrightarrow(B,T,D).
 $$
 
-The contracted axes are the last input-feature axis and the first axis of the displayed transposed weight. The original H_ℓ and U_ℓ form the two residual paths. The separately normalized branch input is not substituted for either original residual. Each block has its own two LayerNorm modules and Q/K/V/output/FFN parameters.
+The contracted axes are the last input-feature axis and the first axis of the displayed transposed weight. The original H_ℓ and U_ℓ form the two residual paths. The separately normalized branch input is not substituted for either original residual. Each block has its own two LayerNorm modules and $Q$/$K$/$V$/output/FFN parameters.
 
 After all blocks, the model uses a separate final LayerNorm and a vocabulary head:
 
@@ -9188,9 +9098,9 @@ F=\operatorname{LN}_f(H_L),\qquad Z=FW_{head}^{\top},\qquad
 (B,T,D)\ @\ (D,V)\longrightarrow(B,T,V).
 $$
 
-Here F names a mathematical tensor; `F` in the exercise imports is PyTorch's functional module. `self.head` stores its weight as `(V,D)` and applies the transpose internally; `bias=False` means no final head bias. There is no final softmax inside this forward method.
+Here $F$ names a mathematical tensor; `F` in the exercise imports is PyTorch's functional module. `self.head` stores its weight as `(V,D)` and applies the transpose internally; `bias=False` means no final head bias. There is no final softmax inside this forward method.
 
-![Full decoder assembly, block branches, residuals and head multiplication shapes](assets/04-09-decoder-model.en.png)
+![Full decoder assembly, block branches, residuals and head multiplication shapes](assets/04-09-decoder-model.en.png){width=100%}
 
 **Read the figure:** Follow the top row from IDs through embedding/positions and two distinct blocks to logits. The middle expands one block; both residual additions preserve `(B,T,D)`, and every attention layer retains its causal mask. The bottom labels both operands and the result of the head multiplication. Shape bands describe dimensions; `[[0,1,2]]` is the actual input content. H0/H1/H2 are names of whole tensors, not their numerical entries.
 
@@ -9213,19 +9123,19 @@ class TinyDecoder(nn.Module):
 
 | Name | Type / dimensions | Meaning and example |
 | --- | --- | --- |
-| `vocab_size` | Positive integer V | Number of candidate token IDs; V=5 means IDs 0…4 |
-| `width` | Positive integer D | Hidden-feature width; D=4 |
+| `vocab_size` | Positive integer $V$ | Number of candidate token IDs; $V=5$ means IDs 0…4 |
+| `width` | Positive integer $D$ | Hidden-feature width; $D=4$ |
 | `heads` | Positive integer | Heads per attention layer; 2, so each head has width 2 |
-| `layers` | Integer L≥1 | Number of independent decoder blocks; L=2 |
-| `max_length` | Positive integer M | Learned position-table capacity; M=8 |
-| `input_ids` | `torch.long`, `(B,T)` | B≥1, 1≤T≤M, each ID in `[0,V)`; parameters and inputs use compatible devices |
-| Return `logits` | Floating `(B,T,V)` | Unnormalized next-token scores, one V-vector per input position |
+| `layers` | Integer $L$≥1 | Number of independent decoder blocks; $L=2$ |
+| `max_length` | Positive integer $M$ | Learned position-table capacity; $M=8$ |
+| `input_ids` | `torch.long`, `(B,T)` | $B$≥1, 1≤$T$≤$M$, each ID in `[0,V)`; parameters and inputs use compatible devices |
+| Return `logits` | Floating `(B,T,V)` | Unnormalized next-token scores, one $V$-vector per input position |
 
-Require `width % heads == 0`. T may change between calls within the capacity, while D and V remain constructor choices. The interface assumes ordinary unpadded sequences; it has no padding mask, KV cache or offset argument. Do not treat a continuation-only chunk as a cached continuation: this particular forward restarts its positions at zero and sees only its supplied input.
+Require `width % heads == 0`. $T$ may change between calls within the capacity, while $D$ and $V$ remain constructor choices. The interface assumes ordinary unpadded sequences; it has no padding mask, KV cache or offset argument. Do not treat a continuation-only chunk as a cached continuation: this particular forward restarts its positions at zero and sees only its supplied input.
 
 `self.embedding.weight` and `self.head.weight` both have shape `(V,D)` but are separate parameters with different roles. The first looks up a token's features; the second scores vocabulary candidates from contextual features. No weight tying is performed here. The learned positions start at zero in the supplied constructor; separate rows may acquire different values through their gradients during training. Before that training, the all-zero table adds no explicit distinction between positions.
 
-The network accepts token IDs, regardless of whether a preceding tokenizer used bytes or BPE. V must agree with that tokenizer and the output head. The toy IDs here are supplied directly; forward does not encode text or change the tokenizer vocabulary.
+The network accepts token IDs, regardless of whether a preceding tokenizer used bytes or BPE. $V$ must agree with that tokenizer and the output head. The toy IDs here are supplied directly; forward does not encode text or change the tokenizer vocabulary.
 
 ### What is already supplied, and what you write
 
@@ -9237,7 +9147,7 @@ Creating modules in `__init__` gives the model persistent parameters. Recreating
 
 ### Complete small example: two blocks with nonzero causal attention
 
-Retain the original dimensions V=5, D=4, heads=2, L=2, M=8 and input `[[0,1,2]]`, B=1, T=3. The original supplied checks use random initialization and B=2; their exact random outputs are not the hand values below. **For this separate deterministic illustration only**, choose these existing parameter values:
+Retain the original dimensions $V=5$, $D=4$, heads=2, $L=2$, $M=8$ and input `[[0,1,2]]`, $B=1$, $T=3$. The original supplied checks use random initialization and $B=2$; their exact random outputs are not the hand values below. **For this separate deterministic illustration only**, choose these existing parameter values:
 
 ```text
 embedding.weight, shape (V,D)=(5,4):
@@ -9259,11 +9169,11 @@ head.weight, shape (V,D)=(5,4):
 [1,1,1,1]
 ```
 
-These values demonstrate data flow; do not paste them into the constructor or learner region. Zeroing the FFN branch isolates the two attention residual updates; V and output projections remain nonzero. The general model and supplied driver retain trainable, randomly initialized branches.
+These values demonstrate data flow; do not paste them into the constructor or learner region. Zeroing the FFN branch isolates the two attention residual updates; $V$ and output projections remain nonzero. The general model and supplied driver retain trainable, randomly initialized branches.
 
 #### Step A: lookup and position addition
 
-The three IDs select three rows. P[0:3] is zero, so the `(B,T,D)=(1,3,4)` tensor H0 has sample b=0:
+The three IDs select three rows. $P$[0:3] is zero, so the `(B,T,D)=(1,3,4)` tensor H0 has sample $b=0$:
 
 ```text
 H0[0] = [[1,-1, 1,-1],
@@ -9273,15 +9183,15 @@ H0[0] = [[1,-1, 1,-1],
 
 Each row has mean zero and population variance one. Its normalized value is its original row divided by `sqrt(1+1e-5)`.
 
-#### Step B: why the two-head attention is uniform here
+#### Step $B$: why the two-head attention is uniform here
 
-With Q/K projection matrices zero, every allowed scaled score is zero. A causal row with n visible keys therefore gives each weight `exp(0)/(n*exp(0))=1/n`. For both heads and both blocks:
+With $Q$/$K$ projection matrices zero, every allowed scaled score is zero. A causal row with n visible keys therefore gives each weight `exp(0)/(n*exp(0))=1/n`. For both heads and both blocks:
 
 $$
 A=\begin{bmatrix}1&0&0\\1/2&1/2&0\\1/3&1/3&1/3\end{bmatrix},\qquad A\in\mathbb R^{3\times3}.
 $$
 
-V's identity projection preserves the normalized features. Each head averages its two feature coordinates using the same A; concatenation restores all four coordinates, and the identity output projection leaves them unchanged. Thus, for this fixture only, full multi-head attention reduces to `A @ LN(H)` for each sample. It is not zero despite zero Q/K.
+$V$'s identity projection preserves the normalized features. Each head averages its two feature coordinates using the same A; concatenation restores all four coordinates, and the identity output projection leaves them unchanged. Thus, for this fixture only, full multi-head attention reduces to `A @ LN(H)` for each sample. It is not zero despite zero $Q$/$K$.
 
 #### Step C: the first residual block
 
@@ -9291,7 +9201,7 @@ $$
 H_1=H_0+A\operatorname{LN}(H_0).
 $$
 
-For local t=1, the attention branch is the average of normalized rows 0 and 1. Before the small epsilon scaling, that average is `[1,0,0,-1]`; adding the original `[1,1,-1,-1]` gives approximately `[2,1,-1,-2]`. Tracking all rows, rounded to four decimals:
+For local $t=1$, the attention branch is the average of normalized rows 0 and 1. Before the small $\epsilon$ scaling, that average is `[1,0,0,-1]`; adding the original `[1,1,-1,-1]` gives approximately `[2,1,-1,-2]`. Tracking all rows, rounded to four decimals:
 
 ```text
 H1[0] ≈ [[2.0000,-2.0000, 2.0000,-2.0000],
@@ -9301,7 +9211,7 @@ H1[0] ≈ [[2.0000,-2.0000, 2.0000,-2.0000],
 
 The FFN's normalization still executes, but its zero down/up branch returns zero and leaves this residual state unchanged. In the ordinary model, the FFN generally contributes nonzero values.
 
-#### Step D: the second block consumes H1, not H0
+#### Step $D$: the second block consumes H1, not H0
 
 The same illustrated A now averages normalized **H1** rows. Normalization must be recomputed from each new row; the second block is not a copy of the first block's output and does not restart with embeddings:
 
@@ -9317,7 +9227,7 @@ H2[0] ≈ [[3.0000,-3.0000, 3.0000,-3.0000],
 
 Both blocks retain three position rows and four features per row. The uniform attention fixture happens to choose equal projection settings across layers; the actual constructor stores separate parameters for them.
 
-#### Step E: final normalization and the vocabulary head
+#### Step $E$: final normalization and the vocabulary head
 
 The final LayerNorm gives:
 
@@ -9335,11 +9245,11 @@ Z[0] ≈ [[1.0000,-1.0000, 1.0000,-1.0000,0.0000],
         [1.6196,-0.8886,-0.7656, 0.0346,0.0000]]
 ```
 
-The product is `(3,4) @ (4,5) -> (3,5)` for displayed sample b=0, or `(1,3,4) @ (4,5) -> (1,3,5)` for the full tensor. The dot product for t=2, candidate ID 0 is approximately `[1.6196,-0.8886,-0.7656,0.0346] · [1,0,0,0] = 1.6196`. These five scores are not probabilities and need not sum to one.
+The product is `(3,4) @ (4,5) -> (3,5)` for displayed sample $b=0$, or `(1,3,4) @ (4,5) -> (1,3,5)` for the full tensor. The dot product for $t=2$, candidate ID 0 is approximately `[1.6196,-0.8886,-0.7656,0.0346] · [1,0,0,0] = 1.6196`. These five scores are not probabilities and need not sum to one.
 
-![Actual intermediate numerical matrices and the final five-candidate logits](assets/04-09-decoder-trace.en.png)
+![Actual intermediate numerical matrices and the final five-candidate logits](assets/04-09-decoder-trace.en.png){width=100%}
 
-**Read the figure:** First follow H0→H1, then H2→Z; the equations specify that H2 consumes H1. Cells contain rounded numerical entries; shape metadata above each matrix includes the omitted B=1 axis and identifies sample b=0. In hidden states c indexes features; in Z it indexes candidate IDs 0…4. The fifth score is zero because of the chosen head weights and zero-mean final normalization, not a general property of token ID 4.
+**Read the figure:** First follow H0→H1, then H2→$Z$; the equations specify that H2 consumes H1. Cells contain rounded numerical entries; shape metadata above each matrix includes the omitted $B=1$ axis and identifies sample $b=0$. In hidden states c indexes features; in $Z$ it indexes candidate IDs 0…4. The fifth score is zero because of the chosen head weights and zero-mean final normalization, not a general property of token ID 4.
 
 The generic shape ledger is unchanged by these special weights:
 
@@ -9357,23 +9267,23 @@ The generic shape ledger is unchanged by these special weights:
 
 For input IDs `[[0,1,2]]`, row Z[0,0] predicts the token after input position 0 using the prefix `[0]`; row Z[0,1] uses `[0,1]`; row Z[0,2] uses `[0,1,2]`. If the training stream is `[0,1,2,3]`, the aligned targets for those three rows are `[1,2,3]`. The forward method receives the input IDs, not these targets.
 
-Returning all T rows lets training score all those shifted targets in one call. Generation can later select only `logits[:,-1,:]` for the next token. Applying argmax or sampling inside forward would discard information needed for cross-entropy and return the wrong contract.
+Returning all $T$ rows lets training score all those shifted targets in one call. Generation can later select only `logits[:,-1,:]` for the next token. Applying argmax or sampling inside forward would discard information needed for cross-entropy and return the wrong contract.
 
-Cross-entropy accepts unnormalized logits and carries out its stable log-probability calculation internally. With B=2, T=3, V=5, the supplied driver reshapes `(2,3,5)` into `(6,5)` and uses six targets; the five candidate scores for each position stay together. [Official CrossEntropyLoss documentation](https://docs.pytorch.org/docs/stable/generated/torch.nn.CrossEntropyLoss.html)
+Cross-entropy accepts unnormalized logits and carries out its stable log-probability calculation internally. With $B=2$, $T=3$, $V=5$, the supplied driver reshapes `(2,3,5)` into `(6,5)` and uses six targets; the five candidate scores for each position stay together. [Official CrossEntropyLoss documentation](https://docs.pytorch.org/docs/stable/generated/torch.nn.CrossEntropyLoss.html)
 
 ### Why causal isolation and context sensitivity are different checks
 
-Change `[[0,1,2]]` to `[[0,1,4]]`. Earlier output rows t=0,1 must remain unchanged: their permitted inputs have not changed. Inductively, every row entering the next block still depends only on its prefix, and per-position LayerNorm/FFN do not introduce future dependencies. Applying the mask at every layer preserves this property. This is checked with unchanged weights and deterministic forward computations; this exercise has no dropout.
+Change `[[0,1,2]]` to `[[0,1,4]]`. Earlier output rows $t=0$,1 must remain unchanged: their permitted inputs have not changed. Inductively, every row entering the next block still depends only on its prefix, and per-position LayerNorm/FFN do not introduce future dependencies. Applying the mask at every layer preserves this property. This is checked with unchanged weights and deterministic forward computations; this exercise has no dropout.
 
 Now change `[[0,1,2]]` to `[[3,1,2]]`. The last row is allowed to change because it can read the earlier position 0. A model that ignores all context could pass future isolation, so the supplied random-fixture driver also requires a last-row change in this particular comparison. Sensitivity is a capability, not a guarantee that every parameter setting and every earlier-token change must alter the final logits.
 
-Positions are added once in this model; the causal mask is applied in each attention layer. The loop processes depth, while each block still processes all T positions together. More detailed causal dependency reasoning remains in [04.05](#section-04-05).
+Positions are added once in this model; the causal mask is applied in each attention layer. The loop processes depth, while each block still processes all $T$ positions together. More detailed causal dependency reasoning remains in [04.05](#section-04-05).
 
 ### A complete one-position prefix example for the live walkthrough
 
-Use the deterministic weights above, but take only its first prefix `input_ids=[[0]]`, shape `(B,T)=(1,1)`. Keep D=4, V=5, heads=2, L=2, M=8. This is a smaller view of the same fixture, not a change to the supplied check or constructor.
+Use the deterministic weights above, but take only its first prefix `input_ids=[[0]]`, shape `(B,T)=(1,1)`. Keep $D=4$, $V=5$, heads=2, $L=2$, $M=8$. This is a smaller view of the same fixture, not a change to the supplied check or constructor.
 
-Lookup and zero position addition give `H0=[[[1,-1,1,-1]]]`. Each head has one visible key, so its attention weight is 1. With identity V/output projections, attention returns LN(H). The zero FFN branch adds nothing. Keeping the actual epsilon1e-5 and rounding:
+Lookup and zero position addition give `H0=[[[1,-1,1,-1]]]`. Each head has one visible key, so its attention weight is 1. With identity $V$/output projections, attention returns LN($H$). The zero FFN branch adds nothing. Keeping the actual epsilon1e-5 and rounding:
 
 $$
 H_1\approx[[[2,-2,2,-2]]],\qquad
@@ -9394,10 +9304,10 @@ Scores belong to token IDs 0…4, predicting after the single supplied input; th
 Open 04_09_decoder_model.py. Edit only `TinyDecoder.forward` between the learner markers. Leave `DecoderBlock`, the constructor, imports and supplied driver unchanged. The following plan specifies operations without replacing your implementation.
 
 1. **Look up input features.** Call the existing `self.embedding` module on `input_ids`, using the syntax `module(argument)`, and save the tensor as `hidden`. The method body uses eight spaces of indentation. Expect `(B,T,D)`; the example is `(1,3,4)`. Calling the module is different from constructing another `nn.Embedding`.
-2. **Add positions.** Pass `hidden` and `self.positions` to the existing `add_positions` helper, leaving its default offset at zero, and replace `hidden` with its return. Keep eight-space indentation. Expect H0 with the same shape; do not add integer IDs, all M rows, or a second position signal inside the block loop.
-3. **Run every block in order.** `for block in self.blocks:` takes the next module from the ModuleList at each iteration. Put that loop header at eight spaces. Its body has twelve spaces: call the current block on the current `hidden` and assign the returned tensor back to `hidden`. With L=2, the first iteration produces H1 and the next consumes H1 to produce H2. Do not keep feeding H0, ignore the return, add another residual, or return inside the loop.
+2. **Add positions.** Pass `hidden` and `self.positions` to the existing `add_positions` helper, leaving its default offset at zero, and replace `hidden` with its return. Keep eight-space indentation. Expect H0 with the same shape; do not add integer IDs, all $M$ rows, or a second position signal inside the block loop.
+3. **Run every block in order.** `for block in self.blocks:` takes the next module from the ModuleList at each iteration. Put that loop header at eight spaces. Its body has twelve spaces: call the current block on the current `hidden` and assign the returned tensor back to `hidden`. With $L=2$, the first iteration produces H1 and the next consumes H1 to produce H2. Do not keep feeding H0, ignore the return, add another residual, or return inside the loop.
 4. **Normalize the final hidden state.** After the loop, return to eight-space indentation. Apply the existing `self.norm` to the latest `hidden`, saving the normalized tensor. Shape remains `(B,T,D)`. This is the final normalization, in addition to the separate norms already inside each block.
-5. **Compute vocabulary scores.** Apply the existing `self.head` to that normalized tensor and save `logits`. It handles its stored weight transpose and preserves B/T automatically: expect `(B,T,V)`. Do not flatten for this call, manually transpose the hidden state, apply softmax, or choose token IDs.
+5. **Compute vocabulary scores.** Apply the existing `self.head` to that normalized tensor and save `logits`. It handles its stored weight transpose and preserves $B$/$T$ automatically: expect `(B,T,V)`. Do not flatten for this call, manually transpose the hidden state, apply softmax, or choose token IDs.
 6. **Return all logits.** At eight-space indentation after the loop, return the one `logits` tensor. For the worked input, its shape is `(1,3,5)`; the original two-sample driver expects `(2,3,5)`.
 
 `for` repeats only its indented body. Returning to eight spaces ends that loop body; `return` then ends the whole forward call. No new conditional, break, continue, optimizer, mask construction or nested batch/position loop is needed.
@@ -9406,13 +9316,13 @@ Open 04_09_decoder_model.py. Edit only `TinyDecoder.forward` between the learner
 
 Registration makes `embedding.weight`, `positions`, names such as `blocks.0.q`, both blocks' norms/FFN modules, final norm and head visible in `named_parameters()` and `state_dict()`. A checkpoint stores weights; it does not make a second model share live parameter objects with the first. Construct the same dimensions, then load the saved state to reproduce its output under the same computation settings.
 
-Optional arithmetic audit for this exact architecture: a block has four bias-free D×D projection matrices, two LayerNorms with gain/bias, and `Linear(D,4D)` / `Linear(4D,D)` including biases. Its parameter count is `12D²+9D`; the whole untied model has:
+Optional arithmetic audit for this exact architecture: a block has four bias-free $D$×$D$ projection matrices, two LayerNorms with gain/bias, and `Linear(D,4D)` / `Linear(4D,D)` including biases. Its parameter count is $12D^2+9D$; the whole untied model has:
 
 $$
 N=2VD+MD+L(12D^2+9D)+2D.
 $$
 
-For V=5, D=4, L=2, M=8, N=536. Heads split existing coordinates and do not multiply the number of these projection matrices. This is a source-derived audit, not an experiment result or a universal Transformer parameter formula.
+For $V=5$, $D=4$, $L=2$, $M=8$, $N=536$. Heads split existing coordinates and do not multiply the number of these projection matrices. This is a source-derived audit, not an experiment result or a universal Transformer parameter formula.
 
 ### Run, checks and preparation status
 
@@ -9430,13 +9340,11 @@ Lesson 04.09 checks passed.
 
 An unfinished 04.08 can produce `learner TODO or an unfinished prerequisite`; that identifies missing exercise code, not an environment installation problem. Reuse the existing environment.
 
-The unchanged supplied driver checks B=2, T=3, V=5 output shape, unchanged earlier outputs when the final input changes, a changed final output for its earlier-token perturbation, gradient connectivity for all registered parameters, and state-dictionary round-trip output equality. `grad is not None` does not prove every gradient is nonzero or that the model has learned language.
+The unchanged supplied driver checks $B=2$, $T=3$, $V=5$ output shape, unchanged earlier outputs when the final input changes, a changed final output for its earlier-token perturbation, gradient connectivity for all registered parameters, and state-dictionary round-trip output equality. `grad is not None` does not prove every gradient is nonzero or that the model has learned language.
 
 The deterministic NumPy trace agrees with supplied Torch blocks.
 
-<a id="section-04-10"></a>
-
-## 04.10 Train and generate with the tiny Transformer
+## 04.10 Train and generate with the tiny Transformer {#section-04-10}
 
 ### Method sources
 
@@ -9452,7 +9360,7 @@ First fit one small consistent batch repeatedly. This is a wiring diagnostic: ca
 
 ### Formula first: logits, targets and mean cross-entropy
 
-Let X and Y have shape `(B,T)`, with Y already containing the next-token target for each input position. One forward call produces Z=f_θ(X), shape `(B,T,V)`. For target y=Y[b, t]:
+Let $X$ and $Y$ have shape `(B,T)`, with $Y$ already containing the next-token target for each input position. One forward call produces $Z=f_\theta(X)$, shape `(B,T,V)`. For target y=Y[b, t]:
 
 $$
 p_{b,t,v}=\frac{e^{Z_{b,t,v}}}{\sum_{j=0}^{V-1}e^{Z_{b,t,j}}},\qquad
@@ -9460,13 +9368,13 @@ p_{b,t,v}=\frac{e^{Z_{b,t,v}}}{\sum_{j=0}^{V-1}e^{Z_{b,t,j}}},\qquad
 =-Z_{b,t,y}+\log\sum_{v=0}^{V-1}e^{Z_{b,t,v}}.
 $$
 
-There are B×T target positions, so the mean objective is:
+There are $B$×$T$ target positions, so the mean objective is:
 
 $$
 L=\frac1{BT}\sum_{b=0}^{B-1}\sum_{t=0}^{T-1}\ell_{b,t}.
 $$
 
-The implementation sends **raw logits**, not softmax probabilities, to `F.cross_entropy`; it performs the stable log-probability calculation internally. Reshape logits into `(B*T,V)` and targets into `(B*T,)`, retaining all V candidates together for each position. The row correspondence is q=b*T+t. `reshape(-1,V)` infers B*T; `-1` does not mean an extra dimension or a negative size. Do not flatten logits into a single candidate-free vector. [Official cross-entropy documentation](https://docs.pytorch.org/docs/stable/generated/torch.nn.CrossEntropyLoss.html)
+The implementation sends **raw logits**, not softmax probabilities, to `F.cross_entropy`; it performs the stable log-probability calculation internally. Reshape logits into `(B*T,V)` and targets into `(B*T,)`, retaining all $V$ candidates together for each position. The row correspondence is $q=bT+t$. `reshape(-1,V)` infers $BT$; `-1` does not mean an extra dimension or a negative size. Do not flatten logits into a single candidate-free vector. [Official cross-entropy documentation](https://docs.pytorch.org/docs/stable/generated/torch.nn.CrossEntropyLoss.html)
 
 #### Classroom follow-up: where is softmax if it is never called
 
@@ -9480,7 +9388,7 @@ log_probs = F.log_softmax(logits_flat, dim=-1)
 loss_expanded = F.nll_loss(log_probs, target_flat)
 ```
 
-N=B*T and `log_probs` still has shape `(N,V)`. NLL means negative log-likelihood; `F.nll_loss` selects each row's true-target log-probability, negates it and averages by default. This describes mathematical equivalence, not a requirement to materialize ordinary probabilities or call a fixed sequence of Python functions internally. [Official explanation](https://docs.pytorch.org/docs/stable/generated/torch.nn.CrossEntropyLoss.html).
+$N=BT$ and `log_probs` still has shape `(N,V)`. NLL means negative log-likelihood; `F.nll_loss` selects each row's true-target log-probability, negates it and averages by default. This describes mathematical equivalence, not a requirement to materialize ordinary probabilities or call a fixed sequence of Python functions internally. [Official explanation](https://docs.pytorch.org/docs/stable/generated/torch.nn.CrossEntropyLoss.html).
 
 For one row of raw scores z and true target y:
 
@@ -9501,24 +9409,24 @@ negative and mean:      0.40760596                          scalar, shape ()
 
 With one row the mean is that row's loss; the original batch averages eight target losses. `cross_entropy(softmax(logits), target)` treats probabilities as new logits and normalizes again, changing the objective and gradients. This example's correct loss is approximately0.407606; passing softmax first gives approximately0.797190.
 
-![Floating-point paths through probabilities versus direct log-probabilities](assets/03-10-stable-log-probabilities.en.png)
+![Floating-point paths through probabilities versus direct log-probabilities](assets/03-10-stable-log-probabilities.en.png){width=100%}
 
 **Read the figure:** This reuses03.10's separate extreme example: logits=`[1000,0,-1000]`, targetID2. The left path rounds ordinary probabilities to`[1,0,0]`, making `-log(0)` infinite. Stable log-probabilities on the right are`[0,-1000,-2000]`, giving finite target loss 2000. Keep this example separate from the preceding`[2,1,0]` arithmetic. Both paths define the same mathematical loss; rounding changes the computed results. This explains the greater numerical stability of computing log-softmax directly.
 
-`loss.backward()` propagates gradients through internal normalization into the model; the softmax mathematics is still present. Attention softmax normalizes over key positions; this normalization is over V vocabulary candidates and has a different role. Compute softmax when sampling or inspecting probabilities; greedy argmax preserves the ordering of finite scores and can select directly from logits.
+`loss.backward()` propagates gradients through internal normalization into the model; the softmax mathematics is still present. Attention softmax normalizes over key positions; this normalization is over $V$ vocabulary candidates and has a different role. Compute softmax when sampling or inspecting probabilities; greedy argmax preserves the ordering of finite scores and can select directly from logits.
 
 ### Complete batch example and teacher forcing
 
-The supplied driver constructs `TinyDecoder(2,8,2,1,16)`: V=2, D=8, heads=2, L=1, M=16. Its B=2, T=4 batch is:
+The supplied driver constructs `TinyDecoder(2,8,2,1,16)`: $V=2$, $D=8$, heads=2, $L=1$, $M=16$. Its $B=2$, $T=4$ batch is:
 
 ```text
 input_ids  X = [[0,1,0,1], [1,0,1,0]]    shape (2,4)
 target_ids Y = [[1,0,1,0], [0,1,0,1]]    shape (2,4)
 ```
 
-The first row can be read from the five-ID stream `[0,1,0,1,0]`: take its first four IDs as X and its last four as Y. The second row uses `[1,0,1,0,1]`. `Y=1-X` is a convenient property of this alternating binary fixture, not a general target-construction rule for text.
+The first row can be read from the five-ID stream `[0,1,0,1,0]`: take its first four IDs as $X$ and its last four as $Y$. The second row uses `[1,0,1,0,1]`. $Y=1-X$ is a convenient property of this alternating binary fixture, not a general target-construction rule for text.
 
-Only X enters the decoder. Training uses the true preceding input tokens; this is teacher forcing. At t=0 the causal model sees `[0]` and predicts target1, at t=1 it sees `[0,1]` and predicts target0, and so on. Although all true input positions are supplied at once, the causal mask prevents a row from reading later inputs. The labels enter the loss, not the attention computation. Y is already aligned; shifting it again would change the task.
+Only $X$ enters the decoder. Training uses the true preceding input tokens; this is teacher forcing. At $t=0$ the causal model sees `[0]` and predicts target1, at $t=1$ it sees `[0,1]` and predicts target0, and so on. Although all true input positions are supplied at once, the causal mask prevents a row from reading later inputs. The labels enter the loss, not the attention computation. $Y$ is already aligned; shifting it again would change the task.
 
 The model's logits are `(2,4,2)`, reshaped to `(8,2)`. Targets become:
 
@@ -9528,9 +9436,9 @@ The model's logits are `(2,4,2)`, reshaped to `(8,2)`. Targets become:
 
 For an **illustrative uniform prediction**, every row gives its true target probability 0.5. Each row contributes `-ln(0.5)=ln(2)≈0.693147`; averaging eight equal contributions gives the same 0.693147. If all true-target probabilities were 0.75, the mean would instead be `-ln(0.75)≈0.287682`. These are arithmetic examples, not the actual random initialization's measured loss or a promised training trajectory.
 
-![The actual shifted batch, flattened position order and an illustrative uniform cross-entropy](assets/04-10-train-tiny-transformer.en.png)
+![The actual shifted batch, flattened position order and an illustrative uniform cross-entropy](assets/04-10-train-tiny-transformer.en.png){width=100%}
 
-**Read the figure:** The upper cells contain actual token IDs, with B as rows and T as columns. The lower table changes meaning: each row is one flattened `(b,t)` position, and its two columns are hypothetical candidate probabilities. Green selects the true target; the adjacent loss box averages all eight terms. Shape metadata and cell contents are labeled separately.
+**Read the figure:** The upper cells contain actual token IDs, with $B$ as rows and $T$ as columns. The lower table changes meaning: each row is one flattened `(b,t)` position, and its two columns are hypothetical candidate probabilities. Green selects the true target; the adjacent loss box averages all eight terms. Shape metadata and cell contents are labeled separately.
 
 ### Why Adam, and what it remembers
 
@@ -9543,30 +9451,30 @@ g_s=\nabla_\theta L_s(\theta_{s-1}),\qquad
 \theta_s=\theta_{s-1}-\eta g_s.
 $$
 
-Theta denotes model parameters and eta the learning rate. Gradients can fluctuate between batches, and their scales can differ substantially across parameters. Adam adds two memories to this update: **an exponential moving average m of gradients to smooth direction, and an exponential moving average v of squared gradients to estimate recent scale.** It divides the former by the square root of the latter, then applies the learning rate. It still needs gradients from backward; it does not replace differentiation.
+Theta denotes model parameters and $\eta$ the learning rate. Gradients can fluctuate between batches, and their scales can differ substantially across parameters. Adam adds two memories to this update: **an exponential moving average m of gradients to smooth direction, and an exponential moving average v of squared gradients to estimate recent scale.** It divides the former by the square root of the latter, then applies the learning rate. It still needs gradients from backward; it does not replace differentiation.
 
 Coordinate-wise scaling means each parameter coordinate has its own m, v and multiplier. A weight with shape `(8,8)` has m and v of shape `(8,8)`, updated element by element, rather than one shared average for the whole table. This differs from LayerNorm, which normalizes activations along a feature axis.
 
-#### Define every symbol, including the beta superscripts
+#### Define every symbol, including the $\beta$ superscripts
 
 | Symbol | Meaning | Setting or example here |
 | --- | --- | --- |
-| s | Update number, starting at 1; not sequence position T or the total update budget | s=1 for update 1, s=2 for update 2 |
-| g_s | Current loss gradient evaluated at the pre-update parameters theta_{s-1} | Illustrative g_1=0.2 |
-| beta_1 | Fraction of the previous m retained; the new gradient receives1-beta_1 | 0.9:90% previous statistic+10% new gradient |
-| beta_2 | Fraction of the previous v retained; the new squared gradient receives1-beta_2 | 0.999:99.9% previous statistic+0.1% new square |
-| beta_1^s, beta_2^s | beta_1 and beta_2 each raised to power s, for startup bias correction | At s=2:0.81 and 0.998001 |
-| m_s, v_s | The two accumulated statistics through update s for that coordinate | m_0=v_0=0 |
-| m_hat, v_hat | Statistics corrected for zero initialization, written with hats | Not new model parameters |
-| eta, epsilon | Base learning rate and small positive denominator stabilizer | 0.03 and 1e-8 |
+| $s$ | Update number, starting at 1; not sequence position $T$ or the total update budget | s=1 for update 1, s=2 for update 2 |
+| $g_s$ | Current loss gradient evaluated at the pre-update parameters $\theta_{s-1}$ | Illustrative $g_1$=0.2 |
+| $\beta_1$ | Fraction of the previous m retained; the new gradient receives1-$\beta_1$ | 0.9:90% previous statistic+10% new gradient |
+| $\beta_2$ | Fraction of the previous v retained; the new squared gradient receives1-$\beta_2$ | 0.999:99.9% previous statistic+0.1% new square |
+| $\beta_1^s$, $\beta_2^s$ | $\beta_1$ and $\beta_2$ each raised to power s, for startup bias correction | At s=2:0.81 and 0.998001 |
+| $m_s$, $v_s$ | The two accumulated statistics through update s for that coordinate | $m_0$=$v_0$=0 |
+| $\widehat m_s$, $\widehat v_s$ | Statistics corrected for zero initialization, written with hats | Not new model parameters |
+| $\eta$, $\epsilon$ | Base learning rate and small positive denominator stabilizer | 0.03 and 1e-8 |
 
-Subscripts1 and 2 distinguish the two betas; superscript s means **exponentiation**, not beta_1 multiplied by s or another trainable parameter. Betas remain fixed here while s increases:
+Subscripts1 and 2 distinguish the two betas; superscript s means **exponentiation**, not $\beta_1$ multiplied by s or another trainable parameter. Betas remain fixed here while s increases:
 
 $$
 \beta_1^s=(0.9)^s,\qquad \beta_2^s=(0.999)^s.
 $$
 
-| Update number s | beta_1^s | beta_2^s |
+| Update number s | $\beta_1^s$ | $\beta_2^s$ |
 | --- | --- | --- |
 | 1 | 0.9 | 0.999 |
 | 2 | 0.81 | 0.998001 |
@@ -9589,13 +9497,13 @@ $$
 v_s=\beta_2v_{s-1}+(1-\beta_2)g_s^2.
 $$
 
-Here g_s² is an element-wise square. Both+0.2 and-0.2 square to 0.04, so v tracks magnitude without cancellation from opposite signs. It is a second raw moment estimate: **a smoothed statistic of squared gradients, not a second derivative or a mean-centered variance.** The square root returns it to the gradient's units, giving a scale similar to recent RMS.
+Here $g_s^2$ is an element-wise square. Both+0.2 and-0.2 square to 0.04, so v tracks magnitude without cancellation from opposite signs. It is a second raw moment estimate: **a smoothed statistic of squared gradients, not a second derivative or a mean-centered variance.** The square root returns it to the gradient's units, giving a scale similar to recent RMS.
 
-#### Why divide by 1-beta^s
+#### Why divide by $1-\beta^s$
 
-Adam starts at m_0=v_0=0. That zero means no gradients have been observed yet. Temporarily prescribe a constant gradient0.2 at every update to isolate the startup effect; this is not a measured network trajectory.
+Adam starts at $m_0$=$v_0$=0. That zero means no gradients have been observed yet. Temporarily prescribe a constant gradient0.2 at every update to isolate the startup effect; this is not a measured network trajectory.
 
-At update 1, m_1=0.9×0+0.1×0.2=0.02. Although the observed gradient is 0.2, the raw statistic is only 0.02 because90% of the weight still belongs to the initial zero. At update 2, m_2=0.9×0.02+0.1×0.2=0.038, still well below0.2.
+At update 1, $m_1$=0.9×0+0.1×0.2=0.02. Although the observed gradient is 0.2, the raw statistic is only 0.02 because90% of the weight still belongs to the initial zero. At update 2, $m_2$=0.9×0.02+0.1×0.2=0.038, still well below0.2.
 
 Expanding the recurrence reveals the correction denominator:
 
@@ -9607,7 +9515,7 @@ m_3&=0.081g_1+0.09g_2+0.1g_3.
 \end{aligned}
 $$
 
-The observed gradients have total weights0.1,0.19 and 0.271, respectively:1-0.9¹,1-0.9² and 1-0.9³. In general, the initialization contributes beta_1^s m_0 before setting m_0 to zero, and the gradient terms have total weight:
+The observed gradients have total weights0.1,0.19 and 0.271, respectively:$1-0.9^{1}$,$1-0.9^{2}$ and $1-0.9^{3}$. In general, the initialization contributes $\beta_1^s$ $m_0$ before setting $m_0$ to zero, and the gradient terms have total weight:
 
 $$
 m_s=\beta_1^s m_0+(1-\beta_1)\sum_{k=1}^{s}\beta_1^{s-k}g_k,
@@ -9615,7 +9523,7 @@ m_s=\beta_1^s m_0+(1-\beta_1)\sum_{k=1}^{s}\beta_1^{s-k}g_k,
 (1-\beta_1)\sum_{k=1}^{s}\beta_1^{s-k}=1-\beta_1^s.
 $$
 
-With m_0=0, dividing by the total observed-gradient weight produces a weighted average whose weights sum to 1. The same derivation applied to squared gradients gives v's correction:
+With $m_0$=0, dividing by the total observed-gradient weight produces a weighted average whose weights sum to 1. The same derivation applied to squared gradients gives v's correction:
 
 $$
 \widehat m_s=\frac{m_s}{1-\beta_1^s},\qquad
@@ -9626,19 +9534,19 @@ The first two constant-gradient updates can be checked completely:
 
 | Quantity | Update1, s=1 | Update2, s=2 |
 | --- | --- | --- |
-| Prescribed gradient g_s | 0.2 | 0.2 |
-| Uncorrected m_s | 0.02 | 0.038 |
-| 1-beta_1^s | 0.1 | 0.19 |
-| Corrected m_hat | 0.2 | 0.2 |
-| Uncorrected v_s | 0.00004 | 0.00007996 |
-| 1-beta_2^s | 0.001 | 0.001999 |
-| Corrected v_hat | 0.04 | 0.04 |
+| Prescribed gradient $g_s$ | 0.2 | 0.2 |
+| Uncorrected $m_s$ | 0.02 | 0.038 |
+| $1-\beta_1^s$ | 0.1 | 0.19 |
+| Corrected $\widehat m_s$ | 0.2 | 0.2 |
+| Uncorrected $v_s$ | 0.00004 | 0.00007996 |
+| $1-\beta_2^s$ | 0.001 | 0.001999 |
+| Corrected $\widehat v_s$ | 0.04 | 0.04 |
 
-For instance, v_2=0.999×0.00004+0.001×0.04=0.00007996; dividing by 0.001999 gives 0.04. This corrects **statistical bias from zero initialization**, not a model bias parameter, dataset bias or a prediction error. Constant gradients recover the constant value; changing gradients still produce a weighted recent average, not knowledge of a true optimal gradient. As s grows, both beta^s terms approach0 and the correction denominators approach1.
+For instance, $v_2$=0.999×0.00004+0.001×0.04=0.00007996; dividing by 0.001999 gives 0.04. This corrects **statistical bias from zero initialization**, not a model bias parameter, dataset bias or a prediction error. Constant gradients recover the constant value; changing gradients still produce a weighted recent average, not knowledge of a true optimal gradient. As s grows, both $\beta^s$ terms approach0 and the correction denominators approach1.
 
-![Two memory paths for direction and scale, with startup weight correction](assets/04-10-adam-memory-correction.en.png)
+![Two memory paths for direction and scale, with startup weight correction](assets/04-10-adam-memory-correction.en.png){width=100%}
 
-**Read the figure:** The upper flow splits g into signed-gradient memory m and squared-gradient memory v, then combines them into an update. The lower panel uses beta_1=0.9 to show the first three sets of raw weights. Gray belongs to the initial zero; colors belong to observed gradients. Divide by the colored total1-beta_1^s. Gray does not represent zero-gradient samples or parameter values. The v branch independently applies the same correction with beta_2=0.999.
+**Read the figure:** The upper flow splits g into signed-gradient memory m and squared-gradient memory v, then combines them into an update. The lower panel uses $\beta_1$=0.9 to show the first three sets of raw weights. Gray belongs to the initial zero; colors belong to observed gradients. Divide by the colored total1-$\beta_1^s$. Gray does not represent zero-gradient samples or parameter values. The v branch independently applies the same correction with $\beta_2$=0.999.
 
 #### Combine direction and scale into a parameter update
 
@@ -9648,24 +9556,24 @@ $$
 \underbrace{\widehat m_{s,i}}_{\text{smoothed gradient}}.
 $$
 
-Each coordinate has its own denominator. **Holding m_hat fixed**, a larger v_hat means a smaller update magnitude. But both memories depend on gradients; a larger current gradient does not necessarily mean a smaller Adam update. Multiplying the whole gradient history by a positive constant scales both numerator and the main denominator term, approximately canceling when epsilon is negligible. Eta still controls overall step size; Adam does not remove the need to choose a learning rate.
+Each coordinate has its own denominator. **Holding $\widehat m_s$ fixed**, a larger $\widehat v_s$ means a smaller update magnitude. But both memories depend on gradients; a larger current gradient does not necessarily mean a smaller Adam update. Multiplying the whole gradient history by a positive constant scales both numerator and the main denominator term, approximately canceling when $\epsilon$ is negligible. Eta still controls overall step size; Adam does not remove the need to choose a learning rate.
 
-For the first scalar update, prescribe theta_0=1, g_1=0.2 and eta=0.03. The table gives m_hat=0.2 and v_hat=0.04, hence:
+For the first scalar update, prescribe $\theta_0$=1, $g_1$=0.2 and $\eta$=0.03. The table gives $\widehat m_s$=0.2 and $\widehat v_s$=0.04, hence:
 
 $$
 \theta_1=1-0.03\frac{0.2}{\sqrt{0.04}+10^{-8}}
 =1-0.03\frac{0.2}{0.2+10^{-8}}\approx0.97.
 $$
 
-Plain SGD gives 1-0.03×0.2=0.994. If update 2 is also **prescribed** gradient0.2, corrected statistics remain0.2 and 0.04, and the parameter becomes approximately0.94. A real model must recompute gradients at its new parameters; the gradient need not remain constant. A first gradient-0.2 gives negative m_hat with a positive denominator, so subtracting the negative update increases the parameter. Later direction follows smoothed m. Epsilon is outside the root here, unlike the LayerNorm variance expression.
+Plain SGD gives 1-0.03×0.2=0.994. If update 2 is also **prescribed** gradient0.2, corrected statistics remain0.2 and 0.04, and the parameter becomes approximately0.94. A real model must recompute gradients at its new parameters; the gradient need not remain constant. A first gradient-0.2 gives negative $\widehat m_s$ with a positive denominator, so subtracting the negative update increases the parameter. Later direction follows smoothed m. Epsilon is outside the root here, unlike the LayerNorm variance expression.
 
-This exercise uses Adam defaults beta_1=0.9, beta_2=0.999 and epsilon=1e-8, with no weight decay. These formulas describe standard Adam from the original paper; students do not implement the optimizer itself. [Adam paper](https://arxiv.org/abs/1412.6980), [official optimizer documentation](https://docs.pytorch.org/docs/stable/generated/torch.optim.Adam.html).
+This exercise uses Adam defaults $\beta_1$=0.9, $\beta_2$=0.999 and $\epsilon$=1e-8, with no weight decay. These formulas describe standard Adam from the original paper; students do not implement the optimizer itself. [Adam paper](https://arxiv.org/abs/1412.6980), [official optimizer documentation](https://docs.pytorch.org/docs/stable/generated/torch.optim.Adam.html).
 
 Create **one optimizer before the training loop** so m/v persist across its updates. Recreating Adam each iteration loses its history. This simple helper does create a new optimizer on each separate `fit_tiny` call; it is not a resume-training interface that preserves optimizer state across calls.
 
 The code responsibilities are separate: `loss.backward()` computes g; `optimizer.step()` updates m, v and the counter s, then changes parameters; `optimizer.zero_grad(...)` clears parameter `.grad` while retaining optimizer statistics. You call these interfaces; the assignment's eight-step implementation plan stays the same.
 
-![First scalar Adam update and the position of loss recording within an iteration](assets/04-10-adam-chronology.en.png)
+![First scalar Adam update and the position of loss recording within an iteration](assets/04-10-adam-chronology.en.png){width=100%}
 
 **Read the figure:** The upper flow is a chosen scalar gradient, not measured decoder weights. The lower flow shows the real loop order: compute loss, record a Python float, backpropagate, then update parameters. A history of length80 contains losses before updates 1…80; it does not include a new forward evaluation after update 80.
 
@@ -9678,15 +9586,15 @@ def fit_tiny(model: nn.Module, input_ids: torch.Tensor, target_ids: torch.Tensor
 | Name | Type / shape | Meaning |
 | --- | --- | --- |
 | `model` | Existing compatible `nn.Module` | Registered trainable parameters; forward returns raw `(B,T,V)` logits |
-| `input_ids` | `torch.long`, `(B,T)` | Already prepared token IDs; B≥1, T≥1, IDs valid for the model |
+| `input_ids` | `torch.long`, `(B,T)` | Already prepared token IDs; $B$≥1, $T$≥1, IDs valid for the model |
 | `target_ids` | `torch.long`, same `(B,T)` | Already shifted labels, each in `[0,V)`; not one-hot vectors |
 | `steps` | Nonnegative Python integer | Number of optimizer updates over the same batch |
 | `learning_rate` | Positive float | Adam step size; original fixture uses0.03 |
 | Return `history` | Python `list[float]` | One scalar mean loss before each update; length exactly `steps` |
 
-Inputs and model use compatible devices. T must respect the decoder's position capacity. Reuse the passed model and parameter objects; do not change input or target tensors. The function calls `model.train()` and leaves it in training mode. It updates model parameters in place through the optimizer. A zero-step call returns `[]` and does not update parameter values, although setting the training-mode flag is still a side effect.
+Inputs and model use compatible devices. $T$ must respect the decoder's position capacity. Reuse the passed model and parameter objects; do not change input or target tensors. The function calls `model.train()` and leaves it in training mode. It updates model parameters in place through the optimizer. A zero-step call returns `[]` and does not update parameter values, although setting the training-mode flag is still a side effect.
 
-Do not create a new model, return a replacement model, construct labels, sample inputs or implement a tokenizer in this helper. V comes from the returned logits' last axis; `input_ids.max()+1` need not equal vocabulary size.
+Do not create a new model, return a replacement model, construct labels, sample inputs or implement a tokenizer in this helper. $V$ comes from the returned logits' last axis; `input_ids.max()+1` need not equal vocabulary size.
 
 ### Training mode, gradients and parameter updates
 
@@ -9705,7 +9613,7 @@ Edit only `fit_tiny` between the learner markers in 04_10_train_tiny_transformer
 1. **Prepare persistent state at four-space indentation.** Construct `torch.optim.Adam` from `model.parameters()` and the supplied `learning_rate`; save it as `optimizer`. Use its default zero weight decay. Call `model.train()` and create an empty `history` list. Do this once per function call, outside the update loop.
 2. **Start the loop.** Use `for _ in range(steps):` at four spaces. The body has eight spaces. `range(0)` has no iterations, so the later return can still return the empty list. `_` is an unused loop-counter name.
 3. **Clear old gradients.** Inside the loop, call `optimizer.zero_grad(set_to_none=True)`. PyTorch normally accumulates gradients; clearing them makes this iteration differentiate its own loss. Resetting `.grad` is different from deleting Adam's moment state. Do not rebuild the optimizer.
-4. **Run the current model.** Call `model(input_ids)` and save `logits`, shape `(B,T,V)`. Read V from `logits.shape[-1]`; reshape scores to `(-1,V)` and labels to `(-1)`. In the fixture, expect `(8,2)` and `(8,)`. Forward must run again after each update to use the current weights.
+4. **Run the current model.** Call `model(input_ids)` and save `logits`, shape `(B,T,V)`. Read $V$ from `logits.shape[-1]`; reshape scores to `(-1,V)` and labels to `(-1)`. In the fixture, expect `(8,2)` and `(8,)`. Forward must run again after each update to use the current weights.
 5. **Compute and record the loss.** Pass the reshaped raw logits and labels to `F.cross_entropy`, saving the scalar `loss`. Append `loss.item()` to history before the update; `.item()` produces a Python float without retaining that computation graph in the list. Keep the tensor `loss` for backpropagation.
 6. **Backpropagate once.** Call `.backward()` on the loss tensor. This fills gradients for the registered model parameters; it does not itself change their values. Do not backpropagate through the extracted Python float or run the training forward under `no_grad`.
 7. **Update once.** Call `optimizer.step()` after backward. It reads the current gradients, updates moments and modifies the same model parameters. The next iteration returns to gradient clearing and a fresh forward. Both operations in steps6/7 stay at eight spaces.
@@ -9717,7 +9625,7 @@ The loss need not decrease on every single step. The original fixture checks fin
 
 After fitting, the supplied driver switches to evaluation mode and wraps generation in `torch.no_grad()`. `.eval()` controls mode-dependent module behavior; `no_grad()` disables graph recording. They serve different purposes, even though this tiny decoder has no dropout. During fitting, gradients must remain enabled.
 
-For a current prefix of k IDs, forward returns `(1,k,V)`. Select `[0,-1]`: sample0, its final input position, all V candidates. Greedy generation chooses:
+For a current prefix of k IDs, forward returns `(1,k,V)`. Select `[0,-1]`: sample0, its final input position, all $V$ candidates. Greedy generation chooses:
 
 $$
 x_{k}=\underset{v\in\{0,\ldots,V-1\}}{\operatorname{argmax}}\ Z_{0,k-1,v}.
@@ -9736,9 +9644,9 @@ prefix [0,1,0,1,0] -> logits (1,5,2) -> last row t=4 -> ID1
 returned prefix: [0,1,0,1,0,1]
 ```
 
-![Five growing-prefix calls, their output shapes and last-row selections](assets/04-10-greedy-prefix.en.png)
+![Five growing-prefix calls, their output shapes and last-row selections](assets/04-10-greedy-prefix.en.png){width=100%}
 
-**Read the figure:** Each line is a new forward call. The first column is actual prefix content; the next is shape metadata, followed by the selected position index and appended ID. The initial token plus five generated tokens yields six IDs. Here the longest actual forward input has five IDs and M=16. Before another call, check that its supplied prefix fits capacity; there is no automatic truncation, wraparound or cache. This small success beyond the four training positions is not a general long-context claim.
+**Read the figure:** Each line is a new forward call. The first column is actual prefix content; the next is shape metadata, followed by the selected position index and appended ID. The initial token plus five generated tokens yields six IDs. Here the longest actual forward input has five IDs and $M=16$. Before another call, check that its supplied prefix fits capacity; there is no automatic truncation, wraparound or cache. This small success beyond the four training positions is not a general long-context claim.
 
 The sampling loop is supplied check code, not another core to implement in this lesson. Teacher forcing uses true preceding tokens during training; generation conditions on the IDs it has already chosen. Errors can therefore affect later choices. A two-ID toy sequence has no general text-decoding stage; a real tokenizer later needs a matching decode function.
 
@@ -9768,21 +9676,17 @@ Once the wiring diagnostic passes, a separate real-text experiment can use licen
 
 The decoder is now a working composition of familiar operations. Modern variants change some of those operations and their numerical behavior; they do not remove the need to check their contracts.
 
-<a id="chapter-05"></a>
-
-# 05 Choose reliable model components
+# 05 Choose reliable model components {#chapter-05}
 
 A model diagram does not tell the whole numerical story. Normalization defines which statistics are removed, positional rotations define how coordinate pairs interact, and a gated feed-forward layer defines two branches whose elementwise product must be aligned. Optimization adds its own state and time conventions.
 
 This chapter revisits the decoder with RMSNorm, rotary position embeddings and SwiGLU, then follows initialization, AdamW, scheduling, clipping and checkpoint recovery. The aim is to understand what each replacement preserves and what it changes. In particular, a checkpoint is a continuation of a process, not merely a copy of model weights.
 
-<a id="section-05-01"></a>
-
-## 05.01 RMS normalization
+## 05.01 RMS normalization {#section-05-01}
 
 ### Method sources
 
-Root mean square normalization (RMSNorm) is introduced by [Zhang and Sennrich, 2019; R06](https://arxiv.org/abs/1910.07467). The exercise implements the full-feature RMS statistic, with explicit epsilon, axis and dtype choices; it does not implement partial RMSNorm.
+Root mean square normalization (RMSNorm) is introduced by [Zhang and Sennrich, 2019; R06](https://arxiv.org/abs/1910.07467). The exercise implements the full-feature RMS statistic, with explicit $\epsilon$, axis and dtype choices; it does not implement partial RMSNorm.
 
 ### From the first decoder to a different normalization choice
 
@@ -9792,11 +9696,11 @@ Normalization gives later projections features with a controlled magnitude. RMSN
 
 Prerequisites are last-axis reductions/broadcasting, gradients, and [04.08 LayerNorm](#section-04-08). This is a standalone tensor function with no dependency on04.10's implementation. Use the existing environment; this assignment does not depend on a newer built-in RMSNorm module.
 
-RMSNorm now operates on hidden **features**: each `(b,t)` row has D coordinates and receives its own magnitude adjustment. Softmax instead converts V candidate scores into probabilities summing to 1. RMSNorm's coordinates are not candidate probabilities; normalization here controls feature magnitude. Keep the axes and purposes distinct while reading the formulas.
+RMSNorm now operates on hidden **features**: each `(b,t)` row has $D$ coordinates and receives its own magnitude adjustment. Softmax instead converts $V$ candidate scores into probabilities summing to 1. RMSNorm's coordinates are not candidate probabilities; normalization here controls feature magnitude. Keep the axes and purposes distinct while reading the formulas.
 
 ### Formula first: root mean square, then learned gain
 
-For one feature row x containing D coordinates, define its mean square and stabilized denominator:
+For one feature row x containing $D$ coordinates, define its mean square and stabilized denominator:
 
 $$
 a=\frac1D\sum_{j=0}^{D-1}x_j^2,\qquad
@@ -9804,26 +9708,26 @@ r=\frac1{\sqrt{a+\epsilon}},\qquad
 y_i=g_i x_i r.
 $$
 
-- x_i is feature coordinate i, not a token ID or a probability.
-- D counts features in a row; it is not B, T, vocabulary size or layer count.
-- a is one scalar shared by the D coordinates of that row.
-- epsilon is the positive `eps`, inside the square root; default1e-6.
+- $x_i$ is feature coordinate $i$, not a token ID or a probability.
+- $D$ counts features in a row; it is not $B$, $T$, vocabulary size or layer count.
+- a is one scalar shared by the $D$ coordinates of that row.
+- $\epsilon$ is the positive `eps`, inside the square root; default1e-6.
 - r is the reciprocal stabilized RMS, called `inverse_rms` in the hints.
-- g_i is `gain[i]`, a supplied trainable-capable feature multiplier. This function has no additive bias.
+- $g_i$ is `gain[i]`, a supplied trainable-capable feature multiplier. This function has no additive bias.
 
-“Root mean square” describes square → mean → square root. The exact RMS is sqrt(a); this implementation uses sqrt(a+epsilon) to avoid a zero denominator. `torch.rsqrt(z)` computes1/sqrt(z), so it combines the root and reciprocal operations. [Official rsqrt documentation](https://docs.pytorch.org/docs/stable/generated/torch.rsqrt.html)
+“Root mean square” describes square → mean → square root. The exact RMS is sqrt(a); this implementation uses sqrt(a+$\epsilon$) to avoid a zero denominator. `torch.rsqrt(z)` computes1/sqrt(z), so it combines the root and reciprocal operations. [Official rsqrt documentation](https://docs.pytorch.org/docs/stable/generated/torch.rsqrt.html)
 
-Let u=x*r be the vector before gain. It is multiplied by one positive scalar, preserving that row's direction when nonzero. Nonuniform or negative gains can change the final direction or signs. With positive epsilon:
+Let u=x*r be the vector before gain. It is multiplied by one positive scalar, preserving that row's direction when nonzero. Nonuniform or negative gains can change the final direction or signs. With positive $\epsilon$:
 
 $$
 \frac1D\sum_i u_i^2=\frac{a}{a+\epsilon}.
 $$
 
-This is close to 1 when a is much larger than epsilon. RMS normalization does not generally make the mean zero, set each coordinate to 1, limit every output to[-1,1], or produce probabilities. After arbitrary gain, even its mean square need not be near1. Its Euclidean length without gain is approximately sqrt(D), not generally1.
+This is close to 1 when a is much larger than $\epsilon$. RMS normalization does not generally make the mean zero, set each coordinate to 1, limit every output to[-1,1], or produce probabilities. After arbitrary gain, even its mean square need not be near1. Its Euclidean length without gain is approximately sqrt($D$), not generally1.
 
 ### Complete original fixture, with every intermediate value
 
-The supplied driver's first input is `x=[[3,4]]`, shape `(1,2)`, using float64. `gain=[1,2]`, shape `(2,)`; eps=0.000001. D=2:
+The supplied driver's first input is `x=[[3,4]]`, shape `(1,2)`, using float64. `gain=[1,2]`, shape `(2,)`; eps=0.000001. $D=2$:
 
 ```text
 square:          [[9,16]]                  shape (1,2)
@@ -9837,7 +9741,7 @@ output:         [[0.84852810,2.26274161]]   shape (1,2)
 
 In particular, the final second coordinate is `4/sqrt(12.500001)*2`, not `4/sqrt(12.500001)`. Gain multiplies features individually; it is not a second normalization statistic.
 
-![Exact RMSNorm arithmetic, learned gain and a separately labeled LayerNorm comparison](assets/05-01-rmsnorm.en.png)
+![Exact RMSNorm arithmetic, learned gain and a separately labeled LayerNorm comparison](assets/05-01-rmsnorm.en.png){width=100%}
 
 **Read the figure:** The first row computes one scalar statistic from two features; the next multiplies both features by its reciprocal denominator and then by the two gains. Metadata bands give shapes; values occupy their own area. The bottom is a **separate comparison using gain=[1,1] on both sides**, not the primary output with gain=[1,2].
 
@@ -9866,35 +9770,35 @@ For x=[3,4], mu=3.5 and sigma²=0.25. With unit gain, no LayerNorm bias and the 
 | Denominator | `sqrt(0.250001)` | `sqrt(12.500001)` |
 | Output | approximately `[-0.999998,0.999998]` | approximately `[0.848528,1.131371]` |
 
-Adding the same constant to every coordinate cancels under LayerNorm centering, but generally changes RMSNorm's result. For mean-zero inputs, the two cores agree when epsilon matches; complete outputs also require matched gains and zero LayerNorm bias. Neither construction alone determines which will train better on a task.
+Adding the same constant to every coordinate cancels under LayerNorm centering, but generally changes RMSNorm's result. For mean-zero inputs, the two cores agree when $\epsilon$ matches; complete outputs also require matched gains and zero LayerNorm bias. Neither construction alone determines which will train better on a task.
 
-Positive rescaling has a different property. For a positive scalar c, fixed gains and a=mean(x²):
+Positive rescaling has a different property. For a positive scalar c, fixed gains and a=mean($x^2$):
 
 $$
 \frac{cx}{\sqrt{c^2a+\epsilon}}=
 \frac{x}{\sqrt{a+\epsilon/c^2}}.
 $$
 
-With epsilon0 this is exact positive scale invariance; with our positive epsilon it is approximate when the mean square dominates epsilon. Near zero that approximation can fail. A negative c also reverses the normalized direction before gain; do not call arbitrary signed scaling invariant.
+With epsilon0 this is exact positive scale invariance; with our positive $\epsilon$ it is approximate when the mean square dominates $\epsilon$. Near zero that approximation can fail. A negative c also reverses the normalized direction before gain; do not call arbitrary signed scaling invariant.
 
 ### Which axes are reduced, and what keepdim preserves
 
-For an input `(B,T,D)`, compute statistics over the final D coordinates independently for each `(b,t)` row:
+For an input `(B,T,D)`, compute statistics over the final $D$ coordinates independently for each `(b,t)` row:
 
 $$
 (B,T,D)\xrightarrow{\mathrm{square}}(B,T,D)
 \xrightarrow{\mathrm{mean}(-1,\mathrm{keepdim=True})}(B,T,1).
 $$
 
-Multiplication then broadcasts `(B,T,1)` across D features, and `gain` of shape `(D,)` across all B/T rows. No position is mixed with another, so this normalization preserves prefix-only dependencies in a causal network.
+Multiplication then broadcasts `(B,T,1)` across $D$ features, and `gain` of shape `(D,)` across all $B$/$T$ rows. No position is mixed with another, so this normalization preserves prefix-only dependencies in a causal network.
 
 The same rule works for general `(...,D)`: for `(D,)` the retained statistic has shape `(1,)`, for `(N,D)` it is `(N,1)`. Without `keepdim=True`, `(B,T)` may fail to broadcast or silently align with the wrong axes when some sizes coincide. Shape success alone is not sufficient evidence that the intended axis was reduced.
 
-For the figure's sample b=0, take three position rows `[3,4]`, `[0,0]`, `[-3,4]`. Their mean squares are 12.5,0,12.5 separately; with gain=[1,2], the outputs are approximately `[0.8485,2.2627]`, `[0,0]`, `[-0.8485,2.2627]`. The complete input/output shape is `(1,3,2)`; statistics are `(1,3,1)`.
+For the figure's sample $b=0$, take three position rows `[3,4]`, `[0,0]`, `[-3,4]`. Their mean squares are 12.5,0,12.5 separately; with gain=[1,2], the outputs are approximately `[0.8485,2.2627]`, `[0,0]`, `[-0.8485,2.2627]`. The complete input/output shape is `(1,3,2)`; statistics are `(1,3,1)`.
 
-![Independent position statistics and the order of float16-to-float32 computation](assets/05-01-rmsnorm-axes-precision.en.png)
+![Independent position statistics and the order of float16-to-float32 computation](assets/05-01-rmsnorm-axes-precision.en.png){width=100%}
 
-**Read the figure:** The top row displays only sample b=0; each t row keeps its own statistic. The zero row has denominator sqrt(eps) and remains zero. The lower panel is a separate float16 example with every feature1000, explaining dtype changes rather than changing the upper example's values.
+**Read the figure:** The top row displays only sample $b=0$; each t row keeps its own statistic. The zero row has denominator sqrt(eps) and remains zero. The lower panel is a separate float16 example with every feature1000, explaining dtype changes rather than changing the upper example's values.
 
 ### Why widen before the square
 
@@ -9919,14 +9823,14 @@ def rmsnorm(x: torch.Tensor, gain: torch.Tensor, eps: float = 1e-6) -> torch.Ten
 
 | Name | Type / shape | Meaning |
 | --- | --- | --- |
-| `x` | Floating tensor `(...,D)`, D≥1 | Feature rows; float16, bfloat16, float32 or float64 |
+| `x` | Floating tensor `(...,D)`, $D$≥1 | Feature rows; float16, bfloat16, float32 or float64 |
 | `gain` | Floating `(D,)`, same dtype/device as x | One multiplier per feature, broadcast across leading axes |
 | `eps` | Positive Python float | Added to mean square inside the square root; default1e-6 |
 | Return | Same shape/dtype/device as x | Normalized and gain-scaled tensor with gradients preserved |
 
 The matched gain dtype is part of this exercise's same-output-dtype contract. Multiplying half-precision normalized values by a float32 gain can promote the output, so mixed-dtype gains are outside this interface rather than something to guess about. Input and gain values are preserved. The function does not create a parameter or optimizer; the caller supplies gain and can register it as a parameter. The original driver uses `requires_grad=True` to check gradient connectivity.
 
-At x=0, epsilon makes the denominator positive: sqrt(1e-6)=0.001. The output is zero for finite gain, but zero output does not mean zero input gradient. For D=1, RMSNorm still approximately preserves a nonzero input's sign before gain; the centering core of LayerNorm instead gives zero.
+At x=0, $\epsilon$ makes the denominator positive: sqrt(1e-6)=0.001. The output is zero for finite gain, but zero output does not mean zero input gradient. For $D=1$, RMSNorm still approximately preserves a nonzero input's sign before gain; the centering core of LayerNorm instead gives zero.
 
 ### Six guided implementation steps
 
@@ -9934,14 +9838,14 @@ With04.10 checked, open 05_01_rmsnorm.py. Follow the worked example first, then 
 
 1. **Choose a working dtype.** At four-space indentation, test membership of `x.dtype` in `(torch.float16, torch.bfloat16)` using `if ... in ...:`. `in` tests membership of that tuple; an if-body uses eight spaces. Choose `torch.float32` for those two input types. An `else:` at four spaces handles the remaining types, choosing `x.dtype` in its eight-space body. Save the choice as `work_dtype`.
 2. **Make the working tensor.** Return to four spaces and call `x.to(work_dtype)`, saving `work`. Shape stays `(...,D)`; only working precision changes. Do this before squaring. Preserve the original x and its dtype for the final cast.
-3. **Compute mean square.** Use `.square()` and `.mean(dim=-1,keepdim=True)` on `work`, saving `mean_square`. For x shape `(1,2)` with[3,4], expect shape `(1,1)` and 12.5. No mean subtraction or reduction over T is needed.
-4. **Form inverse RMS.** Add the supplied `eps` to `mean_square`, then apply `torch.rsqrt`, saving `inverse_rms`. Same statistic shape; the fixture is approximately0.28284270. Adding epsilon after rsqrt would change the function.
+3. **Compute mean square.** Use `.square()` and `.mean(dim=-1,keepdim=True)` on `work`, saving `mean_square`. For x shape `(1,2)` with[3,4], expect shape `(1,1)` and 12.5. No mean subtraction or reduction over $T$ is needed.
+4. **Form inverse RMS.** Add the supplied `eps` to `mean_square`, then apply `torch.rsqrt`, saving `inverse_rms`. Same statistic shape; the fixture is approximately0.28284270. Adding $\epsilon$ after rsqrt would change the function.
 5. **Normalize and restore dtype.** Multiply `work` by `inverse_rms`, letting broadcasting recover `(...,D)`. Save `normalized`, then cast that tensor back to the original `x.dtype`. The fixture before gain is approximately[0.84852810,1.13137080]. Do not cast the large squared statistic back to float16.
 6. **Apply gain and return.** At four spaces, multiply the normalized tensor by the supplied `gain` and return one tensor. Original fixture: approximately[[0.84852810,2.26274161]], shape `(1,2)`, dtype float64. Use ordinary multiplication; no in-place modification, manual loops over rows, detach, item conversion or parameter update is needed.
 
 ### Optional gradient derivation
 
-For one row with r=(a+epsilon)^(-1/2), the chain rule gives:
+For one row with r=(a+$\epsilon$)^(-1/2), the chain rule gives:
 
 $$
 \frac{\partial r}{\partial x_j}=-\frac{x_j}{D}r^3,\qquad
@@ -9949,7 +9853,7 @@ $$
 \frac{\partial y_i}{\partial g_i}=x_ir.
 $$
 
-Delta_ij is 1 for i=j and 0 otherwise. Coordinates within a row influence the shared scale, so a gradient is not just gain divided by RMS. For the original fixture and loss=sum(output), input gradients are approximately[-0.0905,0.0679], and gain gradients approximately[0.8485,1.1314]. Shared gain gradients sum contributions from all leading rows. At a zero row, its input derivative is the diagonal gain/sqrt(eps), while its gain derivative is zero. Autograd handles this; the optional derivation checks the mechanism without adding manual differentiation to the exercise function.
+$\delta_{ij}$ is 1 for $i=j$ and 0 otherwise. Coordinates within a row influence the shared scale, so a gradient is not just gain divided by RMS. For the original fixture and loss=sum(output), input gradients are approximately[-0.0905,0.0679], and gain gradients approximately[0.8485,1.1314]. Shared gain gradients sum contributions from all leading rows. At a zero row, its input derivative is the diagonal gain/sqrt(eps), while its gain derivative is zero. Autograd handles this; the optional derivation checks the mechanism without adding manual differentiation to the exercise function.
 
 ### Run, checks and preparation status
 
@@ -9967,17 +9871,15 @@ Lesson 05.01 checks passed.
 
 The unchanged driver checks the exact float64 gain-scaled example, input/gain gradient connectivity, zero rows and finite float16 outputs with preserved dtype for1000-valued inputs. Additional checks compared independent row arithmetic, rank1/2/3 inputs, non-contiguous float64 tensors, analytic gradients, finite-difference gradcheck, four supported dtypes, zero/large rows and preserved inputs/gain. The four localized figure previews, source arithmetic, bilingual formulas and manuscript links were checked.
 
-<a id="section-05-02"></a>
-
-## 05.02 RoPE, rotary query and key positions
+## 05.02 RoPE, rotary query and key positions {#section-05-02}
 
 ### Method sources
 
-Rotary position embedding (RoPE) is introduced in RoFormer by [Su et al., 2021; R07](https://arxiv.org/abs/2104.09864), Sections 3.2 and 3.4.2. The pairwise rotations of Q/K and the relative-position dot-product argument below follow that construction; the concrete vectors and diagrams are our teaching examples.
+Rotary position embedding (RoPE) is introduced in RoFormer by [Su et al., 2021; R07](https://arxiv.org/abs/2104.09864), Sections 3.2 and 3.4.2. The pairwise rotations of $Q$/$K$ and the relative-position dot-product argument below follow that construction; the concrete vectors and diagrams are our teaching examples.
 
 ### Follow-up: pair four concrete numbers before introducing symbols
 
-**Question:** omega_i, base, the negative exponent and p*omega_i appeared too abruptly. What is a feature pair? Are alternate entries selected and then rotated? This identifies a missing bridge in the explanation, not demonstrated understanding or completion. We rebuild the bridge from concrete values.
+**Question:** $\omega_i$, base, the negative exponent and $p\omega_i$ appeared too abruptly. What is a feature pair? Are alternate entries selected and then rotated? This identifies a missing bridge in the explanation, not demonstrated understanding or completion. We rebuild the bridge from concrete values.
 
 #### One vector, four coordinates, two pairs
 
@@ -10004,24 +9906,24 @@ same column 1: even[1], odd[1] -> [3,4]
 
 Even/odd refers to coordinate-index parity, not value parity. The first entry at coordinate 0 is even-indexed; the second at coordinate 1 is odd-indexed. Even and odd are two calculation containers. Their matching columns reconstruct the original pairs; the values 1,3 inside even are not a pair rotated together. Code computes all first coordinates and all second coordinates in parallel, then reinterleaves them. The mathematics still rotates each original pair independently.
 
-![Coordinate indices, values, original pairs and matching slice columns](assets/05-02-rope-pairs-symbols.en.png)
+![Coordinate indices, values, original pairs and matching slice columns](assets/05-02-rope-pairs-symbols.en.png){width=100%}
 
 **Read the figure:** The upper indices and values are separate; colors identify the original pairs. Each middle column is one pair, with even on the first row and odd on the second. Only the bottom introduces pair speeds and angles at position 3. Read the upper half first.
 
-#### How to read omega_i, and what base controls
+#### How to read $\omega_i$, and what base controls
 
-The symbol resembling “Wi” is the Greek letter omega with subscript i, written`omega_i`. It is not a newly introduced W weight matrix. Name the quantities one at a time:
+The symbol resembling “Wi” is the Greek letter $\omega$ with subscript i, written $\omega_i$. It is not a newly introduced $W$ weight matrix. Name the quantities one at a time:
 
 | Notation | Meaning | Value in this example |
 | --- | --- | --- |
-| d | Number of coordinates in this per-head vector | 4 |
-| i | Pair index, starting at 0 | 0 or1 |
+| $d$ | Number of coordinates in this per-head vector | 4 |
+| $i$ | Pair index, starting at 0 | 0 or1 |
 | base | Fixed hyperparameter selecting rotation speeds | Default10000 |
-| omega_i | Radians turned per position step by pair i | 1 or0.01 |
-| p | Absolute position of the current vector | 3 in this complete example |
-| p*omega_i | Position times speed, giving the rotation angle | 3 or0.03 radians |
+| $\omega_i$ | Radians turned per position step by pair $i$ | 1 or0.01 |
+| $p$ | Absolute position of the current vector | 3 in this complete example |
+| $p\omega_i$ | Position times speed, giving the rotation angle | 3 or0.03 radians |
 
-Read omega as angular speed before reading the formula:
+Read $\omega$ as angular speed before reading the formula:
 
 $$
 \omega_i=\mathrm{base}^{-2i/d},\qquad \theta_{p,i}=p\times\omega_i.
@@ -10031,7 +9933,7 @@ The base 10000 is a common configuration for this construction, not a vocabulary
 
 #### Work through the negative exponent without skipping steps
 
-For this example d=4 and base 10000:
+For this example $d=4$ and base 10000:
 
 $$
 \omega_0=10000^{-2\times0/4}=10000^0=1,
@@ -10042,14 +9944,14 @@ $$
 =\frac1{\sqrt{10000}}=\frac1{100}=0.01.
 $$
 
-We have assigned speed1 to pair0 and speed0.01 to pair1. Both pairs share position p=3, the fourth position when counting from 0:
+We have assigned speed1 to pair0 and speed0.01 to pair1. Both pairs share position $p=3$, the fourth position when counting from 0:
 
 $$
 \theta_{3,0}=3\times1=3,\qquad
 \theta_{3,1}=3\times0.01=0.03.
 $$
 
-The expression`p*omega_i` is simply multiplication, not another mysterious variable. These angles are radians, without an extra factor of 2*pi.
+The expression $p\omega_i$ is simply multiplication, not another mysterious variable. These angles are radians, without an extra factor of $2\pi$.
 
 #### Finish rotating the same four-dimensional vector
 
@@ -10067,7 +9969,7 @@ output = [-1.27223251,-1.83886499,2.87866810,4.08818664]
 
 The output still has four coordinates and squared length30. In the sliced implementation, rotated even is`[-1.27223251,2.87866810]` and rotated odd is`[-1.83886499,4.08818664]`; interleaving produces the final vector.
 
-The original d=2 fixture, the earlier d=4 vector`[1,0,2,0]`, and this follow-up vector`[1,2,3,4]` are separately labeled examples. This section follows only`[1,2,3,4]` to completion. Establish pairs, speeds, position-times-speed and independent rotations before the later matrix/relative-position derivation. Reading the follow-up does not require immediately finishing code.
+The original $d=2$ fixture, the earlier $d=4$ vector`[1,0,2,0]`, and this follow-up vector`[1,2,3,4]` are separately labeled examples. This section follows only`[1,2,3,4]` to completion. Establish pairs, speeds, position-times-speed and independent rotations before the later matrix/relative-position derivation. Reading the follow-up does not require immediately finishing code.
 
 ### Follow-up: trace an implementation line by line
 
@@ -10083,9 +9985,9 @@ positions = torch.tensor([3])
 base = 10000.
 ```
 
-The **shape of x is `(1,1,1,4)`**: B=1 sample, H=1 head, T=1 row and d=4 feature coordinates. The nested brackets place one four-coordinate vector in the four-axis interface. Its actual values are `x[0,0,0]=[1,2,3,4]`, a Q or K feature vector, not four token IDs.
+The **shape of x is `(1,1,1,4)`**: $B=1$ sample, $H=1$ head, $T=1$ row and $d=4$ feature coordinates. The nested brackets place one four-coordinate vector in the four-axis interface. Its actual values are `x[0,0,0]=[1,2,3,4]`, a $Q$ or $K$ feature vector, not four token IDs.
 
-T=1 means one supplied row. `positions=[3]` says its absolute position is 3, the fourth position when counting from 0. Row count and position value are different quantities. Rotate `[1,2]` and `[3,4]` separately using their position-dependent angles, then restore the original coordinate order.
+$T=1$ means one supplied row. `positions=[3]` says its absolute position is 3, the fourth position when counting from 0. Row count and position value are different quantities. Rotate `[1,2]` and `[3,4]` separately using their position-dependent angles, then restore the original coordinate order.
 
 #### Lines 1–5: prepare working precision and compute each pair's speed
 
@@ -10110,7 +10012,7 @@ pair_coords         = [0, 2]        shape (2,)
 10000 ** [0, -0.5]  = [1, 0.01]     shape (2,)
 ```
 
-![Pair starting indices become speeds through negation, division and exponentiation](assets/05-02-rope-inverse-frequency.en.png)
+![Pair starting indices become speeds through negation, division and exponentiation](assets/05-02-rope-inverse-frequency.en.png){width=100%}
 
 **Read the figure:** Indices sit outside the upper cells; x feature values sit inside. The three middle cards process indices only. Their columns retain pair0/pair1 throughout. The lower cards expand both calculations. Position multiplication at the bottom belongs to the next operation, not to inv_freq itself.
 
@@ -10156,7 +10058,7 @@ Generally `(T,1)` times `(1,d/2)` produces `(T,d/2)`, one position per row and o
 
 #### Lines 9–12: select coordinates and rotate each original pair
 
-**Line9: `even = x[...,0::2]`.** `...` keeps preceding B, H, T axes. On the last axis, `0::2` starts at 0 and takes every second entry to the end. Coordinates0,2 have values `[1,3]`; the complete slice shape is `(1,1,1,2)`.
+**Line9: `even = x[...,0::2]`.** `...` keeps preceding $B$, $H$, $T$ axes. On the last axis, `0::2` starts at 0 and takes every second entry to the end. Coordinates0,2 have values `[1,3]`; the complete slice shape is `(1,1,1,2)`.
 
 **Line10: `odd = x[...,1::2]`.** Starting at 1 selects coordinates1,3 with values `[2,4]`, also `(1,1,1,2)`. Even/odd describes **index** parity. The values 1,3 inside even are not rotated together; match the columns:
 
@@ -10167,7 +10069,7 @@ odd value             2           4
 angle                 3           0.03
 ```
 
-**Line11: `rotated_even = even*cos_angles - odd*sin_angles`.** A pair `[a,b]` rotates to a first coordinate a*cos(theta)-b*sin(theta). Compute both pairs' first output coordinates together:
+**Line11: `rotated_even = even*cos_angles - odd*sin_angles`.** A pair `[a,b]` rotates to a first coordinate $a\cos\theta-b\sin\theta$. Compute both pairs' first output coordinates together:
 
 $$
 \begin{aligned}
@@ -10176,9 +10078,9 @@ a'_1&=3\cos0.03-4\sin0.03\approx2.87866810.
 \end{aligned}
 $$
 
-rotated_even displays `[-1.27223251,2.87866810]`, with full shape `(1,1,1,2)`. Right-alignment treats an angle table `(T,d/2)` as `(1,1,T,d/2)`, sharing that position's angles across B, H; the final T, d/2 axes must correspond.
+rotated_even displays `[-1.27223251,2.87866810]`, with full shape `(1,1,1,2)`. Right-alignment treats an angle table `(T,d/2)` as `(1,1,T,d/2)`, sharing that position's angles across $B$, $H$; the final $T$, d/2 axes must correspond.
 
-**Line12: `rotated_odd = even*sin_angles + odd*cos_angles`.** The second output coordinate is a*sin(theta)+b*cos(theta):
+**Line12: `rotated_odd = even*sin_angles + odd*cos_angles`.** The second output coordinate is $a\sin\theta+b\cos\theta$:
 
 $$
 \begin{aligned}
@@ -10193,7 +10095,7 @@ Why these formulas? Regard `[a,b]` as a two-dimensional arrow. After rotation, t
 
 #### Lines 13–14: restore coordinate order and the original dtype
 
-**First half of line 13: `torch.stack([rotated_even,rotated_odd],dim=-1)`.** stack inserts an axis; dim=-1 puts the new axis last. It places the matching first/second outputs together. Displaying only the values after omitting B, H, T:
+**First half of line 13: `torch.stack([rotated_even,rotated_odd],dim=-1)`.** stack inserts an axis; dim=-1 puts the new axis last. It places the matching first/second outputs together. Displaying only the values after omitting $B$, $H$, $T$:
 
 ```text
 [[-1.27223251, -1.83886499],   # pair 0: [new first, new second]
@@ -10202,14 +10104,14 @@ Why these formulas? Regard `[a,b]` as a two-dimensional arrow. After rotation, t
 
 Full shape changes from `(1,1,1,2)` to `(1,1,1,2,2)`; its final axes count pairs and coordinates per pair. It does not place the whole rotated_even row before rotated_odd; directly concatenating the slices changes coordinate order.
 
-**Second half of line 13: `.flatten(start_dim=-2)`.** -2 means the second-to-last axis, and the default end is the final axis. Merge only `(two pairs,two coordinates per pair)=(2,2)` into4. B, H, T remain unchanged; this does not flatten the entire tensor into one long list.
+**Second half of line 13: `.flatten(start_dim=-2)`.** -2 means the second-to-last axis, and the default end is the final axis. Merge only `(two pairs,two coordinates per pair)=(2,2)` into4. $B$, $H$, $T$ remain unchanged; this does not flatten the entire tensor into one long list.
 
 ```text
 x_rope[0,0,0] = [-1.27223251,-1.83886499,2.87866810,4.08818664]
 x_rope.shape  = (1,1,1,4)
 ```
 
-Rotation changes values, not token order, row count, head count or width. The squared output length remains approximately30, matching1²+2²+3²+4².
+Rotation changes values, not token order, row count, head count or width. The squared output length remains approximately30, matching1²+$2^{2}$+$3^{2}$+$4^{2}$.
 
 **Line14: `return x_rope.to(x.dtype)` has a dtype-restoration issue.** Line1 already rebound local x, so x.dtype now reads the working dtype instead of the original input dtype. Float16/bfloat16 input therefore returns float32, violating this lesson's original-dtype contract. Float32/float64 fixtures hide the issue. The rotation formula itself is not the cause.
 
@@ -10224,9 +10126,9 @@ Additional dtype checks observed float16→float32 and bfloat16→float32: the o
 
 ### Why study another position representation
 
-Lesson 04.07 adds a position vector to input features: h_p=e_p+P_p. Here we inject position differently: first project Q and K, then rotate their features according to their positions. Attention comparisons can consequently depend on content and relative displacement. RoPE means Rotary Position Embedding. [Original RoFormer paper](https://arxiv.org/abs/2104.09864)
+Lesson 04.07 adds a position vector to input features: $h_p=e_p+P_p$. Here we inject position differently: first project $Q$ and $K$, then rotate their features according to their positions. Attention comparisons can consequently depend on content and relative displacement. RoPE means Rotary Position Embedding. [Original RoFormer paper](https://arxiv.org/abs/2104.09864)
 
-Fix two content vectors q=k=[1,0]. Without a position transformation their dot product is always1, regardless of where they are placed. We want the comparison of these fixed contents to change with displacement: the immediately previous position and a position three steps earlier can receive different scores. RoPE writes position into the comparison through deterministic rotation angles.
+Fix two content vectors $q=k$=[1,0]. Without a position transformation their dot product is always1, regardless of where they are placed. We want the comparison of these fixed contents to change with displacement: the immediately previous position and a position three steps earlier can receive different scores. RoPE writes position into the comparison through deterministic rotation angles.
 
 A causal mask determines which keys are visible; position representations supply positional signals for comparing visible contents. Neither replaces the other. This fixed-vector example does not imply that a multilayer causal network cannot obtain ordering information through other paths.
 
@@ -10240,22 +10142,22 @@ def apply_rope(x: torch.Tensor, positions: torch.Tensor, base: float = 10000.) -
 
 | Name | Type / shape | Meaning |
 | --- | --- | --- |
-| x | Floating `(B,H,T,d)` | One projected, head-split Q or K tensor, not token IDs |
-| B | Positive dimension | Samples |
-| H | Positive dimension | Attention heads |
-| T | Positive dimension | Number of position rows in this call |
-| d | Positive even dimension | Width per head; usually d=D/H after splitting |
-| positions | Integer `(T,)`, same device as x | Absolute positions shared across B and H in this interface |
+| x | Floating `(B,H,T,d)` | One projected, head-split $Q$ or $K$ tensor, not token IDs |
+| $B$ | Positive dimension | Samples |
+| $H$ | Positive dimension | Attention heads |
+| $T$ | Positive dimension | Number of position rows in this call |
+| $d$ | Positive even dimension | Width per head; usually $d=D/H$ after splitting |
+| positions | Integer `(T,)`, same device as x | Absolute positions shared across $B$ and $H$ in this interface |
 | base | Positive Python float, default10000 | Determines pair frequencies; fixed, not learned here |
 | Return | Same shape/dtype/device as x | Rotated features at each position, with gradients preserved |
 
-d denotes per-head width, not total hidden width D or vocabulary size V. T=2 means two supplied rows: positions may be`[0,1]` or`[10,11]`. A tensor row index and its absolute position value are distinct.
+d denotes per-head width, not total hidden width $D$ or vocabulary size $V$. $T=2$ means two supplied rows: positions may be`[0,1]` or`[10,11]`. A tensor row index and its absolute position value are distinct.
 
 Supported x dtypes are float16, bfloat16, float32 and float64; torch.long is recommended for positions. Positions are normally nonnegative token indices; the rotation formula is also defined for negative integers. This interface does not implement a different two-dimensional position table for every sample or add an input-validation assignment.
 
 ### Two-dimensional rotation changes features, not token rows
 
-Treat two adjacent feature coordinates a, b as an arrow in a plane. Counterclockwise rotation by theta gives:
+Treat two adjacent feature coordinates a, b as an arrow in a plane. Counterclockwise rotation by $\theta$ gives:
 
 $$
 a'=a\cos\theta-b\sin\theta,\qquad
@@ -10271,11 +10173,11 @@ $$
 \underbrace{\begin{bmatrix}a\\b\end{bmatrix}}_{(2,1)}.
 $$
 
-Column vectors explain the geometry here; code evaluates the two coordinate equations without constructing a large rotation matrix or exchanging B/H/T axes. Rows remain at their original positions. Floating feature coordinates within each row change.
+Column vectors explain the geometry here; code evaluates the two coordinate equations without constructing a large rotation matrix or exchanging $B$/$H$/$T$ axes. Rows remain at their original positions. Floating feature coordinates within each row change.
 
-Angles are in **radians**:1 radian is approximately57.3 degrees, and one full turn is 2*pi radians. `torch.sin` and `torch.cos` take radians. Our angle formula already specifies radians; do not add a factor of 2*pi.
+Angles are in **radians**:1 radian is approximately57.3 degrees, and one full turn is $2\pi$ radians. `torch.sin` and `torch.cos` take radians. Our angle formula already specifies radians; do not add a factor of $2\pi$.
 
-Why is length preserved? Expand the squares, cancel the cross terms and use cos²+sin²=1:
+Why is length preserved? Expand the squares, cancel the cross terms and use $\cos^2\theta+\sin^2\theta=1$:
 
 $$
 (a')^2+(b')^2
@@ -10285,9 +10187,9 @@ $$
 
 Preserving each pair's length preserves the full d-dimensional norm. Rotation does not normalize length to 1. Floating arithmetic preserves it within tolerance.
 
-### Complete original fixture: d=2
+### Complete original fixture: $d=2$
 
-The supplied driver uses B=H=1, T=2, d=2:
+The supplied driver uses $B=H=1$, $T=2$, $d=2$:
 
 ```text
 x[0,0] = [[1,0],
@@ -10295,7 +10197,7 @@ x[0,0] = [[1,0],
 positions = [0,1]     shape (2,)
 ```
 
-There is one feature pair with angular frequency omega=1. Positions0 and 1 therefore have angles0 and 1:
+There is one feature pair with angular frequency $\omega$=1. Positions0 and 1 therefore have angles0 and 1:
 
 $$
 R(0)\begin{bmatrix}1\\0\end{bmatrix}=\begin{bmatrix}1\\0\end{bmatrix},\qquad
@@ -10305,33 +10207,33 @@ $$
 
 The two returned rows are`[1,0]` and`[0.54030231,0.84147098]`; full shape remains`(1,1,2,2)`. Both squared lengths are 1. Equal content obtains different directions at different positions.
 
-![Original two-dimensional vectors, angle, components and preserved length](assets/05-02-rotary-positions.en.png)
+![Original two-dimensional vectors, angle, components and preserved length](assets/05-02-rotary-positions.en.png){width=100%}
 
 **Read the figure:** The left panel uses actual geometric coordinates: orange for position 0, teal for position 1. Dashed projections show cos1 and sin1. The matrix size is labeled separately from vector values on the right. Position1 does not mean one degree or moving row 0 into row 1.
 
 ### Wider vectors: pairs, frequencies and position angles
 
-For pair index i=0,..., d/2-1, fix adjacent coordinate pairs`(0,1),(2,3),...`. Pair i uses:
+For pair index $i=0$,..., d/2-1, fix adjacent coordinate pairs`(0,1),(2,3),...`. Pair i uses:
 
 $$
 \omega_i=\mathrm{base}^{-2i/d},\qquad
 \theta_{p,i}=p\omega_i.
 $$
 
-Omega_i is radians gained per position step. Position p comes from positions, not necessarily the local row index. Frequency depends on the pair, not token content or head number. For default base 10000 and d=4:
+$\omega_i$ is radians gained per position step. Position p comes from positions, not necessarily the local row index. Frequency depends on the pair, not token content or head number. For default base 10000 and $d=4$:
 
-| Pair index i | Feature coordinates | Exponent -2i/d | omega_i | Angle at p=1 |
+| Pair index $i$ | Feature coordinates | Exponent -2i/d | $\omega_i$ | Angle at $p=1$ |
 | --- | --- | --- | --- | --- |
 | 0 | (0,1) | 0 | 1 | 1 radian |
 | 1 | (2,3) | -1/2 | 0.01 | 0.01 radian |
 
-The second frequency is 0.01, not0.0001. `torch.arange(0,d,2)` produces each pair's first coordinate 2i, namely`[0,2]` for d=4. The code exponent is therefore`-pair_coords/d`; do not multiply by 2 again.
+The second frequency is 0.01, not0.0001. `torch.arange(0,d,2)` produces each pair's first coordinate 2i, namely`[0,2]` for $d=4$. The code exponent is therefore`-pair_coords/d`; do not multiply by 2 again.
 
 Different frequencies change direction at different distance scales. The period is $\lambda_i=2\pi/\omega_i$: approximately 6.283 and 628.319 positions for these pairs. With the default `base > 1`, later pairs turn more slowly. A pair does not identify arbitrary distant positions without ambiguity, and distance does not make every score decrease monotonically.
 
 #### A numeric example showing both frequencies
 
-This example is separate from the original d=2 fixture. Let B=H=1, T=3, d=4, each row initially`[1,0,2,0]`, and positions=`[0,1,2]`:
+This example is separate from the original $d=2$ fixture. Let $B=H=1$, $T=3$, $d=4$, each row initially`[1,0,2,0]`, and positions=`[0,1,2]`:
 
 ```text
 inv_freq = [1,0.01]                    shape (2,)
@@ -10344,15 +10246,15 @@ output[0,0] = [[ 1,          0,          2,          0         ],
 full output shape (1,1,3,4)
 ```
 
-At position 1, the first pair`[1,0]` turns1 radian; the second`[2,0]` turns only 0.01 radians. Each row still has squared length1²+2²=5. The second pair retains length2; rotation is not RMSNorm.
+At position 1, the first pair`[1,0]` turns1 radian; the second`[2,0]` turns only 0.01 radians. Each row still has squared length1²+$2^{2}=5.$ The second pair retains length2; rotation is not RMSNorm.
 
-![Two-frequency angle/output tables and slice/reinterleave shape changes](assets/05-02-rope-shapes-frequencies.en.png)
+![Two-frequency angle/output tables and slice/reinterleave shape changes](assets/05-02-rope-shapes-frequencies.en.png){width=100%}
 
 **Read the figure:** The upper tables show only`b=0,h=0`; full shapes are labeled separately. Angle columns represent feature pairs, while output columns represent individual feature coordinates. The lower flow shows even/odd slicing, the new stack axis and flattening the last two axes. Shape metadata is outside value cells.
 
 ### Why absolute rotations introduce relative position
 
-Fix content vectors q, k at positions p, r. Each feature pair has angles p*omega and r*omega. Their transformed dot product is:
+Fix content vectors q, k at positions $p$, r. Each feature pair has angles $p\omega$ and $r\omega$. Their transformed dot product is:
 
 $$
 \widetilde q_p=R(p\omega)q,\qquad
@@ -10365,11 +10267,11 @@ $$
 =q^{\mathsf T}R((r-p)\omega)k.
 $$
 
-The first equality uses the transpose-of-a-product rule. The second uses the fact that a rotation's transpose reverses the rotation: undo p*omega, then turn r*omega, leaving(r-p)*omega. Contributions from multiple feature pairs add, retaining dependence on displacement. [Original two-dimensional and general construction](https://arxiv.org/html/2104.09864v5#S3.SS2)
+The first equality uses the transpose-of-a-product rule. The second uses the fact that a rotation's transpose reverses the rotation: undo $p\omega$, then turn $r\omega$, leaving(r-p)*$\omega$. Contributions from multiple feature pairs add, retaining dependence on displacement. [Original two-dimensional and general construction](https://arxiv.org/html/2104.09864v5#S3.SS2)
 
-The driver again uses q=k=[1,0], d=2. At p=1, r=3 the dot is cos(3-1)=cos2≈-0.41614684. Adding5 to both gives positions 6,8; the angle difference and dot remain the same.
+The driver again uses $q=k$=[1,0], $d=2$. At $p=1$, $r=3$ the dot is cos(3-1)=cos2≈-0.41614684. Adding5 to both gives positions 6,8; the angle difference and dot remain the same.
 
-![Different absolute angles, equal angle difference and equal dot product](assets/05-02-rope-relative-position.en.png)
+![Different absolute angles, equal angle difference and equal dot product](assets/05-02-rope-relative-position.en.png){width=100%}
 
 **Read the figure:** Absolute arrow directions differ between the two circles, but their angular separation and dot product match. This holds for fixed original q, k and frequencies. It does not prove arbitrary whole models are invariant to absolute position shifts; other position mechanisms or changed contents can affect results.
 
@@ -10385,13 +10287,13 @@ hidden (B,T,D)
   -> causal mask -> softmax over keys -> multiply unrotated V
 ```
 
-This design rotates Q and K, not V; V may still have a different feature width. Q and K must use consistent pairing, d and frequencies. Lesson 05.04 later assembles these pieces; the completed04.09 decoder is not changed here.
+This design rotates $Q$ and $K$, not $V$; $V$ may still have a different feature width. $Q$ and $K$ must use consistent pairing, d and frequencies. Lesson 05.04 later assembles these pieces; the completed04.09 decoder is not changed here.
 
 | Position method | Injection mechanism | Trainable position table |
 | --- | --- | --- |
-| Learned absolute positions in04.07 | Add P_p to input features | Yes |
+| Learned absolute positions in04.07 | Add $P_p$ to input features | Yes |
 | Fixed sine/cosine position vectors | Generate a vector and add it to features | No |
-| RoPE here | Rotate projected Q/K feature pairs by position | No |
+| RoPE here | Rotate projected $Q$/$K$ feature pairs by position | No |
 
 Although both fixed methods use trigonometry, adding a vector differs from rotating one. RoPE angles can be computed beyond a finite table's row count; this does not guarantee useful behavior beyond training lengths. Attention cost, numerical precision, the training distribution and application configuration still constrain usable context.
 
@@ -10417,18 +10319,18 @@ flatten(start_dim=-2)      (B,H,T,d)
 
 In indexing, `None` inserts a singleton axis, `...` retains all preceding axes, and `0::2` selects every second coordinate starting at 0. Broadcasting `(T,d/2)` conceptually adds two leading singleton axes, sharing angles across samples and heads. No hand-written loops are needed.
 
-Stack adds an axis containing`[even_i,odd_i]` for each pair. Flattening the last two axes restores`[even_0,odd_0,even_1,odd_1]`. Direct concatenation instead gives`[even_0,even_1,odd_0,odd_1]`: the shape can be correct while the convention is wrong. Adjacent-pair and half-split layouts can be related under consistent weight/convention changes, but cannot be swapped arbitrarily within one model.
+Stack adds an axis containing $[\mathrm{even}_i,\mathrm{odd}_i]$ for each pair. Flattening the last two axes restores`[even_0,odd_0,even_1,odd_1]`. Direct concatenation instead gives`[even_0,even_1,odd_0,odd_1]`: the shape can be correct while the convention is wrong. Adjacent-pair and half-split layouts can be related under consistent weight/convention changes, but cannot be swapped arbitrarily within one model.
 
 ### Eight guided implementation steps
 
 Open the shared exercise and edit only the learner region in`apply_rope`, preserving its driver. Compare each step with the shapes and values above:
 
 1. **Read width and choose work dtype.** At four spaces read d from`x.shape[-1]`. Use a four-space`if x.dtype == torch.float64:` with an eight-space body selecting float64; a four-space`else:` has an eight-space body selecting float32. Save work_dtype. Remaining steps return to four spaces; no for-loop is needed.
-2. **Prepare work and coordinates.** If rebinding x, first save original_dtype=x.dtype. Save work with`.to(work_dtype)`. Use`torch.arange(0,d,2,device=x.device,dtype=work_dtype)` for pair_coords. At d=4 values are`[0,2]`, shape`(2,)`.
-3. **Compute frequencies.** Python power`**` expresses`base**(-pair_coords/d)`; save inv_freq. At d=4 expect`[1,0.01]`.
+2. **Prepare work and coordinates.** If rebinding x, first save original_dtype=x.dtype. Save work with`.to(work_dtype)`. Use`torch.arange(0,d,2,device=x.device,dtype=work_dtype)` for pair_coords. At $d=4$ values are`[0,2]`, shape`(2,)`.
+3. **Compute frequencies.** Python power`**` expresses`base**(-pair_coords/d)`; save inv_freq. At $d=4$ expect`[1,0.01]`.
 4. **Build angles for all rows and pairs.** Convert positions to work dtype, use`[:,None]` for`(T,1)`, and multiply by`inv_freq[None,:]` of shape`(1,d/2)`. Save angles. The original fixture gives`[[0],[1]]`.
 5. **Compute trigonometry and split coordinates.** `.cos()` and`.sin()` keep shape. Take even and odd with`work[...,0::2]` and`work[...,1::2]`, each`(B,H,T,d/2)`.
-6. **Create both rotated tensors.** even*cos minus odd*sin gives rotated_even; even*sin plus odd*cos gives rotated_odd. Both equations use the original slices; do not overwrite even before computing odd. The original p=1 fixture gives cos1 and sin1.
+6. **Create both rotated tensors.** even*cos minus odd*sin gives rotated_even; even*sin plus odd*cos gives rotated_odd. Both equations use the original slices; do not overwrite even before computing odd. The original $p=1$ fixture gives cos1 and sin1.
 7. **Restore interleaving.** With even result first, use`torch.stack((...),dim=-1)` to obtain`(B,H,T,d/2,2)`. Then`.flatten(start_dim=-2)` merges only the last two axes and restores the original shape.
 8. **Restore dtype and return.** Return one tensor in the original x.dtype. Preserve device, input values and gradients; no in-place writes, detach, item conversion or parameter update.
 
@@ -10444,7 +10346,7 @@ Expected after implementation:
 Lesson 05.02 checks passed.
 ```
 
-The original driver checks exact d=2 rotation, norm preservation and gradient connectivity; float64 norms with shape`(2,3,4,6)`; and dot products at positions(1,3)/(6,8). Since d=2 has only one frequency, it cannot alone test frequency variation; the manuscript therefore adds the d=4 example.
+The original driver checks exact $d=2$ rotation, norm preservation and gradient connectivity; float64 norms with shape`(2,3,4,6)`; and dot products at positions(1,3)/(6,8). Since $d=2$ has only one frequency, it cannot alone test frequency variation; the manuscript therefore adds the $d=4$ example.
 
 Preparation uses a temporary in-memory reference only: explicit block rotation matrices, non-default bases, varied dimensions, non-contiguous inputs, four dtypes, position offsets, norm/dot identities, input gradients against explicit matrices and finite differences. At preparation time the learner placeholder and original driver remained intact; preparation was not learner completion. Figure arithmetic, localized layouts and manuscript links are reviewed separately.
 
@@ -10452,9 +10354,7 @@ Preparation uses a temporary in-memory reference only: explicit block rotation m
 
 Later, cache each key after rotating it once at its original absolute position. If retained keys are at 10,11,12, the next query is at 13, not3 merely because three keys remain. Do not rotate an already rotated key again or reset only the new query to 0. This assumes fixed base and consistent frequencies; later lessons handle cache details.
 
-<a id="section-05-03"></a>
-
-## 05.03 SwiGLU, gated feed-forward networks
+## 05.03 SwiGLU, gated feed-forward networks {#section-05-03}
 
 ### Method sources
 
@@ -10464,7 +10364,7 @@ The Swish-gated linear-unit variant, SwiGLU, is described by [Shazeer, 2020; R08
 
 Lesson 04.08 projects to an intermediate width, applies GELU and projects back. SwiGLU adds a parallel projection: the same input produces content and input-dependent multipliers that regulate that content coordinate by coordinate, followed by the final projection. This is a learnable multiplicative interaction. [GLU Variants Improve Transformer](https://arxiv.org/abs/2002.05202)
 
-Gating here means coordinate-wise modulation, not a Python if-statement or one scalar per token. Each input feature row gets its own row of multipliers. Attention exchanges information between positions; this function applies the same feature computation independently at every position, preserving leading axes such as B, T.
+Gating here means coordinate-wise modulation, not a Python if-statement or one scalar per token. Each input feature row gets its own row of multipliers. Attention exchanges information between positions; this function applies the same feature computation independently at every position, preserving leading axes such as $B$, $T$.
 
 This lesson implements one bias-free tensor function. Later composition handles RMSNorm, residuals and causal attention; the completed04.09 model is not rewritten here.
 
@@ -10476,15 +10376,15 @@ def swiglu(x: torch.Tensor, gate: torch.Tensor, up: torch.Tensor, down: torch.Te
 
 | Name | Type / shape | Meaning |
 | --- | --- | --- |
-| x | Floating `(...,D)` | Input features, with last-axis width D |
+| x | Floating `(...,D)` | Input features, with last-axis width $D$ |
 | gate | Floating `(D,F)` | Weight matrix producing gate preactivations |
 | up | Floating `(D,F)` | Separate weight matrix producing content |
-| down | Floating `(F,D)` | Weight matrix mapping gated features back to D |
+| down | Floating `(F,D)` | Weight matrix mapping gated features back to $D$ |
 | Return | Floating `(...,D)` | Original leading axes and feature width, with gradients |
 
-D, F are positive dimensions; F is intermediate width and need not equal D or4D. Inputs share dtype/device on a backend supporting these operations. The driver and preparation use float32/float64. The caller supplies/registers weights; this function creates no parameters and preserves input/weight values.
+$D$, $F$ are positive dimensions; $F$ is intermediate width and need not equal $D$ or4D. Inputs share dtype/device on a backend supporting these operations. The driver and preparation use float32/float64. The caller supplies/registers weights; this function creates no parameters and preserves input/weight values.
 
-**Distinguish the two uses of F:** F in shape notation denotes intermediate width. In code, `F.silu` uses the namespace imported by`from torch.nn import functional as F`. Do not overwrite that Python namespace with an integer F.
+**Distinguish the two uses of $F$:** $F$ in shape notation denotes intermediate width. In code, `F.silu` uses the namespace imported by`from torch.nn import functional as F`. Do not overwrite that Python namespace with an integer `F`.
 
 ### First learn SiLU: sigmoid times its input
 
@@ -10507,7 +10407,7 @@ Sigma denotes sigmoid, mapping a scalar between0 and 1. It differs from softmax 
 
 SiLU may be negative or exceed1. Its gate values are not probabilities: they can suppress, amplify or reverse content signs. Smoothness does not imply monotonicity; the value decreases slightly from input-2 to-1. `F.silu` computes the complete a*sigmoid(a), not sigmoid alone.
 
-![Different sigmoid/SiLU ranges, coordinate points and numeric table](assets/05-03-swiglu-activation.en.png)
+![Different sigmoid/SiLU ranges, coordinate points and numeric table](assets/05-03-swiglu-activation.en.png){width=100%}
 
 **Read the figure:** Each curve has its own labeled vertical axis: sigmoid on the left, SiLU on the right. At a=2 the values are approximately0.880797 and 1.761594, respectively. The lower table retains negative values and the zero point; these are different functions.
 
@@ -10530,7 +10430,7 @@ Juxtaposition with a matrix denotes matrix multiplication, written`@` in code. T
 | gated | Element-wise gate_values times content | `(...,F)` |
 | output | gated projected through down | `(...,D)` |
 
-For intermediate coordinate f in one row, first mix the D input features, then gate:
+For intermediate coordinate $f$ in one row, first mix the $D$ input features, then gate:
 
 $$
 a_f=\sum_{j=0}^{D-1}x_j\,\mathrm{gate}_{j,f},\quad
@@ -10543,7 +10443,7 @@ a, c, z are rows of gate_pre, content, gated. Index j denotes input coordinates,
 
 ### Complete original scalar fixture
 
-All tensors have shape`(1,1)`: x=`[[1]]`, gate=`[[2]]`, up=`[[3]]`, down=`[[4]]`, with D=F=1.
+All tensors have shape`(1,1)`: x=`[[1]]`, gate=`[[2]]`, up=`[[3]]`, down=`[[4]]`, with $D=F=1$.
 
 ```text
 1. gate_pre   = 1*2 = 2
@@ -10554,15 +10454,15 @@ All tensors have shape`(1,1)`: x=`[[1]]`, gate=`[[2]]`, up=`[[3]]`, down=`[[4]]`
 5. output     ≈ 5.28478247*4 ≈ 21.13912987
 ```
 
-Matrix and element-wise multiplication look numerically identical in this special one-dimensional example. The next example uses unequal D, F to distinguish them. The driver's expected24/(1+exp(-2)) matches this trace.
+Matrix and element-wise multiplication look numerically identical in this special one-dimensional example. The next example uses unequal $D$, $F$ to distinguish them. The driver's expected24/(1+exp(-2)) matches this trace.
 
-![Scalar input, parallel branches, SiLU, element-wise gate and final projection](assets/05-03-swiglu.en.png)
+![Scalar input, parallel branches, SiLU, element-wise gate and final projection](assets/05-03-swiglu.en.png){width=100%}
 
 **Read the figure:** The same x branches into gate and up. The upper path produces2, then applies SiLU; the lower path produces content3 directly. They merge by multiplication before down. Shapes and values are separate; all shapes happen to match in this fixture.
 
-### D=2, F=3: distinguish full matrices, sizes and values
+### $D=2$, $F=3$: distinguish full matrices, sizes and values
 
-This example is separate from the scalar fixture. Use one row with B=T=1 and full x shape`(1,1,2)`; the displayed row is`[1,2]`:
+This example is separate from the scalar fixture. Use one row with $B=T=1$ and full x shape`(1,1,2)`; the displayed row is`[1,2]`:
 
 ```text
 gate = [[1,0, 1],     shape (2,3)
@@ -10584,11 +10484,11 @@ gated      = [1.46211716,-1.76159416,-1.07576569]
 output     = [0.38635147,-0.68582847]
 ```
 
-Gate preactivation0 is `1*1+2*0=1`; preactivation2 is `1*1+2*(-1)=-1`. Output0 is `1.46211716+(-1.07576569)=0.38635147`; output1 is`-1.76159416-(-1.07576569)=-0.68582847`.
+Gate preactivation0 is $1\times1+2\times0=1$; preactivation2 is $1\times1+2\times(-1)=-1$. Output0 is $1.46211716+(-1.07576569)=0.38635147$; output1 is $-1.76159416-(-1.07576569)=-0.68582847$.
 
 The four intermediates all have full shape`(1,1,3)`; output restores`(1,1,2)`. A negative third gate value times positive content4 produces a negative intermediate. These are not probabilities.
 
-![Unequal D/F, full weight tables, branch values and shape flow](assets/05-03-swiglu-shapes.en.png)
+![Unequal $D$/$F$, full weight tables, branch values and shape flow](assets/05-03-swiglu-shapes.en.png){width=100%}
 
 **Read the figure:** Upper tables contain actual weight values, with size outside their cells. Middle rows align three intermediate coordinates. The last row uses down to restore two outputs. The3 in`(1,1,3)` is a width, not a value inside a cell.
 
@@ -10600,7 +10500,7 @@ Open the shared exercise and edit only the learner region in`swiglu`. Every stat
 
 1. **Project the gate branch.** Apply matrix multiplication`@` between original x and supplied gate; save gate_pre. `(...,D)@(D,F)` gives`(...,F)`; the scalar fixture gives`[[2]]`.
 2. **Project the content branch.** Separately multiply the same original x by up; save content. Same shape; scalar value`[[3]]`. Do not feed gate_pre into the content projection.
-3. **Apply SiLU.** Pass gate_pre to the existing`F.silu`, saving gate_values. Shape stays fixed; scalar value approximately`[[1.76159416]]`. The namespace F is already imported.
+3. **Apply SiLU.** Pass gate_pre to the existing`F.silu`, saving gate_values. Shape stays fixed; scalar value approximately`[[1.76159416]]`. The namespace `F` is already imported.
 4. **Multiply element-wise.** Use`*` between gate_values and content, saving gated. Shape remains`(...,F)`; scalar value approximately`[[5.28478247]]`. Do not use matrix multiplication`@` here.
 5. **Project back and return.** Multiply gated by down using`@`, then return that result. `(...,F)@(F,D)` gives`(...,D)`; scalar value approximately`[[21.13912987]]`. Return the tensor with gradients preserved.
 
@@ -10618,7 +10518,7 @@ Multiplication sends gradients into both branches, then through their matrix pro
 
 ### Optional: parameter budgets and intermediate width
 
-Without biases, the three matrices contain DF+DF+FD=3DF parameters. A conventional two-matrix FFN with the same intermediate width uses2DF; same-width SwiGLU therefore uses1.5 times as many weight parameters. Matching budgets suggests:
+Without biases, the three matrices contain DF+DF+$FD=3DF$ parameters. A conventional two-matrix FFN with the same intermediate width uses2DF; same-width SwiGLU therefore uses1.5 times as many weight parameters. Matching budgets suggests:
 
 $$
 3D F_{\mathrm{SwiGLU}}\approx2D F_{\mathrm{plain}},\qquad
@@ -10639,11 +10539,9 @@ Expected after implementation:
 Lesson 05.03 checks passed.
 ```
 
-The driver checks the scalar fixture, a positive input gradient and zero output for a zero gate matrix. Preparation uses an in-memory reference only, additionally checking independent coordinate sums, unequal D/F, varied leading axes, non-contiguous float64, analytic and finite-difference gradients for all four tensors, row independence, zero-gate gradients and preserved inputs. The original learner placeholder and driver remain unchanged; preparation is not learner completion.
+The driver checks the scalar fixture, a positive input gradient and zero output for a zero gate matrix. Preparation uses an in-memory reference only, additionally checking independent coordinate sums, unequal $D$/$F$, varied leading axes, non-contiguous float64, analytic and finite-difference gradients for all four tensors, row independence, zero-gate gradients and preserved inputs. The original learner placeholder and driver remain unchanged; preparation is not learner completion.
 
-<a id="section-05-04"></a>
-
-## 05.04 Compose the modern baseline
+## 05.04 Compose the modern baseline {#section-05-04}
 
 ### Method sources
 
@@ -10657,7 +10555,7 @@ Compare the chosen04.09 design with this chosen baseline:
 
 | Component | Earlier decoder | Modern baseline here |
 | --- | --- | --- |
-| Position mechanism | Add a learned position table | Rotate projected Q, K using RoPE |
+| Position mechanism | Add a learned position table | Rotate projected $Q$, $K$ using RoPE |
 | Branch normalization | LayerNorm | RMSNorm with learned feature gains |
 | Position-wise FFN | Linear → GELU → Linear | Parallel gate/up → SiLU gating → down |
 | Residual structure | Two pre-norm residual branches | Same two-branch structure |
@@ -10669,21 +10567,21 @@ Prerequisites: [05.01 RMSNorm](#section-05-01), [05.02 RoPE](#section-05-02), [0
 
 ### The exact learner interface and every registered weight
 
-You implement only `ModernBlock.forward(self, x)` in `05_04_modern_model.py`. The constructor and `ModernLM` are supplied. The constructor arguments are `width`, `heads`, `hidden`, written D, H, F in formulas. F is a size symbol here; the imported Python namespace F still denotes torch.nn.functional.
+You implement only `ModernBlock.forward(self, x)` in `05_04_modern_model.py`. The constructor and `ModernLM` are supplied. The constructor arguments are `width`, `heads`, `hidden`, written $D$, $H$, $F$ in formulas. $F$ is a size symbol here; the imported Python namespace `F` still denotes torch.nn.functional.
 
 | Object | Type / shape | Meaning |
 | --- | --- | --- |
 | x | Floating tensor `(B,T,D)` | Features entering this block; not token IDs |
-| B, T | Positive axis lengths | Samples and positions supplied in this call |
-| self.heads | Python integer H | Number of attention heads |
-| d=D/H | Positive even integer | Q/K width within one head; D must be divisible by H |
+| $B$, $T$ | Positive axis lengths | Samples and positions supplied in this call |
+| self.heads | Python integer $H$ | Number of attention heads |
+| $d=D/H$ | Positive even integer | $Q$/$K$ width within one head; $D$ must be divisible by $H$ |
 | self.gain1, self.gain2 | Separate nn.Parameter tensors `(D,)` | RMSNorm gains for the two branches |
 | self.q, self.k, self.v, self.o | Separate nn.Parameter tensors `(D,D)` | Raw matrices in the row-vector x @ weight convention |
 | self.gate, self.up | Separate nn.Parameter tensors `(D,F)` | SwiGLU gate/content projections |
-| self.down | nn.Parameter tensor `(F,D)` | SwiGLU projection back to D |
+| self.down | nn.Parameter tensor `(F,D)` | SwiGLU projection back to $D$ |
 | Return | Floating tensor `(B,T,D)` | Updated features, preserving input values and the gradient graph |
 
-F need not equal D or4D. Use compatible floating input/parameter dtype and device; the lesson verifies float32/float64. Low-precision training requires later dedicated validation. There is no padding mask, position offset or KV cache in this interface. T must be positive, and all supplied rows are treated as actual tokens. No optimizer step occurs in forward.
+$F$ need not equal $D$ or4D. Use compatible floating input/parameter dtype and device; the lesson verifies float32/float64. Low-precision training requires later dedicated validation. There is no padding mask, position offset or KV cache in this interface. $T$ must be positive, and all supplied rows are treated as actual tokens. No optimizer step occurs in forward.
 
 `nn.Parameter` registers a trainable tensor. The constructor's `setattr(self,name,value)` creates attributes such as self.q from string names; it is already supplied. self.q is a weight, while your local projected q is a feature tensor. Unlike an nn.Linear module, this raw tensor is used as `normalized @ self.q`, without transposing it. The final supplied nn.Linear vocabulary head has its own `(V,D)` storage convention and handles its transpose internally.
 
@@ -10704,15 +10602,15 @@ R=\operatorname{RMS}(U;g_2),\quad
 Y=U+\operatorname{SwiGLU}(R).
 $$
 
-X is the original input; U is the result after attention; Y is the result after the FFN. Normalize only the input to each branch. The first residual adds X, not Z. The second adds the updated U, not the old X and not normalized R. gain1/gain2 are independently learned even though both start as ones. The direct residual route has an identity derivative plus the branch derivative; this helps provide a gradient route, but does not guarantee stable training for arbitrary settings.
+$X$ is the original input; U is the result after attention; $Y$ is the result after the FFN. Normalize only the input to each branch. The first residual adds $X$, not $Z$. The second adds the updated U, not the old $X$ and not normalized $R$. gain1/gain2 are independently learned even though both start as ones. The direct residual route has an identity derivative plus the branch derivative; this helps provide a gradient route, but does not guarantee stable training for arbitrary settings.
 
-![Shape map with separate original-X and updated-U residual bypasses](assets/05-04-modern-model.en.png)
+![Shape map with separate original-$X$ and updated-U residual bypasses](assets/05-04-modern-model.en.png){width=100%}
 
-**Read the figure:** Orange carries the original X around the attention branch. Blue carries U around the FFN branch. Main-flow boxes show shapes, not matrix entries. T and D stay unchanged across both additions; only internal attention heads and FFN widths change layout.
+**Read the figure:** Orange carries the original $X$ around the attention branch. Blue carries U around the FFN branch. Main-flow boxes show shapes, not matrix entries. $T$ and $D$ stay unchanged across both additions; only internal attention heads and FFN widths change layout.
 
 ### Project, split, rotate and attend: track all four axes
 
-Project Z independently through the three raw matrices. Each projection keeps `(B,T,D)`. Split each row's D features into H groups of d and move heads ahead of positions:
+Project $Z$ independently through the three raw matrices. Each projection keeps `(B,T,D)`. Split each row's $D$ features into $H$ groups of d and move heads ahead of positions:
 
 ```text
 Z @ self.q / self.k / self.v     (B,T,D)
@@ -10722,15 +10620,15 @@ transpose(1,2)                 (B,H,T,d)
 
 Here slash-separated names denote three separate projections, not division. reshape groups adjacent features; transpose swaps the head and position axes. Their sizes may coincidentally match, but their meanings differ. No token order is shuffled. Do not directly reshape `(B,T,D)` into `(B,H,T,d)` without the intermediate layout change.
 
-Create `positions=torch.arange(T,device=x.device)`, shape `(T,)`, values 0 through T-1. For each Q/K pair i, RoPE uses the per-head width d:
+Create `positions=torch.arange(T,device=x.device)`, shape `(T,)`, values 0 through $T$-1. For each $Q$/$K$ pair $i$, RoPE uses the per-head width $d$:
 
 $$
 \omega_i=10000^{-2i/d},\qquad \theta_{t,i}=t\omega_i.
 $$
 
-Pass each of q, k to apply_rope with the same positions, keeping `(B,H,T,d)`. Do not rotate v in this design. Each head has d/2 frequency pairs; heads do not receive just one scalar frequency each unless d=2. Do not add the old learned absolute position table as well in this baseline.
+Pass each of q, k to apply_rope with the same positions, keeping `(B,H,T,d)`. Do not rotate v in this design. Each head has d/2 frequency pairs; heads do not receive just one scalar frequency each unless $d=2$. Do not add the old learned absolute position table as well in this baseline.
 
-For each sample and head, query row t compares with key row r:
+For each sample and head, query row $t$ compares with key row $r$:
 
 $$
 S_{t,r}=\frac{\widetilde q_t\cdot\widetilde k_r}{\sqrt d},\qquad
@@ -10755,17 +10653,17 @@ U = original X + branch        (B,T,D)
 
 Use reshape after transpose, or contiguous().view after transpose if you choose view. A direct view on a non-contiguous tensor may fail; more importantly, merging the wrong axes can give plausible sizes with incorrect contents. self.o mixes the concatenated head coordinates without mixing positions.
 
-Normalize U with gain2 and call swiglu with R, self.gate, self.up, self.down:
+Normalize U with gain2 and call swiglu with $R$, self.gate, self.up, self.down:
 
 $$
 \operatorname{SwiGLU}(R)=\left[\operatorname{SiLU}(R\,\mathrm{gate})\odot(R\,\mathrm{up})\right]\mathrm{down}.
 $$
 
-Both projections read the same R. `@` is matrix multiplication, `*` is coordinate-wise multiplication. The branch expands `(B,T,D)` to two `(B,T,F)` tensors, gates them, then returns `(B,T,D)`. Add this returned change to U, yielding Y. swiglu itself adds no residual, so add exactly one here.
+Both projections read the same $R$. `@` is matrix multiplication, `*` is coordinate-wise multiplication. The branch expands `(B,T,D)` to two `(B,T,F)` tensors, gates them, then returns `(B,T,D)`. Add this returned change to U, yielding $Y$. swiglu itself adds no residual, so add exactly one here.
 
 ### A complete numeric example with specified weights
 
-The supplied original driver uses random D=8, H=2, F=16. To make every entry readable, this **separate arithmetic example** uses B=1, T=2, D=4, H=2, d=2, F=3. Set gain1=gain2=ones, q=k=v=I4 and o=0.5*I4; positions=[0,1], base 10000, eps1e-6. I4 denotes the 4×4 identity matrix. Each head now has one pair with omega=1; the previous lesson's wider example covers multiple frequencies.
+The supplied original driver uses random $D=8$, $H=2$, $F=16$. To make every entry readable, this **separate arithmetic example** uses $B=1$, $T=2$, $D=4$, $H=2$, $d=2$, $F=3$. Set gain1=gain2=ones, $q=k=v$=I4 and o=0.5*I4; positions=[0,1], base 10000, eps1e-6. I4 denotes the 4×4 identity matrix. Each head now has one pair with $\omega$=1; the previous lesson's wider example covers multiple frequencies.
 
 Choose these FFN weights, all separate tensors:
 
@@ -10806,7 +10704,7 @@ Z[0]  full shape=(1,2,4)
 [ 0.00000000, 1.41421215, 1.41421215, 0.00000000 ]
 ```
 
-Each X row has mean square0.5. Divide by sqrt(0.500001), giving c≈1.41421215. Because projection weights are identity, the full Q, K, V equal Z before splitting. Head 0 receives coordinates0,1, while head 1 receives2,3. At position 0 there is no rotation; at position 1 each pair rotates by 1 radian. V remains unrotated:
+Each $X$ row has mean square0.5. Divide by sqrt(0.500001), giving c≈1.41421215. Because projection weights are identity, the full $Q$, $K$, $V$ equal $Z$ before splitting. Head 0 receives coordinates0,1, while head 1 receives2,3. At position 0 there is no rotation; at position 1 each pair rotates by 1 radian. $V$ remains unrotated:
 
 ```text
 rotated Q = rotated K, head 0  slice shape=(2,2)
@@ -10862,9 +10760,9 @@ context, head 1  slice shape=(2,2)
 
 In each table, rows are query positions and columns are key positions. The first row can see only key 0, so its weights are exactly[1,0]. For head 0 row 1, scores are about[-1.19001730,1.41421073], and the first weight is 1/(1+exp(2.60422804))≈0.06886681. Its output is 0.06886681*[c,0]+0.93113319*[0, c]. Head 1 uses a different score pair and therefore a different weighted sum.
 
-![Rotated Q/K, unchanged V, causal scores, weights, per-head outputs and merged entries](assets/05-04-modern-attention-trace.en.png)
+![Rotated $Q$/$K$, unchanged $V$, causal scores, weights, per-head outputs and merged entries](assets/05-04-modern-attention-trace.en.png){width=100%}
 
-**Read the figure:** All small head tables display `(T,d)` or `(T,T)` slices, explicitly labeled. The full tensors still include B, H. Bottom rows concatenate head 0's two outputs followed by head 1's two outputs. Here H=T=d=2 numerically; the axis meanings remain distinct.
+**Read the figure:** All small head tables display `(T,d)` or `(T,T)` slices, explicitly labeled. The full tensors still include $B$, $H$. Bottom rows concatenate head 0's two outputs followed by head 1's two outputs. Here $H=T=d=2$ numerically; the axis meanings remain distinct.
 
 #### Merge, first residual and the second RMSNorm
 
@@ -10886,7 +10784,7 @@ R[0]  full shape=(1,2,4)
 [ 0.04449106, 1.51520054, 1.27272793, 0.28696366 ]
 ```
 
-For example, U at position 1 is `[0,1,1,0] + 0.5*[0.09739227,1.31681987,0.78604000,0.62817215]`. R is a new normalization of this U, not a reused Z. Keep U available for the next addition.
+For example, U at position 1 is `[0,1,1,0] + 0.5*[0.09739227,1.31681987,0.78604000,0.62817215]`. $R$ is a new normalization of this U, not a reused $Z$. Keep U available for the next addition.
 
 #### Parallel projections, gating and the final residual
 
@@ -10926,21 +10824,21 @@ Y[0]  full shape=(1,2,4)
 [ 0.04944988, 1.84662934, 1.51956314, 0.25316355 ]
 ```
 
-At position 0, gate_pre's first coordinate is c2≈1.41421308 and content's first coordinate is 2*c2. Thus gated is `[SiLU(c2)*(2*c2),0,0]≈[3.21771622,0,0]`. Multiplying by down gives `[0.32177162,0,0,0.32177162]`. Adding U gives the displayed Y. At position 1, all three intermediate coordinates contribute; down's negative entry makes the fourth branch coordinate negative. Negative feature updates are valid.
+At position 0, gate_pre's first coordinate is c2≈1.41421308 and content's first coordinate is 2*c2. Thus gated is `[SiLU(c2)*(2*c2),0,0]≈[3.21771622,0,0]`. Multiplying by down gives `[0.32177162,0,0,0.32177162]`. Adding U gives the displayed $Y$. At position 1, all three intermediate coordinates contribute; down's negative entry makes the fourth branch coordinate negative. Negative feature updates are valid.
 
-![All second-branch intermediate entries, their full shapes and the updated-U residual](assets/05-04-modern-residual-trace.en.png)
+![All second-branch intermediate entries, their full shapes and the updated-U residual](assets/05-04-modern-residual-trace.en.png){width=100%}
 
-**Read the figure:** Each table contains the same two token rows, never dimension labels inside the value cells. Full shape is printed separately. F=3 differs from D=4, so the expansion/projection is visible. The final addition uses U. Figures round to six decimals; text rounds to eight; calculations retain full precision and eps throughout.
+**Read the figure:** Each table contains the same two token rows, never dimension labels inside the value cells. Full shape is printed separately. $F=3$ differs from $D=4$, so the expansion/projection is visible. The final addition uses U. Figures round to six decimals; text rounds to eight; calculations retain full precision and eps throughout.
 
 ### From one block to ModernLM and raw vocabulary logits
 
-Supplied ModernLM embeds integer input_ids `(B,T)`, applies each registered block sequentially, then final rmsnorm with self.gain and an nn.Linear head. Return shape is `(B,T,V)`, with raw next-token logits for every supplied row. Its constructor arguments are vocab_size, width, heads, hidden, layers, tied=False. Require layers>=1 for the intended stacked decoder; IDs are torch.long in[0, V), with matching model device and positive B, T. This exercise adds no validation task.
+Supplied ModernLM embeds integer input_ids `(B,T)`, applies each registered block sequentially, then final rmsnorm with self.gain and an nn.Linear head. Return shape is `(B,T,V)`, with raw next-token logits for every supplied row. Its constructor arguments are vocab_size, width, heads, hidden, layers, tied=False. Require layers>=1 for the intended stacked decoder; IDs are torch.long in[0, $V$), with matching model device and positive $B$, $T$. This exercise adds no validation task.
 
 `nn.ModuleList` registers blocks, but the supplied for-loop actually runs them. Each block owns different parameters; depth is not a loop over token positions. No extra residual surrounds an entire block call. The final self.gain is separate from each block's gain1/gain2.
 
-With `tied=True`, the supplied assignment `self.head.weight=self.embedding.weight` shares **the same Parameter object**, not merely equal initial numbers. E has shape `(V,D)`: input IDs select E rows, while the output head computes final_normalized @ E.T. Both uses contribute gradients to the shared E. The nn.Linear call handles the transpose; do not manually transpose its registered weight or create a second embedding.
+With `tied=True`, the supplied assignment `self.head.weight=self.embedding.weight` shares **the same Parameter object**, not merely equal initial numbers. $E$ has shape `(V,D)`: input IDs select $E$ rows, while the output head computes final_normalized @ E.T. Both uses contribute gradients to the shared $E$. The nn.Linear call handles the transpose; do not manually transpose its registered weight or create a second embedding.
 
-Continue the same numeric example with one block, V=3, final gain ones and tied weights:
+Continue the same numeric example with one block, $V=3$, final gain ones and tied weights:
 
 ```text
 E  shape=(3,4)
@@ -10961,15 +10859,15 @@ logits[0]  full shape=(1,2,3)
 [ 0.25161817, 2.79893456, -1.49432563 ]
 ```
 
-`input_ids=[[0,1]]` selects E's first two rows, reproducing X above. The first logit at position 1 is `0.04111677+0.21050139≈0.25161817`. The second is `1.53544241+1.26349216≈2.79893456`. The third is `0.04111677-1.53544241≈-1.49432563`. These three columns are candidate vocabulary scores, not three new input positions. Do not apply softmax before the later F.cross_entropy training call.
+`input_ids=[[0,1]]` selects $E$'s first two rows, reproducing $X$ above. The first logit at position 1 is $0.04111677+0.21050139\approx0.25161817$. The second is $1.53544241+1.26349216\approx2.79893456$. The third is $0.04111677-1.53544241\approx-1.49432563$. These three columns are candidate vocabulary scores, not three new input positions. Do not apply softmax before the later F.cross_entropy training call.
 
-![Shared embedding/head parameter, final normalization, matrix dimensions and complete logits](assets/05-04-modern-tied-head.en.png)
+![Shared embedding/head parameter, final normalization, matrix dimensions and complete logits](assets/05-04-modern-tied-head.en.png){width=100%}
 
-**Read the figure:** The upper E table is one parameter used in two places. The lower product displays sample0's normalized rows times E.T, keeping T=2 and changing D=4 into V=3. There is no learned position table here. Real tokenizer outputs can enter through IDs after matching V; the block does not train BPE, decode bytes or sample tokens.
+**Read the figure:** The upper $E$ table is one parameter used in two places. The lower product displays sample0's normalized rows times E.T, keeping $T=2$ and changing $D=4$ into $V=3$. There is no learned position table here. Real tokenizer outputs can enter through IDs after matching $V$; the block does not train BPE, decode bytes or sample tokens.
 
 ### Parameter budget: what weight tying saves
 
-A block has four D×D attention matrices, three DF-sized FFN matrices, and two D-sized gains:
+A block has four $D$×$D$ attention matrices, three DF-sized FFN matrices, and two $D$-sized gains:
 
 $$
 P_{\mathrm{block}}=4D^2+3DF+2D,\qquad
@@ -10981,16 +10879,16 @@ No bias or position-table parameters are present in this supplied design. In our
 
 ### Eight guided steps for the learner region
 
-Open the real exercise and edit only ModernBlock.forward between its markers. Ordinary method statements use **eight spaces**; it is inside a class. No new for-loop or parameter initialization is required. Keep x as the original residual state. The following names Z/U/R are suggested local names, not extra attributes.
+Open the real exercise and edit only ModernBlock.forward between its markers. Ordinary method statements use **eight spaces**; it is inside a class. No new for-loop or parameter initialization is required. Keep x as the original residual state. The following names $Z$/U/$R$ are suggested local names, not extra attributes.
 
-1. **Read sizes and normalize.** Unpack `B,T,D=x.shape`; read H from self.heads and d via integer division `D//H`. Call rmsnorm with x, self.gain1 and save Z, `(B,T,D)`. Fixture row 0 becomes[c,0,0, c]. `//` gives an integer width suitable for reshape.
-2. **Project and split three times.** Use `@ self.q`, `@ self.k`, `@ self.v` on the same Z. For each result use `.reshape(B,T,H,d).transpose(1,2)`, saving local q, k, v. Fixture full shape `(1,2,2,2)`; head 0 row 0 is[c,0], head 1 row 0[0, c]. Do not use nn.Linear call syntax on a raw Parameter.
-3. **Make positions and rotate only q, k.** Use torch.arange(T, device=x.device), obtaining[0,1]. Pass q and positions to apply_rope, then independently k and positions. Reassign the local projected tensors, preserving v. Keep the default base consistent.
+1. **Read sizes and normalize.** Unpack `B,T,D=x.shape`; read $H$ from self.heads and d via integer division `D//H`. Call rmsnorm with x, self.gain1 and save $Z$, `(B,T,D)`. Fixture row 0 becomes[c,0,0, c]. `//` gives an integer width suitable for reshape.
+2. **Project and split three times.** Use `@ self.q`, `@ self.k`, `@ self.v` on the same $Z$. For each result use `.reshape(B,T,H,d).transpose(1,2)`, saving local q, k, v. Fixture full shape `(1,2,2,2)`; head 0 row 0 is[c,0], head 1 row 0[0, c]. Do not use nn.Linear call syntax on a raw Parameter.
+3. **Make positions and rotate only q, k.** Use torch.arange($T$, device=x.device), obtaining[0,1]. Pass q and positions to apply_rope, then independently k and positions. Reassign the local projected tensors, preserving v. Keep the default base consistent.
 4. **Call the supplied attention and unpack.** Assign its two outputs to context and weights, or use `_` for unused weights. `_` is an ordinary name signaling deliberate non-use. Context is `(B,H,T,d)`; weights is `(B,H,T,T)`. No additional mask/softmax/scale is needed.
 5. **Merge and project.** Transpose context's axes1,2, then reshape to `(B,T,D)`. Multiply that result by self.o using `@`. In the fixture the branch is 0.5 times the displayed merged values.
-6. **Make the first residual state.** Add original x to the attention branch; save U, still `(B,T,D)`. Fixture row 0 is`[1.70710607,0,0,1.70710607]`. Do not add normalized Z instead.
-7. **Make the second branch.** Call rmsnorm on U, self.gain2 and save R. Call swiglu with R, self.gate, self.up, self.down. Its return is an FFN change `(B,T,D)`, not the final residual state. Fixture row 0 change is`[0.32177162,0,0,0.32177162]`.
-8. **Return the second residual.** At eight spaces return U plus the FFN change. Fixture row 0 is`[2.02887770,0,0,2.02887770]`. Preserve all T rows and the gradient graph. Do not detach, overwrite input values, update weights, return attention weights or produce token IDs.
+6. **Make the first residual state.** Add original x to the attention branch; save U, still `(B,T,D)`. Fixture row 0 is`[1.70710607,0,0,1.70710607]`. Do not add normalized $Z$ instead.
+7. **Make the second branch.** Call rmsnorm on U, self.gain2 and save $R$. Call swiglu with $R$, self.gate, self.up, self.down. Its return is an FFN change `(B,T,D)`, not the final residual state. Fixture row 0 change is`[0.32177162,0,0,0.32177162]`.
+8. **Return the second residual.** At eight spaces return U plus the FFN change. Fixture row 0 is`[2.02887770,0,0,2.02887770]`. Preserve all $T$ rows and the gradient graph. Do not detach, overwrite input values, update weights, return attention weights or produce token IDs.
 
 Hints guide your own implementation; the lesson does not insert a completed forward method. Leave the supplied ModernLM and check driver intact.
 
@@ -11006,21 +10904,19 @@ After implementation and functional prerequisites, expect:
 Lesson 05.04 checks passed.
 ```
 
-An unfinished dependency raises learner TODO; it is not evidence of an environment problem. The original driver checks block shape at B=2, T=3, D=8, future isolation after perturbing the final input row, graph connectivity for all registered block parameters, identity when attention/FFN matrices are zero, tied parameter identity, and full-model logit shape. Zero branch weights leave both residual routes intact, so output equals x even though RMSNorm gains need not be zero.
+An unfinished dependency raises learner TODO; it is not evidence of an environment problem. The original driver checks block shape at $B=2$, $T=3$, $D=8$, future isolation after perturbing the final input row, graph connectivity for all registered block parameters, identity when attention/FFN matrices are zero, tied parameter identity, and full-model logit shape. Zero branch weights leave both residual routes intact, so output equals x even though RMSNorm gains need not be zero.
 
 It checks the original driver using actual prerequisites in float32, the complete independent NumPy trace in float64, unequal axes/widths, non-contiguous inputs, zero branches, causal isolation/context sensitivity, input/parameter preservation, gradients and parameter-count/tied-object identities. No corpus training or quality result is claimed.
 
 ### Why the causal mask still works after multiple blocks
 
-At a row t, RMSNorm, feature projections, RoPE, SwiGLU and residual additions do not read another row. Causal attention reads only rows at r<=t. If each input row r already depends only on its own prefix, row t can still depend only on its prefix after this block. Repeating blocks preserves that property. Changed feature values or feature widths do not move the token axis.
+At a row $t$, RMSNorm, feature projections, RoPE, SwiGLU and residual additions do not read another row. Causal attention reads only rows at r<=t. If each input row $r$ already depends only on its own prefix, row $t$ can still depend only on its prefix after this block. Repeating blocks preserves that property. Changed feature values or feature widths do not move the token axis.
 
 This forward always recomputes a complete supplied sequence and numbers it0..T-1. It does not implement offsets or cached decoding. Later caches must retain absolute positions; do not restart only a newly supplied cached token at 0. Having no finite learned position table does not imply unlimited usable context: quadratic attention work/storage, precision and training lengths still matter.
 
-Immediately after causal_attention, context is (B, H, T, dv), where this implementation uses dv=D//self.heads for Q/K/V alike. After transpose(1,2) it is (B, T, H, dv), then reshape yields (B, T, D). The original comment put T/H in the wrong order; this was a comment correction, not a computational bug.
+Immediately after causal_attention, context is (B, H, T, dv), where this implementation uses $d_v=D$//self.heads for $Q$/$K$/$V$ alike. After transpose(1,2) it is (B, T, H, dv), then reshape yields (B, T, D). The original comment put $T$/$H$ in the wrong order; this was a comment correction, not a computational bug.
 
-<a id="section-05-05"></a>
-
-## 05.05 AdamW, initialization and weight decay
+## 05.05 AdamW, initialization and weight decay {#section-05-05}
 
 ### Method sources
 
@@ -11055,30 +10951,30 @@ def adamw_update(parameter: torch.Tensor, gradient: torch.Tensor,
 | first | Same-shape/dtype/device buffer for the previous signed-gradient average | Yes, in place |
 | second | Same-shape/dtype/device buffer for the previous squared-gradient average | Yes, in place |
 | step | Positive Python integer: this parameter's update count, starting at 1 | No |
-| learning_rate | Nonnegative Python scalar, written eta | No |
+| learning_rate | Nonnegative Python scalar, written $\eta$ | No |
 | beta1, beta2 | Fixed averaging coefficients in [0,1) | No |
 | eps | Positive scalar added after the square root | No |
-| decay | Nonnegative weight-decay coefficient, written lambda | No |
+| decay | Nonnegative weight-decay coefficient, written $\lambda$ | No |
 | Return | None; the caller observes mutated tensors | No new parameter returned |
 
 Use finite, real float32/float64 tensors with separate, non-overlapping storage for parameter, gradient, first and second. Buffers are ordinary non-differentiable optimizer state; second is nonnegative. At the start of a new run, initialize first and second to zeros. At later calls, supply the preceding buffers and the correct update count. A matrix parameter has a matrix of moments, one value per coordinate; do not reduce over rows, tokens or all weights.
 
-step is not the token count T or epoch number. With gradient accumulation, increment it when this parameter is actually updated, not for every microbatch. This tensor-only interface has no gradient=None skip logic. An explicitly zero gradient still participates in the update.
+step is not the token count $T$ or epoch number. With gradient accumulation, increment it when this parameter is actually updated, not for every microbatch. This tensor-only interface has no gradient=None skip logic. An explicitly zero gradient still participates in the update.
 
 ### Name the symbols before reading the formulas
 
 | Formula | Actual argument / interpretation |
 | --- | --- |
-| theta_(t-1), theta_t | parameter before / after the call |
-| g_t | gradient supplied for update t |
-| m_(t-1), m_t | first before / after updating its buffer |
-| v_(t-1), v_t | second before / after updating its buffer |
-| beta_1, beta_2 | beta1, beta2: fractions of the previous memories retained |
-| t | step: 1,2,3,... for this parameter |
-| eta, lambda, epsilon | learning_rate, decay, eps |
-| m_hat, v_hat | Temporarily bias-corrected values, not replacement buffer states |
+| $\theta_{t-1}$, $\theta_t$ | parameter before / after the call |
+| $g_t$ | gradient supplied for update t |
+| $m_{t-1}$, $m_t$ | first before / after updating its buffer |
+| $v_{t-1}$, $v_t$ | second before / after updating its buffer |
+| $\beta_1$, $\beta_2$ | beta1, beta2: fractions of the previous memories retained |
+| $t$ | step: 1,2,3,... for this parameter |
+| $\eta$, $\lambda$, $\epsilon$ | learning_rate, decay, eps |
+| $\widehat m_t$, $\widehat v_t$ | Temporarily bias-corrected values, not replacement buffer states |
 
-In beta_1^t, the subscript 1 selects beta1 and the superscript t means exponentiation. At t=2, beta1=0.9 gives 0.9²=0.81; beta2=0.99 gives 0.99²=0.9801. In Python write `beta1 ** step`, not `beta1 * step` and not `beta1 ^ step`; ^ is not Python exponentiation. The beta values stay fixed while their powers change with t.
+In $\beta_1^t$, the subscript 1 selects beta1 and the superscript t means exponentiation. At $t=2$, beta1=0.9 gives $0.9^{2}=0.81$; beta2=0.99 gives $0.99^{2}=0.9801.$ In Python write `beta1 ** step`, not `beta1 * step` and not `beta1 ^ step`; ^ is not Python exponentiation. The $\beta$ values stay fixed while their powers change with t.
 
 ### Two gradient memories: direction and squared scale
 
@@ -11091,7 +10987,7 @@ $$
 
 For beta1=0.9, first keeps 90% of its old value and adds 10% of the current gradient. It can be positive or negative; it smooths direction rather than obeying only the newest sign. With beta2=0.99, second keeps 99% of its old value and adds 1% of the squared gradient. Squaring makes negative gradients contribute positively to scale.
 
-v is a raw second-moment estimate, not a second derivative or an exact variance: variance would subtract the square of the mean. Dividing by sqrt(v_hat)+eps scales each coordinate using its own gradient history. It is not a probability normalization or a sum-to-one operation, and does not guarantee identical parameter displacements or monotonically decreasing loss.
+v is a raw second-moment estimate, not a second derivative or an exact variance: variance would subtract the square of the mean. Dividing by $\sqrt{\widehat v_t}+\epsilon$ scales each coordinate using its own gradient history. It is not a probability normalization or a sum-to-one operation, and does not guarantee identical parameter displacements or monotonically decreasing loss.
 
 ### Why startup correction divides by 1 minus a power
 
@@ -11102,7 +10998,7 @@ m_t=(1-\beta_1)(1+\beta_1+\cdots+\beta_1^{t-1})g
 =(1-\beta_1^t)g.
 $$
 
-At t=1 with beta1=0.9, the uncorrected memory is only 0.1g. The missing weight came from the zero initial state. Divide by the observed-gradient weight to remove this startup attenuation; apply the same reasoning to squares:
+At $t=1$ with beta1=0.9, the uncorrected memory is only 0.1g. The missing weight came from the zero initial state. Divide by the observed-gradient weight to remove this startup attenuation; apply the same reasoning to squares:
 
 $$
 \widehat m_t=\frac{m_t}{1-\beta_1^t},\qquad
@@ -11115,7 +11011,7 @@ $$
 | 2 | 0.19 | 0.0199 |
 | 3 | 0.271 | 0.029701 |
 
-Correction also normalizes the accumulated weights for varying gradients; it does not predict the true current gradient or guarantee an unbiased estimate of a changing underlying mean. Keep the **uncorrected** m_t, v_t in first, second for the next recurrence. Compute m_hat, v_hat in new temporary tensors. Dividing first or second in place by its correction denominator corrupts the next update. step=0 would give zero denominators, so valid counts start at 1.
+Correction also normalizes the accumulated weights for varying gradients; it does not predict the true current gradient or guarantee an unbiased estimate of a changing underlying mean. Keep the **uncorrected** $m_t$, $v_t$ in first, second for the next recurrence. Compute $\widehat m_t$, $\widehat v_t$ in new temporary tensors. Dividing first or second in place by its correction denominator corrupts the next update. step=0 would give zero denominators, so valid counts start at 1.
 
 ### AdamW: shrink the old parameter separately, then subtract an adaptive change
 
@@ -11129,13 +11025,13 @@ $$
 
 The adaptive term follows gradient memories. Weight decay acts on the old parameter itself and does not enter those memories. This is the decoupled rule used here, with eps outside the square root. [Official AdamW algorithm](https://docs.pytorch.org/docs/stable/generated/torch.optim.AdamW.html)
 
-For eta=0.1, lambda=0.1, multiply old parameters by 0.99: 1 becomes 0.99 and -2 becomes-1.98. Both move toward zero before the adaptive contribution. This shrink interpretation assumes a usual factor between0 and 1; arbitrary nonnegative hyperparameters do not guarantee shrinkage. Decoupled means separate from gradient moments, not independent of learning rate: eta*lambda still determines this step's decay.
+For $\eta$=0.1, $\lambda$=0.1, multiply old parameters by 0.99: 1 becomes 0.99 and -2 becomes-1.98. Both move toward zero before the adaptive contribution. This shrink interpretation assumes a usual factor between0 and 1; arbitrary nonnegative hyperparameters do not guarantee shrinkage. Decoupled means separate from gradient moments, not independent of learning rate: $\eta\lambda$ still determines this step's decay.
 
 The minus sign applies to the signed adaptive term. Subtracting a negative term increases a parameter. Momentum may disagree with the newest gradient sign, as the two-step trace below demonstrates. Performing the adaptive subtraction first and multiplying the entire result by 0.99 afterward would also decay the new adaptive change; that is a different equation.
 
 ### Full scalar calculation before writing code
 
-Take coordinate 0 of the original driver, represented as a one-entry tensor of shape(1,): old p=1, g=2, first=second=0, step=1, learning_rate=0.1, beta1=0.9, beta2=0.99, eps=1e-8, decay=0.1.
+Take coordinate 0 of the original driver, represented as a one-entry tensor of shape(1,): old $p=1$, $g=2$, first=second=0, step=1, learning_rate=0.1, beta1=0.9, beta2=0.99, eps=1e-8, decay=0.1.
 
 ```text
 1. first       = 0.9*0 + 0.1*2       = 0.2
@@ -11148,9 +11044,9 @@ Take coordinate 0 of the original driver, represented as a one-entry tensor of s
 8. new p       = 0.99-adaptive       = 0.8900000005
 ```
 
-Persist first=0.2, second=0.04 and the new p. The supplied gradient stays 2; the function returns None. Numbers are shown rounded, while calculations retain eps. Plain SGD without decay would give`1-0.1*2=0.8`; AdamW's history-based scaling defines a different update.
+Persist first=0.2, second=0.04 and the new p. The supplied gradient stays 2; the function returns None. Numbers are shown rounded, while calculations retain eps. Plain SGD without decay would give $1-0.1\times2=0.8$; AdamW's history-based scaling defines a different update.
 
-![Separate gradient-memory and parameter-decay paths, bias corrections and scalar result](assets/05-05-adamw-initialization.en.png)
+![Separate gradient-memory and parameter-decay paths, bias corrections and scalar result](assets/05-05-adamw-initialization.en.png){width=100%}
 
 **Read the figure:** The upper input is a gradient and feeds both memory buffers. The lower input is the old parameter and feeds decay. Only at the final subtraction do the paths meet. Shape labels are outside numeric entries; every box in this slice describes one parameter coordinate. Persistent buffers and temporary corrected values have different roles.
 
@@ -11176,7 +11072,7 @@ Coordinate1's adaptive term is negative, so subtracting it raises its parameter 
 
 #### Step 2: reuse the first step's actual moments
 
-Now 1-0.9²=0.19 and 1-0.99²=0.0199. For coordinate 0, `first=0.9*0.2+0.1*(-0.5)=0.13` and `second=0.99*0.04+0.01*0.25=0.0421`. For coordinate 1, `first=0.9*(-0.1)+0.1*3=0.21` and `second=0.99*0.01+0.01*9=0.0999`.
+Now $1-0.9^{2}=0.19$ and $1-0.99^{2}=0.0199.$ For coordinate 0, `first=0.9*0.2+0.1*(-0.5)=0.13` and `second=0.99*0.04+0.01*0.25=0.0421`. For coordinate 1, `first=0.9*(-0.1)+0.1*3=0.21` and `second=0.99*0.01+0.01*9=0.0999`.
 
 | Quantity | Coordinate 0 | Coordinate 1 |
 | --- | --- | --- |
@@ -11192,7 +11088,7 @@ Now 1-0.9²=0.19 and 1-0.99²=0.0199. For coordinate 0, `first=0.9*0.2+0.1*(-0.5
 
 Although coordinate 0's current gradient is-0.5, its first_hat remains positive. AdamW still subtracts a positive adaptive change this step. This is the effect of direction memory, not a sign error. The trace would differ if buffers were reset or corrected buffers were saved as persistent state.
 
-![Every persistent and temporary vector across both updates, with coordinate labels separate from values](assets/05-05-adamw-state-trace.en.png)
+![Every persistent and temporary vector across both updates, with coordinate labels separate from values](assets/05-05-adamw-state-trace.en.png){width=100%}
 
 **Read the figure:** Left is step 1, right step 2. Each table has two coordinate columns and the same row meanings. Green rows identify stored states; temporary corrected states remain separate. The original driver compares both parameter trajectories and final memories with PyTorch AdamW, not just the final scalar.
 
@@ -11205,48 +11101,48 @@ J(\theta)=L(\theta)+\frac{\lambda}{2}\|\theta\|_2^2,\qquad
 \nabla J=g+\lambda\theta.
 $$
 
-For plain SGD without momentum, subtracting eta*(g+lambda*theta) equals decaying theta and subtracting eta*g. Adam transforms the supplied gradient using coordinate histories; feeding g+lambda*theta into that transformation changes both memories. It is generally different from AdamW's separate parameter decay. [Decoupled Weight Decay Regularization](https://arxiv.org/abs/1711.05101)
+For plain SGD without momentum, subtracting $\eta(g+\lambda\theta)$ equals decaying $\theta$ and subtracting $\eta g$. Adam transforms the supplied gradient using coordinate histories; feeding $g+\lambda\theta$ into that transformation changes both memories. It is generally different from AdamW's separate parameter decay. [Decoupled Weight Decay Regularization](https://arxiv.org/abs/1711.05101)
 
-Use a separate fresh example p=1, g=0, m=v=0, step 1, with the same coefficients. Adam plus this L2 penalty uses effective gradient0.1, so m=0.01, v=0.0001, m_hat=0.1, v_hat=0.01. Its adaptive decrement is about 0.1 and new p≈0.90000001. AdamW keeps m=v=0, has no adaptive decrement, and gives p=0.99 through decay alone.
+Use a separate fresh example $p=1$, $g=0$, $m=v=0$, step 1, with the same coefficients. Adam plus this L2 penalty uses effective gradient0.1, so $m=0.01$, $v=0.0001$, $\widehat m_t$=0.1, $\widehat v_t$=0.01. Its adaptive decrement is about 0.1 and new p≈0.90000001. AdamW keeps $m=v=0$, has no adaptive decrement, and gives $p=0.99$ through decay alone.
 
-![Same zero-gradient input, different moment states and different parameter changes](assets/05-05-adamw-decay-comparison.en.png)
+![Same zero-gradient input, different moment states and different parameter changes](assets/05-05-adamw-decay-comparison.en.png){width=100%}
 
 **Read the figure:** This is explicitly a new comparison fixture, not step 3 of the prior trace. Both sides start from the same zero memories. A zero gradient with nonzero previous first can still move a parameter; gradient=None is a separate optimizer case not implemented by this function.
 
 ### Initialization: why the previous constructor divides by sqrt(fan-in)
 
-For the row-vector convention in 05.04, x is(1, n), W is(n, m), y=x@W is(1, m). fan-in n counts terms contributing to one output feature, not the output width m:
+For the row-vector convention in 05.04, x is(1, n), $W$ is(n, m), y=x@W is(1, m). fan-in n counts terms contributing to one output feature, not the output width $m$:
 
 $$
 y_j=\sum_{i=0}^{n-1}x_iW_{ij},\qquad
 \operatorname{Var}(y_j)=n\,\operatorname{Var}(x_i)\operatorname{Var}(W_{ij}).
 $$
 
-This equality assumes independent zero-mean inputs with common variance q, independent zero-mean weights with common variance sigma_W², and independence between weights and inputs. Each product contributes q*sigma_W² and cross covariances vanish under these assumptions. If q=1 and weight standard deviation is 1, output variance is n. Choosing weight variance1/n, hence **standard deviation1/sqrt(n)**, makes this simplified output variance1.
+This equality assumes independent zero-mean inputs with common variance q, independent zero-mean weights with common variance $\sigma_W^2$, and independence between weights and inputs. Each product contributes $q\sigma_W^2$ and cross covariances vanish under these assumptions. If $q=1$ and weight standard deviation is 1, output variance is n. Choosing weight variance1/n, hence **standard deviation1/sqrt(n)**, makes this simplified output variance1.
 
-Do not confuse variance and standard deviation: for n=4, standard deviation0.5 means variance0.25. Dividing randn by sqrt(n) scales its standard deviation, not its realized entries' sample variance to an exact prescribed number. Zero mean and variance describe a random distribution; individual samples can be positive or negative and their empirical statistics vary.
+Do not confuse variance and standard deviation: for $n=4$, standard deviation0.5 means variance0.25. Dividing randn by sqrt(n) scales its standard deviation, not its realized entries' sample variance to an exact prescribed number. Zero mean and variance describe a random distribution; individual samples can be positive or negative and their empirical statistics vary.
 
 | Actual 05.04 raw matrix | Shape | fan-in | Supplied standard-deviation scale |
 | --- | --- | --- | --- |
-| q, k, v, o | (D, D) | D | 1/sqrt(D) |
-| gate, up | (D, F) | D | 1/sqrt(D) |
-| down | (F, D) | F | 1/sqrt(F) |
+| q, k, v, o | (D, D) | $D$ | $1/\sqrt D$ |
+| gate, up | (D, F) | $D$ | $1/\sqrt D$ |
+| down | (F, D) | $F$ | $1/\sqrt F$ |
 
-This explains the supplied randn/sqrt(width) and randn/sqrt(hidden) choices; it is not a universal optimum for gated, normalized attention networks. nn.Linear stores its matrix transposed relative to raw x@W. Fan-based initialization APIs assume that Linear storage convention, so check matrix orientation before using them on raw Parameters. [Official initialization notes](https://docs.pytorch.org/docs/stable/nn.init.html)
+This explains the supplied randn/sqrt(width) and randn/sqrt(hidden) choices; it is not a universal optimum for gated, normalized attention networks. nn.Linear stores its matrix transposed relative to raw x@$W$. Fan-based initialization APIs assume that Linear storage convention, so check matrix orientation before using them on raw Parameters. [Official initialization notes](https://docs.pytorch.org/docs/stable/nn.init.html)
 
 #### Depth scaling is a separate optional approximation
 
-If 2L residual branch changes were independent, zero-mean and each had variance s², multiplying each by alpha would give:
+If 2L residual branch changes were independent, zero-mean and each had variance $s^2$, multiplying each by $\alpha$ would give:
 
 $$
 \operatorname{Var}\left(\sum_{r=1}^{2L}\alpha\Delta h_r\right)=2L\alpha^2s^2.
 $$
 
-alpha=1/sqrt(2L) keeps this simplified summed-change variance at s². Real branches are correlated and include nonlinear gates, normalization and input-dependent attention, so this is a motivation for possible scaling, not a guarantee or a prescription added to 05.04. Variance of the entire hidden state also includes its input and covariance terms. Record and inspect actual activation/gradient statistics when running later experiments; this lesson makes no measurements of those statistics.
+$\alpha=1/\sqrt{2L}$ keeps this simplified summed-change variance at $s^2$. Real branches are correlated and include nonlinear gates, normalization and input-dependent attention, so this is a motivation for possible scaling, not a guarantee or a prescription added to 05.04. Variance of the entire hidden state also includes its input and covariance terms. Record and inspect actual activation/gradient statistics when running later experiments; this lesson makes no measurements of those statistics.
 
-![Separate tensor dimensions, fan-in variance prediction, residual-depth approximation and standard-deviation table](assets/05-05-initialization-scales.en.png)
+![Separate tensor dimensions, fan-in variance prediction, residual-depth approximation and standard-deviation table](assets/05-05-initialization-scales.en.png){width=100%}
 
-**Read the figure:** Top boxes show shapes. Left chart varies input width n; right chart varies depth L. Both axes use logarithmic scales and depict analytical values under the stated assumptions. Green curves stay at 1 because of the respective scaling choice, not because every real model activation is exactly 1. Bottom table lists weight standard deviation, not variance.
+**Read the figure:** Top boxes show shapes. Left chart varies input width $n$; right chart varies depth $L$. Both axes use logarithmic scales and depict analytical values under the stated assumptions. Green curves stay at 1 because of the respective scaling choice, not because every real model activation is exactly 1. Bottom table lists weight standard deviation, not variance.
 
 #### Which parameters to decay is a configuration choice
 
@@ -11287,13 +11183,11 @@ Lesson 05.05 checks passed.
 
 This function has no unfinished model dependencies. The original driver performs both updates in float64 against torch.optim.AdamW, checks the return is None, checks gradient is unchanged and compares final first/second buffers with exp_avg/exp_avg_sq. It does not prove every boundary or initialization choice is correct.
 
-Preparation uses a temporary in-memory reference, not code inserted into the learner core. Checks compare scalar and vector arithmetic, the unchanged driver, float32/float64 and non-contiguous matrix updates, preserved object/storage identity and gradients, zero gradients, zero decay, zero learning rate and beta endpoints0 against independent arithmetic and the installed PyTorch optimizer. With learning_rate=0, parameters do not move but moments still update on a supplied gradient. The original low-precision RoPE follow-up is unrelated to this standalone function.
+Preparation uses a temporary in-memory reference, not code inserted into the learner core. Checks compare scalar and vector arithmetic, the unchanged driver, float32/float64 and non-contiguous matrix updates, preserved object/storage identity and gradients, zero gradients, zero decay, zero learning rate and $\beta$ endpoints0 against independent arithmetic and the installed PyTorch optimizer. With learning_rate=0, parameters do not move but moments still update on a supplied gradient. The original low-precision RoPE follow-up is unrelated to this standalone function.
 
 This exercise covers dense real-valued, non-differentiable optimizer steps, not sparse gradients, mixed-precision master weights, AMSGrad, maximize, capturable/fused execution or complete parameter-group policies. Initialization charts are analytic illustrations, not empirical quality/performance claims. In a real run, save model parameters, both moments and update counts; recovering only parameters restarts a different optimizer trajectory. Lesson 05.07 develops full resume state.
 
-<a id="section-05-06"></a>
-
-## 05.06 Learning-rate schedules and global gradient clipping
+## 05.06 Learning-rate schedules and global gradient clipping {#section-05-06}
 
 ### Method sources
 
@@ -11336,7 +11230,7 @@ This lesson uses finite gradients whose accumulated squares are representable in
 
 ### Define the counters before the schedule formula
 
-Write step=s, warmup=w, total=S, peak=eta_max, minimum=eta_min. s counts optimizer-update positions, not tokens T, batch size B or model depth. In 05.05, AdamW's own step=t starts at 1; this helper's schedule index starts at 0. When one update happens each round, t=s+1. With accumulation or skipped updates, track actual update progress explicitly; do not advance solely because another microbatch was read.
+Write step=$s$, warmup=$w$, total=$S$, peak=$\eta_{\max}$, minimum=$\eta_{\min}$. s counts optimizer-update positions, not tokens T, batch size B or model depth. In 05.05, AdamW's own step=t starts at 1; this helper's schedule index starts at 0. When one update happens each round, t=s+1. With accumulation or skipped updates, track actual update progress explicitly; do not advance solely because another microbatch was read.
 
 The exact assignment schedule is:
 
@@ -11356,7 +11250,7 @@ During warmup, s=0 gives peak/w. s=w-1 gives peak. The +1 makes the first rate p
 
 At s=w the cosine branch begins at its own progress0 and also gives peak. Thus this exercise intentionally has consecutive peak values at w-1 and w. Preserve the supplied definition instead of silently changing one index to produce a different schedule.
 
-**Endpoint versus update count:** With total=6, valid samples are 0..6, seven points. A loop over range(total) would use0..5; the endpoint sample6 may be inspected without performing another optimizer update. Do not add a seventh training update simply to reach a plotted endpoint. To apply minimum on the final actual update, align S with that update's index in the chosen training loop. The name total is retained to match the real exercise.
+**Endpoint versus update count:** With total=6, valid samples are 0..6, seven points. A loop over range(total) would use0..5; the endpoint sample6 may be inspected without performing another optimizer update. Do not add a seventh training update simply to reach a plotted endpoint. To apply minimum on the final actual update, align $S$ with that update's index in the chosen training loop. The name total is retained to match the real exercise.
 
 ### Cosine decay: derive the three transformations
 
@@ -11368,9 +11262,9 @@ u=\frac{s-w}{S-w}\in[0,1],\qquad
 a(u)=\frac{1+\cos\phi}{2}.
 $$
 
-At u=0, cos(0)=1 and a=1. At u=0.5, cos(pi/2)=0 and a=0.5. At u=1, cos(pi)=-1 and a=0. Scaling and shifting this coefficient gives eta_min+(eta_max-eta_min)*a. It starts at peak and finishes at minimum; between them it follows a smooth half-cosine rather than a constant decrement. Angles are in radians. [Official cosine-schedule formula](https://docs.pytorch.org/docs/stable/generated/torch.optim.lr_scheduler.CosineAnnealingLR.html)
+At $u=0$, $\cos0=1$ and a=1. At $u=0.5$, $\cos(\pi/2)=0$ and a=0.5. At $u=1$, $\cos\pi=-1$ and a=0. Scaling and shifting this coefficient gives $\eta_{\min}+(\eta_{\max}-\eta_{\min})a$. It starts at peak and finishes at minimum; between them it follows a smooth half-cosine rather than a constant decrement. Angles are in radians. [Official cosine-schedule formula](https://docs.pytorch.org/docs/stable/generated/torch.optim.lr_scheduler.CosineAnnealingLR.html)
 
-Our function is a stateless, explicitly indexed schedule with a warmup branch. It is not a direct call to a stateful PyTorch scheduler; its index boundaries are defined above. Do not continue past S: the formula would eventually rise again, outside this contract. Equal peak/minimum gives a constant cosine phase; both zero gives zero learning rate throughout.
+Our function is a stateless, explicitly indexed schedule with a warmup branch. It is not a direct call to a stateful PyTorch scheduler; its index boundaries are defined above. Do not continue past $S$: the formula would eventually rise again, outside this contract. Equal peak/minimum gives a constant cosine phase; both zero gives zero learning rate throughout.
 
 ### Complete schedule example, including the original call
 
@@ -11398,13 +11292,13 @@ lr       = 0.01 + 0.5*(0.1-0.01)*(1+0)
 
 Displayed decimal values are rounded; floating cosine(pi/2) can be extremely close to, rather than exactly, zero.
 
-![Exact discrete schedule samples, warmup/cosine boundary and step 4 arithmetic](assets/05-06-schedule-clipping.en.png)
+![Exact discrete schedule samples, warmup/cosine boundary and step 4 arithmetic](assets/05-06-schedule-clipping.en.png){width=100%}
 
 **Read the figure:** Horizontal axis is optimizer-update index, vertical axis is a scalar learning rate. Orange background marks warmup; the dashed boundary at 2 starts cosine progress. Dots at 1 and 2 both equal peak. The table explicitly includes the endpoint6 without claiming seven training updates occurred.
 
 ### Global gradient norm: combine entries, not parameter values
 
-Suppose parameter i has gradient tensor g^(i). Conceptually flatten and concatenate all existing gradients into a vector G. Its length is:
+Suppose parameter i has gradient tensor $g^{(i)}$. Conceptually flatten and concatenate all existing gradients into a vector G. Its length is:
 
 $$
 n=\|G\|_2=\sqrt{\sum_{i:\,g^{(i)}\ne\mathrm{None}}\sum_j\left(g_j^{(i)}\right)^2}.
@@ -11412,7 +11306,7 @@ $$
 
 j ranges over every entry of a gradient tensor, regardless of its shape. Sum squared entries, not signed entries or separate tensor norms. There is no division by the number of parameters or tokens. No actual concatenation allocation is required. This joint-gradient interpretation is also used by [PyTorch global norm clipping](https://docs.pytorch.org/docs/stable/generated/torch.nn.utils.clip_grad_norm_.html).
 
-None means no gradient tensor is present; skip it. A zero gradient tensor exists and contributes zero. With an empty list or all None gradients, n=0. Convert each gradient to float64 **before** squaring and summing, so a narrower dtype does not overflow before accumulation. For example, a float16 value 1000 is finite, while its square is too large for float16; casting the already overflowed square afterward cannot recover it. This protects the statistic, not every mixed-precision training operation.
+None means no gradient tensor is present; skip it. A zero gradient tensor exists and contributes zero. With an empty list or all None gradients, $n=0$. Convert each gradient to float64 **before** squaring and summing, so a narrower dtype does not overflow before accumulation. For example, a float16 value 1000 is finite, while its square is too large for float16; casting the already overflowed square afterward cannot recover it. This protects the statistic, not every mixed-precision training operation.
 
 ### One common factor preserves the joint direction
 
@@ -11423,7 +11317,7 @@ $$
 \qquad \widetilde g^{(i)}=\alpha g^{(i)}.
 $$
 
-Only scale when n>c. That condition also guarantees n>0, so the division is safe without adding eps. If gradients are already short enough, do not enlarge them to reach c. Since every coordinate gets the same positive multiplier, the combined nonzero direction is unchanged and the new norm is alpha*n<=c, subject to rounding. Return the saved **original** n for diagnosis, not the length after clipping.
+Only scale when n>c. That condition also guarantees n>0, so the division is safe without adding eps. If gradients are already short enough, do not enlarge them to reach c. Since every coordinate gets the same positive multiplier, the combined nonzero direction is unchanged and the new norm is $\alpha$*n<=c, subject to rounding. Return the saved **original** n for diagnosis, not the length after clipping.
 
 The installed PyTorch clipping utility uses a small denominator stabilizer, giving tiny differences near thresholds. This exercise uses the exact piecewise factor above, with the zero case handled by its branch; comparisons with the utility allow its small numerical difference.
 
@@ -11452,7 +11346,7 @@ return                   = (0.055,5.0)
 
 p remains[1,1], q remains[1], q.grad remains None. The returned 5 is not a failure to clip; it is deliberately the norm before clipping. The caller can use it to tell how large the incoming gradient was. Both returned objects are Python floats, not parameter tensors or losses.
 
-![Parameter values versus gradients, squared-norm accumulation, one factor and the original-norm return](assets/05-06-global-clipping-flow.en.png)
+![Parameter values versus gradients, squared-norm accumulation, one factor and the original-norm return](assets/05-06-global-clipping-flow.en.png){width=100%}
 
 **Read the figure:** Parameter values are shown separately from .grad values. Only the latter enter squares and are scaled. q.grad=None is skipped without allocating zeros. Bottom rows distinguish changed gradient entries, unchanged parameters and the pre-clipping diagnostic.
 
@@ -11460,7 +11354,7 @@ p remains[1,1], q remains[1], q.grad remains None. The returned 5 is not a failu
 
 Use a separate geometric example with two scalar parameters, gradients3 and 4, c=2. Global clipping produces[1.2,1.6], length2, preserving the ratio4/3. Clipping each scalar independently to magnitude2 produces[2,2], length sqrt(8)>2, and changes the ratio to 1. Coordinate-wise truncation to[-2,2] also gives a different result from global norm clipping.
 
-![Same joint vector, radial global clipping versus separately clipped coordinates](assets/05-06-clipping-geometry.en.png)
+![Same joint vector, radial global clipping versus separately clipped coordinates](assets/05-06-clipping-geometry.en.png){width=100%}
 
 **Read the figure:** The circle has radius2. The correct clipped vector lies on the original ray and on the circle. Separately clipped[2,2] lies outside the circle and points elsewhere. The axes here are two parameter-gradient coordinates, not token positions or tensor sizes.
 
@@ -11470,7 +11364,7 @@ $$
 \|\Delta\theta_{\mathrm{SGD}}\|_2=\eta\|\widetilde G\|_2\le\eta c.
 $$
 
-AdamW also uses old moments, adaptive division and independent decay, so the same displacement bound does not follow. For one fresh Adam coordinate with g=0.01, c=0.1, no clipping occurs; its first adaptive change is eta*0.01/(0.01+eps), approximately eta, which exceeds eta*c. Clipping limits the gradient input, not every optimizer's eventual parameter movement or future loss.
+AdamW also uses old moments, adaptive division and independent decay, so the same displacement bound does not follow. For one fresh Adam coordinate with $g=0.01$, $c=0.1$, no clipping occurs; its first adaptive change is $\eta$*0.01/(0.01+eps), approximately $\eta$, which exceeds $\eta$*c. Clipping limits the gradient input, not every optimizer's eventual parameter movement or future loss.
 
 ### Put the helper in the training loop correctly
 
@@ -11489,7 +11383,7 @@ The loop changes each parameter group's learning-rate field before step. This si
 
 If using gradient accumulation, combine all microbatch contributions before one clipping operation. Clipping each microbatch before adding is generally different from clipping their sum. If using AMP loss scaling later, first unscale the accumulated gradients, then clip, then perform the scaled optimizer-step protocol. This ordering is described in the [official AMP clipping example](https://docs.pytorch.org/docs/stable/notes/amp_examples.html#gradient-clipping); do not add AMP setup to this exercise.
 
-![Backward, optional unscale, schedule/clipping, learning-rate assignment and optimizer update order](assets/05-06-training-order.en.png)
+![Backward, optional unscale, schedule/clipping, learning-rate assignment and optimizer update order](assets/05-06-training-order.en.png){width=100%}
 
 **Read the figure:** The optional AMP stage is skipped without scaled gradients. The highlighted helper changes .grad only. The following optimizer step changes parameter values. Keep zero-based schedule s separate from one-based Adam t. No model training or optimizer state mutation happens inside this helper.
 
@@ -11524,9 +11418,7 @@ The original driver checks the full step 4 call, lr0.055, original norm 5, clipp
 
 Preparation uses a temporary in-memory reference without replacing the learner placeholder. Independent calculations check all seven sample rates and other warmup/horizon boundaries, flat/zero schedules, global multi-tensor/matrix arithmetic, None/zero/equal/below-threshold cases, original-norm returns, preserved gradient identities and parameters, non-contiguous float32/float64, float64-before-square behavior and approximate agreement with the installed clipping utility. The exercise driver remains unchanged. Figures and manuscript links are reviewed separately. These are arithmetic checks, not corpus training or a claim of improved model quality.
 
-<a id="section-05-07"></a>
-
-## 05.07 Exact checkpoint and resume
+## 05.07 Exact checkpoint and resume {#section-05-07}
 
 ### What should happen when training stops?
 
@@ -11546,11 +11438,11 @@ $$
 
 | Symbol | Meaning | Returned key |
 | --- | --- | --- |
-| Theta_s | Model parameters and persistent buffers at capture | model |
-| O_s | Optimizer state and parameter-group settings | optimizer |
-| s | Completed update count, supplied by the caller | step |
-| R_cpu | Current default CPU random-generator state | torch_rng |
-| R_sampler | Current state of the separately supplied CPU Generator | sampler_rng |
+| $\Theta_s$ | Model parameters and persistent buffers at capture | model |
+| $O_s$ | Optimizer state and parameter-group settings | optimizer |
+| $s$ | Completed update count, supplied by the caller | step |
+| $R_s^{\mathrm{cpu}}$ | Current default CPU random-generator state | torch_rng |
+| $R_s^{\mathrm{sampler}}$ | Current state of the separately supplied CPU Generator | sampler_rng |
 
 A buffer is a stored tensor registered with a module that need not be a trainable parameter, such as a running statistic. Model state_dict includes persistent buffers as well as parameters. Our nn.Linear fixture has weight and bias but no such buffers. [Module state_dict reference](https://docs.pytorch.org/docs/stable/generated/torch.nn.Module.html#torch.nn.Module.state_dict)
 
@@ -11563,7 +11455,7 @@ $$
 
 This is a condition to verify, not a promise that these five fields cover every possible training program. The next-input position, additional generators and other state must be added when the program uses them.
 
-![Five checkpoint fields, types and progress](assets/05-07-checkpoint-resume.en.png)
+![Five checkpoint fields, types and progress](assets/05-07-checkpoint-resume.en.png){width=100%}
 
 Read the five cards as dictionary entries, not as five tensors with a common shape. step is an integer. RNG entries are byte tensors encoding internal generator state; their lengths are implementation details, not vocabulary sizes or hidden dimensions. Shape metadata appears outside numerical values.
 
@@ -11587,9 +11479,9 @@ $$
 
 Here every fixture parameter receives one gradient per update, so its optimizer counter equals s. In a more general model, a parameter with no gradient may have a different internal counter. Preserve the optimizer's own counters instead of recreating them from the outer step.
 
-Equal theta and equal next gradient do not imply equal next theta when m, v or the internal counter differs. PyTorch's AdamW state names are exp_avg for m, exp_avg_sq for v and step for its per-parameter update count. optimizer.state_dict also retains param_groups, including learning rate, betas, eps, weight_decay and parameter identifiers. Those identifiers are not token IDs or portable tensor names. [Optimizer state_dict reference](https://docs.pytorch.org/docs/stable/generated/torch.optim.Optimizer.state_dict.html)
+Equal $\theta$ and equal next gradient do not imply equal next $\theta$ when m, v or the internal counter differs. PyTorch's AdamW state names are exp_avg for m, exp_avg_sq for v and step for its per-parameter update count. optimizer.state_dict also retains param_groups, including learning rate, betas, eps, weight_decay and parameter identifiers. Those identifiers are not token IDs or portable tensor names. [Optimizer state_dict reference](https://docs.pytorch.org/docs/stable/generated/torch.optim.Optimizer.state_dict.html)
 
-The numerical continuation diagram below accompanies these formulas. Reading that comparison before the implementation makes the reason for saving O_s concrete.
+The numerical continuation diagram below accompanies these formulas. Reading that comparison before the implementation makes the reason for saving $O_s$ concrete.
 
 ### Exact function, inputs, output and side effects
 
@@ -11659,9 +11551,9 @@ $$
 
 Bias correction uses powers beta1^2 and beta2^2. With the saved weight decay and learning rate, update 2 reaches the third table row. The driver always zeroes gradients before its next backward call, so no old gradient is accidentally accumulated.
 
-![Original continuation versus restored continuation](assets/05-07-resume-trace.en.png)
+![Original continuation versus restored continuation](assets/05-07-resume-trace.en.png){width=100%}
 
-Read from the shared C1 card into two routes. A updates the original objects. B creates new objects, restores C1, then performs the same update. Both recover w2≈-0.09148012 and b2≈0.11017589. m and v are listed once to save space; each parameter owns its own entries.
+Read from the shared C1 card into two routes. A updates the original objects. $B$ creates new objects, restores C1, then performs the same update. Both recover w2≈-0.09148012 and b2≈0.11017589. m and v are listed once to save space; each parameter owns its own entries.
 
 **Counterexample:** Reload w1, b1 into a fresh AdamW but omit the saved optimizer state. Its first memories become m≈-0.40425721, v≈0.01634239 and its internal count is 1. The same next gradient now produces w≈-0.09146895, b≈0.11018707. This difference is small in the fixture, but the trajectory has changed. Compare optimizer state as well as weights; a loose numerical tolerance could conceal a small error.
 
@@ -11678,7 +11570,7 @@ state_dict returns a dictionary whose tensor entries refer to live parameter/buf
 
 For an ordinary state_dict with tensor/numeric entries, deepcopy handles nested dictionaries, lists and tensors. It is not a request to copy an arbitrary live computation graph. A clone of one weight would protect only that weight; copying the whole bundle also protects optimizer memories and all other model entries.
 
-![Shallow storage aliases versus independent deep snapshots](assets/05-07-snapshot-storage.en.png)
+![Shallow storage aliases versus independent deep snapshots](assets/05-07-snapshot-storage.en.png){width=100%}
 
 At capture both routes display weight=-0.11149123. After original update 2, a shallow saved reference displays -0.09148012; the deep snapshot still displays -0.11149123. The shape is (1,1) throughout. This figure concerns storage identity, not a reshape or matrix multiplication. The same argument applies to nested exp_avg and exp_avg_sq. [Official saving tutorial: best-state snapshot](https://docs.pytorch.org/tutorials/beginner/saving_loading_models.html)
 
@@ -11690,9 +11582,9 @@ $$
 (u_t,R_{t+1})=\operatorname{draw}(R_t).
 $$
 
-R_t is generator state before a draw; u_t is the returned random value or tensor. This t counts random operations conceptually, not optimizer steps. Different operations can consume different amounts of generator state, so do not reconstruct the cursor by merely counting calls.
+$R_t$ is generator state before a draw; $u_t$ is the returned random value or tensor. This t counts random operations conceptually, not optimizer steps. Different operations can consume different amounts of generator state, so do not reconstruct the cursor by merely counting calls.
 
-In a **separate illustration**, initialize a CPU Generator with seed 7, draw three numbers, and then capture its state S:
+In a **separate illustration**, initialize a CPU Generator with seed 7, draw three numbers, and then capture its state $S$:
 
 ```text
 First three:                [0.53492254, 0.19880319, 0.65921170]
@@ -11704,7 +11596,7 @@ Reset seed7, draw again:    [0.53492254, 0.19880319, 0.65921170]
 
 Resetting the seed goes back to the start instead of continuing after the first three numbers. In the original driver the sampler has not drawn anything before C1; there its saved sampler state happens to be the seed's initial state. The separate illustration shows why that coincidence cannot be assumed in training.
 
-![Seed, saved cursor and correct reconstruction order](assets/05-07-rng-cursor.en.png)
+![Seed, saved cursor and correct reconstruction order](assets/05-07-rng-cursor.en.png){width=100%}
 
 Read rows2–3 as matching **next** draws. Below them, recreate objects before restoring the two RNG states. nn.Linear initialization consumes the default CPU RNG. Restoring RNG first and then constructing nn.Linear would advance the restored stream again.
 
@@ -11794,17 +11686,13 @@ Before moving on, try explaining: why do equal weights permit different next Ada
 
 We have a model and a recoverable update rule. Their results still depend on exactly which text became which targets. The next chapter makes that data path explicit.
 
-<a id="chapter-06"></a>
-
-# 06 Turn documents into pretraining
+# 06 Turn documents into pretraining {#chapter-06}
 
 A corpus begins as records: text accompanied by identity, provenance and perhaps language or license information. Token packing begins later, after the caller extracts text, chooses a split and applies a frozen tokenizer. A dictionary, a string and a list of token IDs therefore represent different stages of the same document.
 
 We preserve that distinction through manifests, stable document splitting, normalization and deduplication, tokenizer freezing, EOS concatenation, padding masks and a complete pretraining loop. The central accounting unit is an observed next-token target. Dataset size, tensor storage and the number of times a target is sampled are related, but they are not interchangeable measures.
 
-<a id="section-06-01"></a>
-
-## 06.01 Data provenance and fingerprints
+## 06.01 Data provenance and fingerprints {#section-06-01}
 
 ### Method sources
 
@@ -11820,7 +11708,7 @@ This lesson reconnects with Chapter 01's UTF-8 bytes. No new tensor operation, a
 
 ### Define the three transformations before coding
 
-For document d, let text_d be its Python string. Define:
+For document d, let $\mathrm{text}_d$ be its Python string. Define:
 
 $$
 b_d=\operatorname{UTF8}(text_d),\qquad
@@ -11830,15 +11718,15 @@ $$
 
 | Symbol | Meaning | Python type |
 | --- | --- | --- |
-| d | Document position, not a feature dimension | Conceptual index |
-| text_d | Original document text | str |
-| b_d | Text encoded as an ordered byte sequence | bytes |
-| n_d | Number of encoded bytes, not their numeric sum | int |
-| h_d | SHA-256 fingerprint displayed in hexadecimal | str, length64 |
+| $d$ | Document position, not a feature dimension | Conceptual index |
+| $\mathrm{text}_d$ | Original document text | str |
+| $b_d$ | Text encoded as an ordered byte sequence | bytes |
+| $n_d$ | Number of encoded bytes, not their numeric sum | int |
+| $h_d$ | SHA-256 fingerprint displayed in hexadecimal | str, length64 |
 
-The pipeline is **text → UTF-8 bytes → byte count and fingerprint**. Count and fingerprint both use the same encoded bytes. Encode once, then reuse that bytes object. Do not count the text characters for n_d, and do not hash a printed dictionary representation.
+The pipeline is **text → UTF-8 bytes → byte count and fingerprint**. Count and fingerprint both use the same encoded bytes. Encode once, then reuse that bytes object. Do not count the text characters for $n_d$, and do not hash a printed dictionary representation.
 
-![Exact UTF-8 bytes and full SHA-256 fingerprints](assets/06-01-data-manifest.en.png)
+![Exact UTF-8 bytes and full SHA-256 fingerprints](assets/06-01-data-manifest.en.png){width=100%}
 
 Read each row from left to right. Decimal numbers inside cells are byte values; lengths are outside the cells. For these examples len('a')=len('你')=1, while UTF-8 lengths are 1 and 3. Python str length counts code points, which need not equal the number of visible characters for every Unicode string. This is a byte sequence, not an embedding matrix, so there is no tensor shape to infer.
 
@@ -11857,7 +11745,7 @@ $$
 
 One hexadecimal character represents4 bits; two represent one byte. hashlib.sha256(raw) constructs a hash object. Its digest() returns 32 bytes; hexdigest() returns 64 lowercase hexadecimal characters, which this exercise records. [Python hashlib documentation](https://docs.python.org/3/library/hashlib.html)
 
-The256 here is the digest's **bit length**. Chapter 01's256 possible byte values comes from 2^8 and is a different quantity. Neither determines a BPE vocabulary size. A document's n_d can be0,1,3 or much larger while h_d always has 64 hexadecimal characters.
+The256 here is the digest's **bit length**. Chapter 01's256 possible byte values comes from 2^8 and is a different quantity. Neither determines a BPE vocabulary size. A document's $n_d$ can be0,1,3 or much larger while $h_d$ always has 64 hexadecimal characters.
 
 ### Function contract and data ownership
 
@@ -11879,7 +11767,7 @@ Do not modify, sort or remove input documents. Do not add fields to their dictio
 
 A source label describes provenance; a content hash describes bytes. A license label records supplied metadata. Computing a hash neither checks the label's accuracy nor grants permission, assesses quality or anonymizes short guessable content. Hashes should not be treated as a privacy transformation.
 
-![Input documents and exact output fields](assets/06-01-manifest-schema.en.png)
+![Input documents and exact output fields](assets/06-01-manifest-schema.en.png){width=100%}
 
 Read the upper list in order, then the new lower list. Only hash prefixes are shown in this diagram to keep the table readable; the actual function must return all64 characters. The input text field is used to compute the fingerprint and is omitted from the output.
 
@@ -11947,7 +11835,7 @@ A newline is data. The string 'a\n' contains a plus one newline; it is not the l
 87428fc522803d31065e7bce3cf03fe475096631e5e07bbd7a0fde60c4cf25c7
 ```
 
-![Newline-sensitive bytes, counts and fixed-width hashes](assets/06-01-byte-sensitivity.en.png)
+![Newline-sensitive bytes, counts and fixed-width hashes](assets/06-01-byte-sensitivity.en.png){width=100%}
 
 The rows compare 'a', 'a\n', 'a\r\n' and empty text. These four byte sequences have distinct fingerprints. The bottom formula concerns output representation length, not input length. An empty document still gets a hash; an empty list of documents produces an empty documents list with the supplied outer metadata.
 
@@ -12006,9 +11894,7 @@ Lesson 06.02 next splits by document before forming windows. Lesson 06.03 handle
 ### Review questions
 Try explaining why len('你') and len('你'.encode('utf-8')) differ; why a 64-character digest does not mean the document has 64 bytes; why a newline matters; and why identical content under two IDs should keep two records here. A later independent reconstruction should produce the schema without copying the completed example into code.
 
-<a id="section-06-02"></a>
-
-## 06.02 Split by document before windows
+## 06.02 Split by document before windows {#section-06-02}
 
 ### Decide what counts as held-out data
 
@@ -12020,25 +11906,25 @@ This lesson combines a concrete overlap example with a deterministic content-bas
 
 ### Start with the next-token windows you already know
 
-For a token sequence z of length L, context length T and start s:
+For a token sequence z of length $L$, context length $T$ and start s:
 
 $$
 X_s=z[s:s+T],\qquad Y_s=z[s+1:s+T+1],\qquad
 0\le s<L-T.
 $$
 
-Here s is a source-window start, not the optimizer update index from 05.06. A single window has T inputs and T next-token targets. Display them as one-dimensional arrays with shape(T,); batching would later produce(B, T). Do not interpret token values as shape lengths.
+Here s is a source-window start, not the optimizer update index from 05.06. A single window has $T$ inputs and $T$ next-token targets. Display them as one-dimensional arrays with shape(T,); batching would later produce(B, T). Do not interpret token values as shape lengths.
 
-Take one document with token IDs[10,11,12,13,14,15], T=3:
+Take one document with token IDs[10,11,12,13,14,15], $T=3$:
 
-| Window | Start | Input X, shape(3,) | Target Y, shape(3,) |
+| Window | Start | Input $X$, shape(3,) | Target $Y$, shape(3,) |
 | --- | --- | --- | --- |
 | A | 0 | [10,11,12] | [11,12,13] |
-| B | 1 | [11,12,13] | [12,13,14] |
+| $B$ | 1 | [11,12,13] | [12,13,14] |
 
-If A enters training and B enters validation, two source transitions occur in both:11→12 and 12→13. The complete visible prefixes can differ because the windows start at different places; that does not remove the shared passage and target positions. This example establishes overlap, not a measured amount of model-loss improvement.
+If A enters training and $B$ enters validation, two source transitions occur in both:11→12 and 12→13. The complete visible prefixes can differ because the windows start at different places; that does not remove the shared passage and target positions. This example establishes overlap, not a measured amount of model-loss improvement.
 
-![Source indices, token values, windows and shared transitions](assets/06-02-document-splits.en.png)
+![Source indices, token values, windows and shared transitions](assets/06-02-document-splits.en.png){width=100%}
 
 Read the source-index row separately from token contents. The bottom two rows highlight the same two transitions on both sides. Keep the entire document on one side to prevent this particular within-document overlap. Common tokens can still occur in both splits; that is expected. The objective is to separate data units, not vocabularies.
 
@@ -12055,7 +11941,7 @@ H_d=\operatorname{SHA256}(p_d).\operatorname{hexdigest}(),\quad
 n_d=\operatorname{int}(H_d,16),\quad u_d=\frac{n_d}{2^{256}}.
 $$
 
-The symbol || denotes byte concatenation, not multiplication or a logical operator. [0] denotes one zero-valued byte. H is a 64-character hexadecimal string; n is the same digest interpreted as a nonnegative integer. Since0<=n<=2^256-1, the mathematical score satisfies0<=u<1. Python's ** means exponentiation; ^ does not.
+The symbol || denotes byte concatenation, not multiplication or a logical operator. [0] denotes one zero-valued byte. $H$ is a 64-character hexadecimal string; n is the same digest interpreted as a nonnegative integer. Since0<=n<=2^256-1, the mathematical score satisfies0<=u<1. Python's ** means exponentiation; ^ does not.
 
 For the mathematical rule:
 
@@ -12064,13 +11950,13 @@ d\in\mathcal V\iff u_d<f,\qquad
 d\in\mathcal T\iff u_d\ge f.
 $$
 
-T and V here name the training and validation sets, not sequence length or vocabulary size. In code, use the list names train and validation to avoid that notation collision. A comparison exactly on the interior threshold belongs to training because the rule uses strict <.
+$T$ and $V$ here name the training and validation sets, not sequence length or vocabulary size. In code, use the list names train and validation to avoid that notation collision. A comparison exactly on the interior threshold belongs to training because the rule uses strict <.
 
-![Exact seed framing, full digest, integer and score](assets/06-02-hash-framing.en.png)
+![Exact seed framing, full digest, integer and score](assets/06-02-hash-framing.en.png){width=100%}
 
 Read seed bytes, separator and text bytes as three pieces of one payload. For seed='v1' and text='a', they concatenate to[118,49,0,97]. The figure gives the full digest and integer before the normalized score. This seeded digest differs from 06.01's unseeded content fingerprint; do not substitute one for the other.
 
-### Classroom Q&A: why divide the hash integer by 2^256?
+### Classroom $Q$&A: why divide the hash integer by 2^256?
 
 A common question is what principle lies behind \(u=\operatorname{int}(h,16)/2^{256}\). The division changes the scale of a deterministic hash number; it does not learn a model parameter or measure document quality.
 
@@ -12085,7 +11971,7 @@ int('c',16) = 12
 u = 12/16 = 0.75
 ```
 
-![Four-bit integer range, binary place weights and normalized scores](assets/06-02-hash-normalization.en.png)
+![Four-bit integer range, binary place weights and normalized scores](assets/06-02-hash-normalization.en.png){width=100%}
 
 Read the bits1,1,0,0 separately from their positional weights8,4,2,1. They represent8+4=12. Divide those weights by 16 and they become1/2,1/4,1/8,1/16; the same bits now represent1/2+1/4=.75. You can think of moving a binary point to the left of all four digits: binary1100 becomes binary0.1100. This explains scaling without needing to memorize a huge decimal integer.
 
@@ -12095,7 +11981,7 @@ $$
 0,\ \frac1{16},\ \frac2{16},\ \ldots,\ \frac{15}{16}.
 $$
 
-There are still16 possible scores, equally spaced, with the last below1. At validation_fraction=.5, integers0…7 give u<.5 and enter validation;8…15 enter train. Our separate example n=12 gives.75, so it enters train. This is an arithmetic analogy, not a replacement four-bit tokenizer/hash implementation.
+There are still16 possible scores, equally spaced, with the last below1. At validation_fraction=.5, integers0…7 give u<.5 and enter validation;8…15 enter train. Our separate example $n=12$ gives.75, so it enters train. This is an arithmetic analogy, not a replacement four-bit tokenizer/hash implementation.
 
 Now replace4 with 256:
 
@@ -12109,7 +11995,7 @@ Thus the original formula is simply **integer divided by the number of represent
 
 For the real seed='v1', text='a' fixture, the full hash integer already shown above gives u≈.6780945009; since that is at least.5 it enters train. Identical seed/text reproduces the same score. Across varied content groups we use hash scores as approximately spread across the interval; this is a split-design assumption, not a promise that every dataset or small sample has equal counts. A given document's score is a deterministic number, not its probability of being correct, text quality, a model confidence or a fresh random draw.
 
-Why not divide by 2^256−1? That would map the largest integer to exactly 1 and define a different normalization. This protocol uses2^256 so the mathematical range is half-open[0,1), making a threshold f=1 conceptually include all scores. Python's finite-precision float division adds a separate implementation concern: distinct exact ratios may round to the same float, and the maximum ratio rounds to 1.0. [Python floating-point explanation](https://docs.python.org/3/tutorial/floatingpoint.html)
+Why not divide by 2^256−1? That would map the largest integer to exactly 1 and define a different normalization. This protocol uses2^256 so the mathematical range is half-open[0,1), making a threshold $f=1$ conceptually include all scores. Python's finite-precision float division adds a separate implementation concern: distinct exact ratios may round to the same float, and the maximum ratio rounds to 1.0. [Python floating-point explanation](https://docs.python.org/3/tutorial/floatingpoint.html)
 
 A controlled test supplied an all-ones256-bit digest, represented by 64 'f' digits. This tests a possible digest value without searching for a document that hashes to it. In the existing environment:
 
@@ -12202,7 +12088,7 @@ The complete return value is:
 )
 ```
 
-This original example gives **no validation documents**, despite f=.5. That is the correct result, not an implementation failure. Choosing a fixed threshold does not force half of three documents into validation. For f=0 the result is(all documents,[]); for f=1 it is([], all documents). Do not train a real experiment with an empty validation set merely because this toy checker permits one.
+This original example gives **no validation documents**, despite f=.5. That is the correct result, not an implementation failure. Choosing a fixed threshold does not force half of three documents into validation. For $f=0$ the result is(all documents,[]); for $f=1$ it is([], all documents). Do not train a real experiment with an empty validation set merely because this toy checker permits one.
 
 ### An extended example with both outputs nonempty
 
@@ -12218,11 +12104,11 @@ To show both branches, add d3 with text'e' and d4 with text'f' after d9. This is
 
 The output IDs are train=[d1, d2, d9], validation=[d3, d4]. Entries still contain the original dictionaries. Reverse or reorder the input, and membership stays the same; the order within each returned list follows the new input order.
 
-![Threshold, shared-content groups and relative-order preservation](assets/06-02-stable-threshold.en.png)
+![Threshold, shared-content groups and relative-order preservation](assets/06-02-stable-threshold.en.png){width=100%}
 
 Read the horizontal axis as the content-derived score, not a token position. Points left of.5 validate. One point for'a' represents both d1 and d9. The tables show membership stability and changed relative ordering as two separate properties.
 
-For N documents, the realized count is:
+For $N$ documents, the realized count is:
 
 $$
 N_{\mathrm{val}}=\sum_{i=1}^{N}\mathbf 1[u_i<f].
@@ -12232,9 +12118,9 @@ The indicator contributes1 when its condition is true and 0 otherwise. There is 
 
 ### Handle fraction endpoints without teaching a floating-point accident
 
-Mathematically u<1, so f=1 must send every document to validation. Python floating division can round an extremely large hash ratio up to 1.0: `(2**256-1)/2**256` evaluates to 1.0 in the existing environment. Preserve the f=1 contract explicitly rather than relying on a rounded score to remain below1.
+Mathematically u<1, so $f=1$ must send every document to validation. Python floating division can round an extremely large hash ratio up to 1.0: `(2**256-1)/2**256` evaluates to 1.0 in the existing environment. Preserve the $f=1$ contract explicitly rather than relying on a rounded score to remain below1.
 
-An understandable routing condition is: **if f is exactly 1, or u<f, choose validation; otherwise choose train**. Python's or is true when either condition is true and evaluates the second only if needed. At f=0, a nonnegative score never satisfies u<0, so all documents train. No input-validation task is added.
+An understandable routing condition is: **if f is exactly 1, or u<f, choose validation; otherwise choose train**. Python's or is true when either condition is true and evaluates the second only if needed. At $f=0$, a nonnegative score never satisfies u<0, so all documents train. No input-validation task is added.
 
 For interior fractions the lesson uses ordinary floating scores and strict comparison. An advanced implementation can compare integers using the fraction's as_integer_ratio rather than rounding u, but that is not required here. Record realized membership and the partition protocol rather than promising bit-exact mathematical thresholds for every floating edge. The figure's printed rounded scores are explanatory; never classify by those displayed decimal strings.
 
@@ -12271,7 +12157,7 @@ The original driver checks fractions0/1, total document count, same-side assignm
 
 ### Put BPE and deduplication in the right part of the pipeline
 
-![Document partition, training-only fitting and frozen-tokenizer application](assets/06-02-split-before-tokenize.en.png)
+![Document partition, training-only fitting and frozen-tokenizer application](assets/06-02-split-before-tokenize.en.png){width=100%}
 
 Keep whole documents separated, then learn tokenizer rules only from training text and apply that same frozen tokenizer to both sides. BPE training learns frequencies and merges; encoding with fixed rules applies an already learned transformation. Fitting separate train and validation tokenizers would produce different token spaces, while fitting on the combined corpus exposes validation information to a learned preprocessing step.
 
@@ -12284,9 +12170,7 @@ For experiment provenance, record the full code commit, split algorithm/version,
 ### Review questions
 Try explaining why two different windows may still leak a passage, why IDs are excluded from this hash, why f=.5 gives no validation examples in the original fixture, and why order-independent membership does not mean sorted outputs. A useful later reconstruction is to predict the extended fixture's two lists before executing your own code.
 
-<a id="section-06-03"></a>
-
-## 06.03 Cleaning and deduplication
+## 06.03 Cleaning and deduplication {#section-06-03}
 
 ### Method sources
 
@@ -12302,14 +12186,14 @@ Lessons06.01–06.02 identify exact bytes and partition content. This lesson del
 
 ### Formulas before implementation
 
-For input document i with text t_i, define:
+For input document i with text $t_i$, define:
 
 $$
 n_i=\operatorname{NFC}(t_i),\qquad
 c_i=\operatorname{join}_{\mathrm{space}}(\operatorname{split}_{\mathrm{whitespace}}(n_i)).
 $$
 
-Here n_i and c_i are strings, not tensors or byte counts. Let m=min_characters, and let S_i contain cleaned strings already retained before document i:
+Here $n_i$ and $c_i$ are strings, not tensors or byte counts. Let m=min_characters, and let $S_i$ contain cleaned strings already retained before document i:
 
 $$
 k_i=\bigl[\operatorname{len}(c_i)\ge m\bigr]\land\bigl[c_i\notin S_i\bigr],
@@ -12323,7 +12207,7 @@ S_i,&k_i\text{ is false}.
 \end{cases}
 $$
 
-If k_i is true, append a fresh dictionary containing the original id and cleaned text. Otherwise skip this document and continue scanning. Outputs follow the order of first qualifying appearances. The comparison is >=m; a cleaned length exactly equal to the minimum passes.
+If $k_i$ is true, append a fresh dictionary containing the original id and cleaned text. Otherwise skip this document and continue scanning. Outputs follow the order of first qualifying appearances. The comparison is >=m; a cleaned length exactly equal to the minimum passes.
 
 The next three figures expand the normalization, whitespace and state-update parts of these formulas separately. There is no matrix multiplication or tensor shape hidden in this helper.
 
@@ -12343,7 +12227,7 @@ Length: 4 code points; UTF-8: 5 bytes
 
 These strings are canonically equivalent. NFC, Normalization Form C, applies canonical normalization with composition; this example combines e plus the acute accent into é. Use unicodedata.normalize('NFC', text). It returns a string and leaves the original input object unchanged. NFC does not guarantee that every combining sequence becomes a single code point. [Python normalization API](https://docs.python.org/3/library/unicodedata.html#unicodedata.normalize), [Unicode normalization specification](https://www.unicode.org/reports/tr15/)
 
-![Code-point values, canonical composition and separate length metadata](assets/06-03-clean-deduplicate.en.png)
+![Code-point values, canonical composition and separate length metadata](assets/06-03-clean-deduplicate.en.png){width=100%}
 
 Read cell contents as code points and the labels beneath as their U+ identifiers. The dotted circle only makes the isolated accent visible; it is not an extra character in the input. The figure isolates the core word; outer spaces in the actual first document remain after NFC and are handled by the next operation.
 
@@ -12365,7 +12249,7 @@ Cleaned length:   3
 
 The newline has code point U+000A, the tab U+0009. The result contains one U+0020 space. A whitespace-only string splits to[]; joining that empty list produces''. No extra strip() is needed after this exact split/join operation. [Python split/join semantics](https://docs.python.org/3/library/stdtypes.html#str.split)
 
-![Whitespace characters, split chunks and the single-space result](assets/06-03-whitespace-flow.en.png)
+![Whitespace characters, split chunks and the single-space result](assets/06-03-whitespace-flow.en.png){width=100%}
 
 The top row shows actual characters with escaped displays for newline and tab. The middle box contains a list of chunks. The bottom row is the resulting string, with count metadata underneath. These are three different kinds of object; do not return the middle list as the cleaned text.
 
@@ -12415,7 +12299,7 @@ Use the default min_characters=1. At the start seen=set() and result=[].
 
 **Document3:** A space splits to[], then joins to''. Length0 fails the positive minimum, so skip it without adding it to seen. Processing ends after the loop.
 
-![Original four-row state trace and two minimum-length results](assets/06-03-seen-state-trace.en.png)
+![Original four-row state trace and two minimum-length results](assets/06-03-seen-state-trace.en.png){width=100%}
 
 Read seen before each row's decision. It contains only previously retained canonical text. In Python the empty set is set(); {} creates an empty dictionary. Nonempty set displays here illustrate membership, not output order.
 
@@ -12479,7 +12363,7 @@ A concrete counterexample uses06.02's seed='v1', fraction=.5:
 
 Cleaning each split separately leaves the same canonical text on both sides, because their local seen sets never see each other. For a fresh canonical-content split, both become café, the first representative is retained, and its canonical score0.0129355996 puts it in validation. Only one toy document remains; this is a conflict illustration, not a viable training corpus.
 
-![Verified cross-split duplicate counterexample and canonical-group workflow](assets/06-03-clean-before-split.en.png)
+![Verified cross-split duplicate counterexample and canonical-group workflow](assets/06-03-clean-before-split.en.png){width=100%}
 
 If splits are already frozen, apply a documented conflict policy instead of silently changing held-out membership. For example, a policy can preserve the held-out set and remove matching training copies, while recording that change. Combining existing splits and blindly keeping the first row may delete held-out examples or alter the evaluation population. Any repartition produces a new dataset/evaluation version. The core function has no split labels and cannot enforce these cross-split decisions by itself.
 
@@ -12519,9 +12403,7 @@ The computation and original driver are preserved.
 ### Review questions
 Try explaining why the original first two texts become equal, why café passes minimum4 but'a b' does not, why an empty set is written set(), why continue cannot be replaced by break, and why two independent per-split seen sets miss the cross-split example. A useful later reconstruction is to trace seen and result before running your own implementation.
 
-<a id="section-06-04"></a>
-
-## 06.04 Frozen tokenizer and special IDs
+## 06.04 Frozen tokenizer and special IDs {#section-06-04}
 
 ### Method sources
 
@@ -12539,7 +12421,7 @@ Prerequisites are the actual completed [02.05 encoder](#section-02-05), [02.06 d
 
 ### Define ordinary IDs and the appended structural ID
 
-Let M denote the fixed learned BPE merge rules. For document index d, define:
+Let $M$ denote the fixed learned BPE merge rules. For document index $d$, define:
 
 $$
 u_d=\operatorname{encode\_bpe}(text_d,M),\qquad
@@ -12548,12 +12430,12 @@ $$
 
 | Symbol | Meaning | Actual Python object |
 | --- | --- | --- |
-| text_d | One document's ordinary text | str, one element of texts |
-| M | Fixed pair-to-new-ID rules, with earlier allocated IDs having earlier merge priority | merges: dict[tuple[int, int], int] |
-| u_d | Ordinary BPE IDs, before any structural marker | A fresh list[int] from encode_bpe |
-| e | Reserved EOS ID, outside the ordinary vocabulary | eos_id: int |
-| z_d | The complete document IDs, with one EOS appended | list[int] |
-| d | Document index; unrelated to embedding width D | Conceptual index |
+| $\mathrm{text}_d$ | One document's ordinary text | str, one element of texts |
+| $M$ | Fixed pair-to-new-ID rules, with earlier allocated IDs having earlier merge priority | merges: dict[tuple[int, int], int] |
+| $u_d$ | Ordinary BPE IDs, before any structural marker | A fresh list[int] from encode_bpe |
+| $e$ | Reserved EOS ID, outside the ordinary vocabulary | eos_id: int |
+| $z_d$ | The complete document IDs, with one EOS appended | list[int] |
+| $d$ | Document index; unrelated to embedding width $D$ | Conceptual index |
 
 The symbol \(\Vert\) means sequence concatenation: keep the ordinary IDs in order, then add one integer e at the end. It is not arithmetic addition. For example, [256,256] concatenated with [257] gives [256,256,257], not [513,513].
 
@@ -12573,7 +12455,7 @@ eos_id = 257
 
 This tokenizer has **one learned rule**: (97,98) becomes 256, whose bytes are b'ab'. The base byte IDs 0 through255 remain ordinary tokens. In some Chapter 02 training examples a second rule also allocated257; that is a different tokenizer version. If257 were a learned token, we could not also reserve it as EOS. Do not import that second rule into this fixture.
 
-![Document-by-document bytes, fixed BPE IDs and appended EOS](assets/06-04-frozen-tokenizer.en.png)
+![Document-by-document bytes, fixed BPE IDs and appended EOS](assets/06-04-frozen-tokenizer.en.png){width=100%}
 
 Read each row left to right. Gray cells are byte IDs before merging; teal cells are ordinary BPE IDs; orange cells are appended EOS. The numbers in cells are contents. Length labels sit outside the cells. The output is a nested list with lengths3,3,1, not a tensor with shape(3,3).
 
@@ -12609,7 +12491,7 @@ $$
 z=[60,101,111,115,62,257].
 $$
 
-![Literal five-character spelling versus the appended structural ID](assets/06-04-literal-and-structural-eos.en.png)
+![Literal five-character spelling versus the appended structural ID](assets/06-04-literal-and-structural-eos.en.png){width=100%}
 
 Read downward: five characters become five ordinary byte IDs because the single ab rule does not match. The formatter then appends257. There are six output IDs: five body IDs and one EOS. Decoding only the body returns the literal text '<eos>'. The final 257 carries document structure; it was not produced from those five characters.
 
@@ -12619,7 +12501,7 @@ Special-token insertion should be an explicit formatting policy. External tokeni
 
 ### Calculate model vocabulary capacity before lookup
 
-Let \(\mathcal I\) contain all allocated ordinary and reserved IDs. Since a table with V rows has indices0 through V−1, every allocated ID must satisfy:
+Let \(\mathcal I\) contain all allocated ordinary and reserved IDs. Since a table with $V$ rows has indices0 through $V$−1, every allocated ID must satisfy:
 
 $$
 0\le i<V_{\mathrm{model}}\quad(i\in\mathcal I),\qquad
@@ -12628,36 +12510,36 @@ $$
 
 For this fixture, ordinary IDs are 0…256 and EOS is 257. The smallest sufficient capacity is 258. This is a capacity calculation, not an upper limit of 256 or258 for language models. If IDs have gaps, counting mapping entries is insufficient: the table must still cover the largest allocated ID.
 
-![Allocated IDs, symbolic embedding rows and dimensions](assets/06-04-id-capacity-and-embedding.en.png)
+![Allocated IDs, symbolic embedding rows and dimensions](assets/06-04-id-capacity-and-embedding.en.png){width=100%}
 
-Read the left panel as ID meanings. On the right, an illustrative embedding table has shape(258,4); only selected rows are drawn. The dots omit rows, not features. Cell symbols such as e₂₅₇,₀ stand for parameter values, not measured weights. Shape is printed above the table.
+Read the left panel as ID meanings. On the right, an illustrative embedding table has shape(258,4); only selected rows are drawn. The dots omit rows, not features. Cell symbols such as $e_{257,0}$ stand for parameter values, not measured weights. Shape is printed above the table.
 
 | Quantity | This example | Meaning |
 | --- | --- | --- |
 | Largest allocated ID | 257 | An integer used to select a row or target class |
-| Minimum V_model | 258 | Number of available ID rows/classes |
-| Embedding width D | 4, chosen only for the diagram | Number of coordinates per embedding vector |
+| Minimum $V_{\mathrm{model}}$ | 258 | Number of available ID rows/classes |
+| Embedding width $D$ | 4, chosen only for the diagram | Number of coordinates per embedding vector |
 | Sequence length for 'abab' with EOS | 3 | Number of positions in this document |
 
 With \(E\in\mathbb R^{258\times D}\), looking up [256,256,257] gives a tensor with shape(3, D). The repeated256 selects the same embedding row twice. For batches later, IDs have shape(B, T), embeddings(B, T, D), and logits(B, T, V_model). Do not confuse any of these axes just because two numerical sizes happen to match. PyTorch names the embedding row count num_embeddings and the width embedding_dim. [Official Embedding reference](https://docs.pytorch.org/docs/stable/generated/torch.nn.Embedding.html)
 
-If we additionally reserve PAD=258 in a future configuration, minimum capacity becomes 259 while D may stay the same. That extension is not in the current fixture or function. Updating an existing trained model's vocabulary requires a coordinated artifact/table change; this assignment performs none of that resizing.
+If we additionally reserve PAD=258 in a future configuration, minimum capacity becomes 259 while $D$ may stay the same. That extension is not in the current fixture or function. Updating an existing trained model's vocabulary requires a coordinated artifact/table change; this assignment performs none of that resizing.
 
 ### Connect EOS to the next-token objective
 
-EOS is represented by its own prediction class. For a document sequence z with length L, form the familiar shifted pairs:
+EOS is represented by its own prediction class. For a document sequence z with length $L$, form the familiar shifted pairs:
 
 $$
 X=z[:-1],\qquad Y=z[1:],\qquad |X|=|Y|=L-1.
 $$
 
-For z=[256,256,257], X=[256,256] and Y=[256,257]. The second position sees the prefix [256,256] and is trained to predict EOS:
+For z=[256,256,257], $X$=[256,256] and $Y$=[256,257]. The second position sees the prefix [256,256] and is trained to predict EOS:
 
 $$
 \ell_{\mathrm{last}}=-\log p_\theta(257\mid256,256).
 $$
 
-![EOS as the final next-token target](assets/06-04-eos-next-token-target.en.png)
+![EOS as the final next-token target](assets/06-04-eos-next-token-target.en.png){width=100%}
 
 The arrows align each input position with its next-token target. Orange marks the final EOS target. This is a document-local illustration: an empty document z=[257] has zero such local pairs. Later packing defines transitions in a concatenated stream and may differ at document boundaries.
 
@@ -12716,9 +12598,7 @@ The unchanged original driver checks the three-document output, unchanged merges
 
 For future experiments, version the vocabulary/merges, special-ID mapping, preprocessing policy, implementation commit and tokenizer artifact checksum together. Pair that record with the data version, model vocabulary capacity and checkpoint. The fixture here is toy-frozen-bpe-eos-v1: UTF-8 bytes, one (97,98)→256 rule, EOS257, and no normalization in this helper. It has no external corpus, trained language-model checkpoint, training budget or language-quality evaluation.
 
-<a id="section-06-05"></a>
-
-## 06.05 Packing and supervision masks
+## 06.05 Packing and supervision masks {#section-06-05}
 
 ### Turn document lists into rectangular next-token batches
 
@@ -12740,7 +12620,7 @@ Earlier lessons use **document** for a piece of source material. Its Python repr
 | 06.05 packing | pack_tokens(documents, context_length, pad_id) | A list[int], such as [256,256,257] |
 | 06.06 training | pretrain(model, x, y, mask, updates, learning_rate) | Already packed tensors, not document dictionaries |
 
-![The same records become texts and token lists through explicit caller operations](assets/06-05-document-representations.en.png)
+![The same records become texts and token lists through explicit caller operations](assets/06-05-document-representations.en.png){width=100%}
 
 Read the blue boxes as source representations and the green box as the token representation. The arrows name the operations that connect them. Python does not change a dictionary into token IDs because a variable is named document. The caller must perform the extraction and encoding explicitly.
 
@@ -12773,7 +12653,7 @@ The original packing driver uses [[1,2,4],[3,4]], a separate hand-written ID fix
 
 ### Count source pairs before choosing a batch shape
 
-Write the concatenated stream as s with N token IDs. A target requires the next source token, so there are P=N−1 valid adjacent pairs:
+Write the concatenated stream as s with $N$ token IDs. A target requires the next source token, so there are $P=N$−1 valid adjacent pairs:
 
 $$
 s=\operatorname{concat}(documents),\quad N=|s|,\quad P=N-1,\qquad
@@ -12782,28 +12662,28 @@ $$
 
 | Symbol | Meaning | Example |
 | --- | --- | --- |
-| s | Flat Python list of token IDs | [1,2,4,3,4] |
-| N | Number of source tokens, including existing EOS | 5 |
-| P | Number of valid adjacent pairs | 4 |
-| T | context_length, the output row width | 3 |
-| B | Number of output rows, calculated from P and T | 2 |
-| b, t | Zero-based output row/column indices | b=0,1; t=0,1,2 |
-| p | pad_id, the fill value | 0 |
+| $s$ | Flat Python list of token IDs | [1,2,4,3,4] |
+| $N$ | Number of source tokens, including existing EOS | 5 |
+| $P$ | Number of valid adjacent pairs | 4 |
+| $T$ | context_length, the output row width | 3 |
+| $B$ | Number of output rows, calculated from $P$ and $T$ | 2 |
+| b, t | Zero-based output row/column indices | $b=0$,1; $t=0$,1,2 |
+| $p$ | pad_id, the fill value | 0 |
 
-**An ID value is not a size.** In this fixture,4 means EOS. Separately, P happens to equal4. Those numbers have different roles. The toy vocabulary is also different from 06.04's byte/BPE IDs; do not interpret4 as EOS257 or add another marker.
+**An ID value is not a size.** In this fixture,4 means EOS. Separately, $P$ happens to equal4. Those numbers have different roles. The toy vocabulary is also different from 06.04's byte/BPE IDs; do not interpret4 as EOS257 or add another marker.
 
-![Source indices and all four adjacent transitions](assets/06-05-packing-masks.en.png)
+![Source indices and all four adjacent transitions](assets/06-05-packing-masks.en.png){width=100%}
 
-Read the source positions s[0]…s[4] separately from their token contents. The lower table lists transitions by source index j. Even if two pairs have equal values in another example, their source positions still count separately. The final token s[4] can be a target but has no next token, so it cannot create another valid pair.
+Read the source positions s[0]…s[4] separately from their token contents. The lower table lists transitions by source index $j$. Even if two pairs have equal values in another example, their source positions still count separately. The final token s[4] can be a target but has no next token, so it cannot create another valid pair.
 
-Each row holds at most T pairs. To retain a partial final row, round the row count upward:
+Each row holds at most $T$ pairs. To retain a partial final row, round the row count upward:
 
 $$
 B=\left\lceil\frac{P}{T}\right\rceil
 =\left\lfloor\frac{P+T-1}{T}\right\rfloor.
 $$
 
-For positive integers, Python `(P + T - 1) // T` computes this without floating division; `//` is floor division. Here `(4+3-1)//3=2`. Using `P//T=1` would drop the last pair. B is not the number of documents: the same two documents with T=1 require four rows.
+For positive integers, Python `(P + T - 1) // T` computes this without floating division; `//` is floor division. Here `(4+3-1)//3=2`. Using `P//T=1` would drop the last pair. $B$ is not the number of documents: the same two documents with $T=1$ require four rows.
 
 ### Define the three outputs without indexing beyond the stream
 
@@ -12815,15 +12695,15 @@ X_{b,t}=\begin{cases}s_j&j<P\\p&j\ge P,\end{cases}\qquad
 Y_{b,t}=\begin{cases}s_{j+1}&j<P\\p&j\ge P.\end{cases}
 $$
 
-The indicator is 1/True when that source pair exists and 0/False otherwise. The formula deliberately does not read s[j] or s[j+1] at padded positions. X, Y are torch.long tensors; mask is torch.bool. All three shapes are(B, T). Their cell contents are IDs or booleans, not dimensions or embedding vectors.
+The indicator is 1/True when that source pair exists and 0/False otherwise. The formula deliberately does not read s[j] or s[j+1] at padded positions. $X$, $Y$ are torch.long tensors; mask is torch.bool. All three shapes are(B, T). Their cell contents are IDs or booleans, not dimensions or embedding vectors.
 
-For row b, its start and number of real pairs are:
+For row $b$, its start and number of real pairs are:
 
 $$
 a_b=bT,\qquad n_b=\min(T,P-a_b).
 $$
 
-Fill only its first n_b slots. In Python's end-exclusive slices, those bodies are:
+Fill only its first $n_b$ slots. In Python's end-exclusive slices, those bodies are:
 
 ```text
 X row prefix ← stream[start : start+n]
@@ -12843,9 +12723,9 @@ context_length = 3
 pad_id = 0
 ```
 
-Concatenation preserves existing markers: stream=[1,2,4,3,4]. Therefore N=5, P=4, T=3, B=2. Initialize X and Y to zero-filled long tensors with shape(2,3), and mask to a false bool tensor of the same shape. These must be separate tensors.
+Concatenation preserves existing markers: stream=[1,2,4,3,4]. Therefore $N=5$, $P=4$, $T=3$, $B=2$. Initialize $X$ and $Y$ to zero-filled long tensors with shape(2,3), and mask to a false bool tensor of the same shape. These must be separate tensors.
 
-| j | Source transition | Row b | Column t | Real target? |
+| $j$ | Source transition | Row b | Column t | Real target? |
 | --- | --- | --- | --- | --- |
 | 0 | 1→2 | 0 | 0 | True |
 | 1 | 2→4 | 0 | 1 | True |
@@ -12865,17 +12745,17 @@ mask = [[True, True,  True],
         [True, False, False]]
 ```
 
-These are printed contents; the returned objects are tensors. The return order is(X, Y, mask).
+These are printed contents; the returned objects are tensors. The return order is($X$, $Y$, mask).
 
-![Packed input, shifted target and supervision-mask tensors](assets/06-05-packed-tensor-layout.en.png)
+![Packed input, shifted target and supervision-mask tensors](assets/06-05-packed-tensor-layout.en.png){width=100%}
 
 The two upper tables contain integer IDs; the bottom table contains booleans. Teal cells hold real pairs; gray cells are padding. Shape and dtype appear above the tables. There are four valid target slots out of six allocated slots. A valid source transition appears once, even though a token can naturally occur as one pair's target and the next pair's input. Do not deduplicate repeated IDs or pairs.
 
-With the same stream, T=2 gives B=2 with no padding; T=4 gives B=1; T=8 gives B=1 with four padded slots. These are changes to row layout, not to the four underlying source pairs.
+With the same stream, $T=2$ gives $B=2$ with no padding; $T=4$ gives $B=1$; $T=8$ gives $B=1$ with four padded slots. These are changes to row layout, not to the four underlying source pairs.
 
 ### Explain what cross-document context does and does not mean
 
-The pair4→3 crosses from document A's EOS to document B's first token. This policy intentionally includes that target. In row 0, predicting3 can use the prefix[1,2,4]. EOS does not reset the causal attention calculation or stop training.
+The pair4→3 crosses from document A's EOS to document $B$'s first token. This policy intentionally includes that target. In row 0, predicting3 can use the prefix[1,2,4]. EOS does not reset the causal attention calculation or stop training.
 
 Rows are independent contexts for the ordinary batched decoder: row 1 begins with 3, so predicting its next4 uses that row's prefix[3], not a carried cache from row 0. Covering every adjacent pair once does not preserve unlimited context across row boundaries. This helper supplies no KV cache, segment IDs, position resets or block-diagonal document attention masks.
 
@@ -12892,7 +12772,7 @@ Y    = [[0,3,0]]
 mask = [[True,True,False]]
 ```
 
-![Valid zero IDs versus padded zero cells](assets/06-05-position-not-token-value.en.png)
+![Valid zero IDs versus padded zero cells](assets/06-05-position-not-token-value.en.png){width=100%}
 
 Read each variable as a separate tensor of shape(1,3). Green columns represent the real pairs2→0 and 0→3. The last gray column has no pair. Y[0,0]=0 is a valid target, and X[0,1]=0 is a valid input. Consequently neither `X != pad_id` nor `Y != pad_id` expresses this helper's contract. A production vocabulary usually reserves PAD outside ordinary text; the synthetic collision tests whether validity truly comes from lengths.
 
@@ -12909,11 +12789,11 @@ $$
 
 The denominator counts valid targets, not all allocated positions or documents. In the next lesson, cross-entropy with reduction='none' supplies per-position losses; selecting `losses[mask].mean()` computes this objective. Flattening the logits/targets for cross-entropy must preserve their matching row/column order, then restore losses to shape(B, T). [Official cross-entropy API](https://docs.pytorch.org/docs/stable/generated/torch.nn.functional.cross_entropy)
 
-![Selected loss values and the correct denominator](assets/06-05-valid-target-loss.en.png)
+![Selected loss values and the correct denominator](assets/06-05-valid-target-loss.en.png){width=100%}
 
-The diagram uses chosen losses[[.2,.4,.6],[.8,9,9]], not actual model measurements. The valid four values sum to 2, so L=2/4=.5. Averaging all six gives 20/6. Even replacing padded losses with zero then averaging all six gives 2/6=1/3, which still scales the loss incorrectly. Select valid positions before averaging; do not try to remove padding after reduction. Boolean selection also avoids relying on zero times a potentially nonfinite padded loss.
+The diagram uses chosen losses[[.2,.4,.6],[.8,9,9]], not actual model measurements. The valid four values sum to 2, so $L=2$/4=.5. Averaging all six gives 20/6. Even replacing padded losses with zero then averaging all six gives 2/6=1/3, which still scales the loss incorrectly. Select valid positions before averaging; do not try to remove padding after reduction. Boolean selection also avoids relying on zero times a potentially nonfinite padded loss.
 
-If cross-entropy is evaluated on all cells before selection, padded Y must still be a valid class ID, as PAD0 is here, or be handled by an explicit ignore-index policy. A negative ignore label is not a valid input embedding index. Ignoring every target equal to 0 would also discard the legitimate target0 in the synthetic counterexample. This assignment creates the data/mask only;06.06 wires the masked training objective.
+If cross-entropy is evaluated on all cells before selection, padded $Y$ must still be a valid class ID, as PAD0 is here, or be handled by an explicit ignore-index policy. A negative ignore label is not a valid input embedding index. Ignoring every target equal to 0 would also discard the legitimate target0 in the synthetic counterexample. This assignment creates the data/mask only;06.06 wires the masked training objective.
 
 ### Exact assignment interface
 
@@ -12925,24 +12805,24 @@ def pack_tokens(
 ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
 ```
 
-Documents are ordered token-ID lists with EOS already included. Their total length N is at least 2. context_length is a positive Python integer T. pad_id is an integer fill value; a real tokenizer normally reserves it, but the supplied synthetic check permits a real token with the same number. Preserve the input lists and every input occurrence.
+Documents are ordered token-ID lists with EOS already included. Their total length $N$ is at least 2. context_length is a positive Python integer $T$. pad_id is an integer fill value; a real tokenizer normally reserves it, but the supplied synthetic check permits a real token with the same number. Preserve the input lists and every input occurrence.
 
-Return three fresh independent tensors, X, Y, mask, with shapes(B, T), dtypes long, long, bool. This course constructs them on CPU from Python lists; no device argument or new environment is added. Only the first n valid slots in each row are written. Under N≥2 there is at least one valid pair. Behavior for total length0/1 or nonpositive T is outside this assignment's valid-input contract; no new validation task is required.
+Return three fresh independent tensors, $X$, $Y$, mask, with shapes(B, T), dtypes long, long, bool. This course constructs them on CPU from Python lists; no device argument or new environment is added. Only the first n valid slots in each row are written. Under $N$≥2 there is at least one valid pair. Behavior for total length0/1 or nonpositive $T$ is outside this assignment's valid-input contract; no new validation task is required.
 
 ### Guided implementation in ten steps
 
 Edit only the learner region in the real assignment. The function body uses four spaces; a loop body adds four more. Keep the supplied driver unchanged and write the core yourself.
 
 1. **Flatten into a fresh list.** At four spaces create `stream=[]`. Loop over `documents` and use `stream.extend(document)` at eight spaces. extend adds each document's integers; append would leave a list of lists. The original example becomes[1,2,4,3,4]. This changes stream, not documents.
-2. **Name the sizes after flattening.** Back at four spaces compute N=len(stream), P=N−1 and T=context_length. Expect5,4,3. Count all tokens, including existing EOS; do not append another EOS or use len(documents) as N.
-3. **Compute the row count.** At four spaces calculate B using integer ceiling division `(P+T-1)//T`. Expect2. `//` rounds downward after the numerator adjustment; `P//T` alone would lose the final pair.
-4. **Allocate separate input and target tensors.** At four spaces use torch.full with shape tuple(B, T), fill value pad_id and dtype=torch.long for each tensor. Both start as two rows of three zeros. Do not bind X and Y to the same tensor object. [Official torch.full reference](https://docs.pytorch.org/docs/stable/generated/torch.full)
+2. **Name the sizes after flattening.** Back at four spaces compute $N$=len(stream), $P=N$−1 and $T$=context_length. Expect5,4,3. Count all tokens, including existing EOS; do not append another EOS or use len(documents) as $N$.
+3. **Compute the row count.** At four spaces calculate $B$ using integer ceiling division `(P+T-1)//T`. Expect2. `//` rounds downward after the numerator adjustment; `P//T` alone would lose the final pair.
+4. **Allocate separate input and target tensors.** At four spaces use torch.full with shape tuple(B, T), fill value pad_id and dtype=torch.long for each tensor. Both start as two rows of three zeros. Do not bind $X$ and $Y$ to the same tensor object. [Official torch.full reference](https://docs.pytorch.org/docs/stable/generated/torch.full)
 5. **Allocate the bool mask.** At four spaces use torch.zeros with the same shape and dtype=torch.bool. All cells start False; these are target-validity flags, not token IDs.
-6. **Enumerate row starts.** At four spaces loop over `enumerate(range(0,P,T))`, receiving row index b and source start. range includes0, excludes P, and advances by T. enumerate pairs each start with its row counter. The example visits(b=0, start=0), then(b=1, start=3); inside this loop use eight spaces.
-7. **Count this row's real pairs.** Inside the loop compute n=min(T, P−start). Expect3, then1. This prevents reading a nonexistent final next token.
+6. **Enumerate row starts.** At four spaces loop over `enumerate(range(0,P,T))`, receiving row index $b$ and source start. range includes0, excludes $P$, and advances by $T$. enumerate pairs each start with its row counter. The example visits($b=0$, start=0), then($b=1$, start=3); inside this loop use eight spaces.
+7. **Count this row's real pairs.** Inside the loop compute n=min($T$, $P$−start). Expect3, then1. This prevents reading a nonexistent final next token.
 8. **Fill the two row prefixes.** Still at eight spaces convert each stream slice to a long tensor and assign to row prefix `[b,:n]`. Inputs use `[start:start+n]`; targets use `[start+1:start+n+1]`. For row 1, the two assigned lists are[3] and[4]. Leave the remaining cells padded.
 9. **Mark those same slots valid.** Still inside the loop assign True to mask[b,:n]. Row0 becomes[True, True, True]; row 1 becomes[True, False, False]. Do not calculate validity from equality to pad_id.
-10. **Return after the loop.** Dedent to four spaces and return X, Y, mask in that order. Remove the placeholder raise, preserve START/END markers and driver, and confirm inputs have not changed. The operation builds examples; it does not run the model or average losses yet.
+10. **Return after the loop.** Dedent to four spaces and return $X$, $Y$, mask in that order. Remove the placeholder raise, preserve START/END markers and driver, and confirm inputs have not changed. The operation builds examples; it does not run the model or average losses yet.
 
 ### Run, explain and record evidence
 
@@ -12956,11 +12836,11 @@ After implementation:
 Lesson 06.05 checks passed.
 ```
 
-The original driver verifies the exact padded example, a divisible-length example with a real0 input, mask count/all, shapes there and long/bool dtypes. It does not check every T, all input ownership, a real0 target, every source-pair mapping or downstream loss/attention behavior.
+The original driver verifies the exact padded example, a divisible-length example with a real0 input, mask count/all, shapes there and long/bool dtypes. It does not check every $T$, all input ownership, a real0 target, every source-pair mapping or downstream loss/attention behavior.
 
-Before implementing, predict the T=8 result and explain why the final source EOS has no valid input/target pair of its own. After passing, reconstruct the position-to-slot mapping and distinguish the supervision mask(B, T) from query/key visibility(T, T), which may have broadcast batch/head axes.
+Before implementing, predict the $T=8$ result and explain why the final source EOS has no valid input/target pair of its own. After passing, reconstruct the position-to-slot mapping and distinguish the supervision mask(B, T) from query/key visibility(T, T), which may have broadcast batch/head axes.
 
-Fixture toy-packed-pairs-eos4-v1 uses the exact two document lists, EOS4, PAD0, T3, full retention of N−1 source pairs and cross-document context allowed inside each row. The zero-collision and chosen-loss examples are explicitly separate. There is no external dataset/tokenizer artifact, language-model checkpoint, training budget or quality evaluation. A real run must version its tokenizer, packing/boundary policy, data, code commit, budget and evaluation protocol, and measure token utilization rather than claiming a speed gain from this toy calculation.
+Fixture toy-packed-pairs-eos4-v1 uses the exact two document lists, EOS4, PAD0, T3, full retention of $N$−1 source pairs and cross-document context allowed inside each row. The zero-collision and chosen-loss examples are explicitly separate. There is no external dataset/tokenizer artifact, language-model checkpoint, training budget or quality evaluation. A real run must version its tokenizer, packing/boundary policy, data, code commit, budget and evaluation protocol, and measure token utilization rather than claiming a speed gain from this toy calculation.
 
 #### Dictionaries and token lists
 
@@ -12968,9 +12848,7 @@ Fixture toy-packed-pairs-eos4-v1 uses the exact two document lists, EOS4, PAD0, 
 
 **Answer:** The representation changed at the caller: a record dictionary supplies its text string to 06.04, which returns one token-ID list per document.06.05 receives those lists. The explanation above now shows the exact handoff and dictionary-key counterexample. Your current loop is correct for that input. The shared name hid the missing explanation; no core-code change is needed. Actual 06.05 is checked and 06.06 is current. This answers the question without claiming that understanding has already been independently demonstrated.
 
-<a id="section-06-06"></a>
-
-## 06.06 A complete pretraining experiment
+## 06.06 A complete pretraining experiment {#section-06-06}
 
 ### Connect data preparation to a training objective
 
@@ -12982,16 +12860,16 @@ Reuse04.10's forward/backward loop,05.05's AdamW concepts and 06.05's valid-targ
 
 ### Keep one example continuous from source records to training tensors
 
-Before using the small two-class check driver, connect the functions you have already written. The [06.05 handoff](#section-06-05) starts with records A="abab" and B="ac", extracts texts, and runs the frozen one-rule BPE encoder. Its result is:
+Before using the small two-class check driver, connect the functions you have already written. The [06.05 handoff](#section-06-05) starts with records A="abab" and $B$="ac", extracts texts, and runs the frozen one-rule BPE encoder. Its result is:
 
 ```text
 token_documents = [[256,256,257], [97,99,257]]
 stream          = [256,256,257,97,99,257]
 ```
 
-IDs 0…255 represent ordinary bytes,256 represents b"ab", and 257 is EOS. We now explicitly reserve a new PAD ID 258. The model needs capacity for indices 0…258, so choose V=259 or larger. This is a vocabulary-capacity change relative to an EOS-only example, not an embedding-width change. The model is constructed by the caller; pretrain receives that existing model.
+IDs 0…255 represent ordinary bytes,256 represents b"ab", and 257 is EOS. We now explicitly reserve a new PAD ID 258. The model needs capacity for indices 0…258, so choose $V=259$ or larger. This is a vocabulary-capacity change relative to an EOS-only example, not an embedding-width change. The model is constructed by the caller; pretrain receives that existing model.
 
-For T=3, there are N=6 source IDs and P=N−1=5 adjacent targets. Your completed pack_tokens computes B=ceil(5/3)=2 and returns:
+For $T=3$, there are $N=6$ source IDs and $P=N$−1=5 adjacent targets. Your completed pack_tokens computes $B$=ceil(5/3)=2 and returns:
 
 ```text
 x    = [[256,256,257],
@@ -13004,11 +12882,11 @@ mask = [[True,True, True],
 
 The five real pairs are 256→256,256→257,257→97,97→99,99→257. The EOS257→97 pair crosses the document boundary under the explicitly chosen packing policy. The final padded slot is 258/258/False; it is not a sixth source pair. Inputs, targets and mask already align, so pretrain must not shift them again. The shape of each input tensor is(2,3); the five valid targets are a count, not another tensor axis.
 
-![The same BPE IDs continue through packed tensors and a five-target analytic objective](assets/06-06-packed-bpe-to-objective.en.png)
+![The same BPE IDs continue through packed tensors and a five-target analytic objective](assets/06-06-packed-bpe-to-objective.en.png){width=100%}
 
 Read the upper tables as actual ID/boolean contents; shapes and dtypes appear above them. Orange is EOS, gray is padding. Then follow the shape line through cross-entropy into five selected losses. The figure's zero logits are an **analytic baseline**, not an assertion that the actual decoder initially produces zero scores.
 
-For that baseline, take Z=0 with shape(2,3,259). At every position, all 259 classes have equal probability 1/259, including the correct class. Each unreduced loss is −ln(1/259)=ln259. We must retain six position losses long enough to apply the matching mask, then average only five:
+For that baseline, take $Z=0$ with shape(2,3,259). At every position, all 259 classes have equal probability 1/259, including the correct class. Each unreduced loss is −ln(1/259)=ln259. We must retain six position losses long enough to apply the matching mask, then average only five:
 
 $$
 K=5,\qquad \ell_{b,t}=\ln259,\qquad
@@ -13017,13 +12895,13 @@ $$
 
 If excluded losses were zeroed and all six cells averaged, the result would be 5ln259/6≈4.630690051: smaller only because of a wrong denominator. Ordinary averaging of all six happens to give the right numeric baseline here because every loss equals ln259; changing excluded logits exposes that accidental agreement. This is why one passing symmetric example cannot establish the mask contract.
 
-The original driver is a **different fixture**: V=2, K=3, x/y alternate 0 and 1, and its entire second row is deliberately excluded. Here V=259, K=5, and only one slot is padding. pretrain must support both by reading the actual logits and mask; do not hard-code V2, K3 or a whole-row selection. The continuous fixture's legal PAD 258 target can be evaluated before selection, but its own position loss is excluded. At selected positions, the PAD output class still participates in the ordinary 259-way softmax denominator; excluding padding positions does not remove a vocabulary column.
+The original driver is a **different fixture**: $V=2$, $K=3$, x/y alternate 0 and 1, and its entire second row is deliberately excluded. Here $V=259$, $K=5$, and only one slot is padding. pretrain must support both by reading the actual logits and mask; do not hard-code V2, K3 or a whole-row selection. The continuous fixture's legal PAD 258 target can be evaluated before selection, but its own position loss is excluded. At selected positions, the PAD output class still participates in the ordinary 259-way softmax denominator; excluding padding positions does not remove a vocabulary column.
 
-For the continuous baseline, one selected output position has gradient −258/1295≈−.199227799 at its correct class, and 1/1295≈.000772201 at every other class. All 259 direct logit gradients at the excluded position are 0. The gradient denominator is K=5; it is neither the vocabulary size259 nor allocated position count 6. The general gradient formula below explains these numbers.
+For the continuous baseline, one selected output position has gradient −258/1295≈−.199227799 at its correct class, and 1/1295≈.000772201 at every other class. All 259 direct logit gradients at the excluded position are 0. The gradient denominator is $K=5$; it is neither the vocabulary size259 nor allocated position count 6. The general gradient formula below explains these numbers.
 
 ### What one update changes, and what it leaves as training data
 
-At update s, parameters θ_s produce current logits. The observed x, aligned y and bool mask are the same supplied tensors on every repetition of this exercise. The loss changes because the parameters change, not because the function replaces the correct labels with its predictions:
+At update s, parameters $\theta_s$ produce current logits. The observed x, aligned y and bool mask are the same supplied tensors on every repetition of this exercise. The loss changes because the parameters change, not because the function replaces the correct labels with its predictions:
 
 $$
 Z_s=f_{\theta_s}(x),\qquad L_s=L(\theta_s;x,y,m),\qquad
@@ -13036,7 +12914,7 @@ This is teacher-forced next-token training, so there is no argmax, random sampli
 
 ### Define predictions, target selection and the mean loss
 
-Let θ denote the model parameters, Z its raw logits and K the number of selected targets:
+Let $\theta$ denote the model parameters, $Z$ its raw logits and $K$ the number of selected targets:
 
 $$
 Z=f_\theta(x)\in\mathbb R^{B\times T\times V},\qquad
@@ -13048,9 +12926,9 @@ $$
 | x | Input token IDs, torch.long(B, T) | [[0,1,0],[1,0,1]] |
 | y | Already aligned next-token targets, torch.long(B, T) | [[1,0,1],[0,1,0]] |
 | m / mask | Target-selection flags, torch.bool(B, T) | First row True, second row False |
-| B, T, V | Batch rows, input positions, vocabulary classes | 2,3,2; equal B/V values do not identify their axes |
-| Z | Floating logits for every position/class | Shape(2,3,2), not sampled IDs |
-| K | Number of valid/selected target positions | 3, not B×T=6 |
+| $B$, $T$, $V$ | Batch rows, input positions, vocabulary classes | 2,3,2; equal $B$/$V$ values do not identify their axes |
+| $Z$ | Floating logits for every position/class | Shape(2,3,2), not sampled IDs |
+| $K$ | Number of valid/selected target positions | 3, not $B$×$T=6$ |
 
 For each position, softmax defines the model distribution and cross-entropy reads the probability of its target:
 
@@ -13062,7 +12940,7 @@ $$
 
 Here c/j index output classes; b/t index input positions. The sum selects target losses, not embedding features. Use natural logarithms. PyTorch cross_entropy takes raw logits and computes the stable log-softmax/cross-entropy calculation internally; do not apply softmax first. reduction='none' preserves individual losses. [Official cross-entropy definition](https://docs.pytorch.org/docs/stable/generated/torch.nn.CrossEntropyLoss.html)
 
-![Original input/target/mask contents and valid-target count](assets/06-06-pretrain-run.en.png)
+![Original input/target/mask contents and valid-target count](assets/06-06-pretrain-run.en.png){width=100%}
 
 Read the three tables as separate tensors. Shape and dtype sit above their contents. The mask cells show their actual True/False values. The second row contains real0/1 tokens; it is deliberately excluded from supervision, not padded. A mask can select targets for reasons beyond padding. In the first row, y[0,1]=0 is still a valid target; ignoring every class 0 would change the objective.
 
@@ -13075,13 +12953,13 @@ q=bT+t:\qquad (B,T,V)\to(BT,V),\quad
 (B,T)\to(BT),\quad (BT)\to(B,T).
 $$
 
-The final vocabulary axis stays together. `.reshape(-1,V)` infers BT while retaining V candidates per position; `y.reshape(-1)` gives matching target order. With reduction='none', cross-entropy returns BT losses. `.reshape_as(y)` restores the(B, T) target layout before mask selection. reshape supports non-contiguous inputs; do not assume view is always valid.
+The final vocabulary axis stays together. `.reshape(-1,V)` infers BT while retaining $V$ candidates per position; `y.reshape(-1)` gives matching target order. With reduction='none', cross-entropy returns BT losses. `.reshape_as(y)` restores the(B, T) target layout before mask selection. reshape supports non-contiguous inputs; do not assume view is always valid.
 
-![Exact six-position alignment and the uniform-logit baseline](assets/06-06-flatten-and-select.en.png)
+![Exact six-position alignment and the uniform-logit baseline](assets/06-06-flatten-and-select.en.png){width=100%}
 
-Read each row as one original(b, t) position, one vector of V class scores, one target and its mask flag. q=0,1,2 are selected; q=3,4,5 are not. A direct cross_entropy call on unpermuted(B, T, V) does not express this layout: that API normally interprets its second axis as classes. Preserve the documented flattening instead of hoping equal dimensions make an incorrect call work.
+Read each row as one original(b, t) position, one vector of $V$ class scores, one target and its mask flag. $q=0$,1,2 are selected; $q=3$,4,5 are not. A direct cross_entropy call on unpermuted(B, T, V) does not express this layout: that API normally interprets its second axis as classes. Preserve the documented flattening instead of hoping equal dimensions make an incorrect call work.
 
-For an explicitly uniform-logit example, every position has scores[0,0]. Its probabilities are[.5,.5], so every position loss is ln2≈.693147. The selected three losses sum to 3ln2, giving L=ln2. Zeroing the excluded three and averaging all six gives ln2/2, the wrong denominator. The randomly initialized TinyDecoder is not guaranteed to output zeros; this is an analytic baseline, not its measured first loss.
+For an explicitly uniform-logit example, every position has scores[0,0]. Its probabilities are[.5,.5], so every position loss is ln2≈.693147. The selected three losses sum to 3ln2, giving $L$=ln2. Zeroing the excluded three and averaging all six gives ln2/2, the wrong denominator. The randomly initialized TinyDecoder is not guaranteed to output zeros; this is an analytic baseline, not its measured first loss.
 
 ### See the gradient that makes prediction improve
 
@@ -13095,13 +12973,13 @@ $$
 \end{cases}
 $$
 
-A selected target's correct class gets p−1; other classes get p. At uniform probabilities with K=3, each selected position contributes±1/6. Gradient descent moves correct-class scores upward and incorrect-class scores downward through the model's parameters.
+A selected target's correct class gets p−1; other classes get p. At uniform probabilities with $K=3$, each selected position contributes±1/6. Gradient descent moves correct-class scores upward and incorrect-class scores downward through the model's parameters.
 
 A zero direct gradient at an excluded output does not block attention to its input, nor freeze shared parameters. An earlier input can affect a later selected prediction even when its own target is excluded. The tiny driver uses independent batch rows, so changing only the excluded second row's targets leaves its compared trajectories unchanged. Changing input context is a different intervention; stochastic models also require matched random streams for trajectory comparisons.
 
 ### Work through a complete separate one-update diagnostic
 
-To make one update calculable, use a separate two-class lookup model: W has shape(2,2), rows are input IDs and columns are output-class scores. It directly returns Z=W[x]. This diagnostic is not TinyDecoder's embedding and does not replace the assignment model. Initially W₀ is all zeros. Use the same x, y, mask as the original fixture.
+To make one update calculable, use a separate two-class lookup model: $W$ has shape(2,2), rows are input IDs and columns are output-class scores. It directly returns $Z=W[x]$. This diagnostic is not TinyDecoder's embedding and does not replace the assignment model. Initially $W_{0}$ is all zeros. Use the same x, y, mask as the original fixture.
 
 Only the first row contributes. Its three supervised mappings are 0→1,1→0,0→1. Therefore:
 
@@ -13119,18 +12997,18 @@ $$
 -\eta\frac{\hat m_s}{\sqrt{\hat v_s}+\epsilon}.
 $$
 
-η is learning_rate; λ=.01 is decoupled weight decay; the corrected moments summarize gradients and squared gradients. Use torch.optim.AdamW rather than implementing this formula again. This exercise uses its ordinary defaults β₁=.9,β₂=.999,ε=1e−8, with explicit weight_decay=.01 for the passed parameter iterable. Production parameter-group decay policies are a separate choice. [Official AdamW reference](https://docs.pytorch.org/docs/stable/generated/torch.optim.AdamW)
+$\eta$ is learning_rate; $\lambda$=.01 is decoupled weight decay; the corrected moments summarize gradients and squared gradients. Use torch.optim.AdamW rather than implementing this formula again. This exercise uses its ordinary defaults $\beta_{1}$=.9,$\beta_{2}$=.999,$\epsilon$=1e−8, with explicit weight_decay=.01 for the passed parameter iterable. Production parameter-group decay policies are a separate choice. [Official AdamW reference](https://docs.pytorch.org/docs/stable/generated/torch.optim.AdamW)
 
-![Separate lookup logits, analytic gradient and first AdamW update](assets/06-06-one-masked-update.en.png)
+![Separate lookup logits, analytic gradient and first AdamW update](assets/06-06-one-masked-update.en.png){width=100%}
 
-At the first step, the corrected first moment is g and corrected second moment is g². Since W₀=0, this first decay term is zero. With learning_rate=.03, each coordinate becomes−.03g/(|g|+1e−8), giving approximately:
+At the first step, the corrected first moment is g and corrected second moment is $g^2$. Since $W_{0}$=0, this first decay term is zero. With learning_rate=.03, each coordinate becomes−.03g/(|g|+1e−8), giving approximately:
 
 ```text
 W₁ = [[−.03,+.03],
       [+.03,−.03]]
 ```
 
-The tiny differences from the displayed values come from epsilon. Both correct-class probabilities are about.514996. The recomputed masked loss is about.663597114, lower than ln2. `history[0]` should still contain the pre-update loss.693147181. This is a checked float64 arithmetic example, not a trained language-model quality claim, and one successful update does not imply every future update decreases loss.
+The tiny differences from the displayed values come from $\epsilon$. Both correct-class probabilities are about.514996. The recomputed masked loss is about.663597114, lower than ln2. `history[0]` should still contain the pre-update loss.693147181. This is a checked float64 arithmetic example, not a trained language-model quality claim, and one successful update does not imply every future update decreases loss.
 
 ### Keep one optimizer alive through all updates in a call
 
@@ -13140,9 +13018,9 @@ The update order is: clear previous gradients, run a new forward pass, calculate
 
 `model.train()` sets training mode for relevant modules such as dropout; it does not enable autograd by itself or run optimization. `model.eval()` also does not disable autograd by itself. This function expects ordinary gradient-enabled execution. [PyTorch autograd/mode distinction](https://docs.pytorch.org/docs/stable/notes/autograd.html#evaluation-mode-nn-module-eval)
 
-![One optimizer lifetime, update sequence and history timing](assets/06-06-optimizer-loop-timing.en.png)
+![One optimizer lifetime, update sequence and history timing](assets/06-06-optimizer-loop-timing.en.png){width=100%}
 
-Read the flow from left to right on the upper row, then right to left on the lower row. Repeat the cycle updates times. `loss.item()` extracts a Python float for history; keep the original scalar tensor named loss for backward. Appending the tensor instead would retain graph-connected objects unnecessarily. After80 updates, the model holds θ₈₀ but history[79] describes L(θ₇₉), before update 80. A final loss at θ₈₀ requires a separate evaluation.
+Read the flow from left to right on the upper row, then right to left on the lower row. Repeat the cycle updates times. `loss.item()` extracts a Python float for history; keep the original scalar tensor named loss for backward. Appending the tensor instead would retain graph-connected objects unnecessarily. After80 updates, the model holds $\theta_{80}$ but history[79] describes $L$($\theta_{79}$), before update 80. A final loss at $\theta_{80}$ requires a separate evaluation.
 
 Every call creates a fresh optimizer. Calling pretrain twice on the same model preserves its weights but resets optimizer memory between calls; this is not an exact-resume interface. The return value contains no optimizer state. Use05.07's fuller checkpoint concepts for later real continuation.
 
@@ -13154,7 +13032,7 @@ def pretrain(model: nn.Module, x: torch.Tensor, y: torch.Tensor,
              learning_rate: float) -> list[float]:
 ```
 
-model is the existing registered causal module, returning floating logits(B, T, V). x and y are long(B, T), already aligned, and mask is bool(B, T) selecting at least one target. Input/target IDs are legal for the model vocabulary, including any excluded entries evaluated before selection. T fits model capacity and devices are compatible. updates is a nonnegative integer; learning_rate is positive. No new validation task is required.
+model is the existing registered causal module, returning floating logits(B, T, V). x and y are long(B, T), already aligned, and mask is bool(B, T) selecting at least one target. Input/target IDs are legal for the model vocabulary, including any excluded entries evaluated before selection. $T$ fits model capacity and devices are compatible. updates is a nonnegative integer; learning_rate is positive. No new validation task is required.
 
 Return a new list of exactly updates Python float pre-update losses, modifying the same passed model with AdamW(weight_decay=.01). Preserve input tensors and parameter identities. Set training mode and leave it set. For updates=0 return[] without forward, backward or optimizer steps; mode can change, while weights remain unchanged. The function does not promise to restore initial mode, return checkpoints, sample tokens, validate, add schedules/clipping/AMP or load data.
 
@@ -13165,7 +13043,7 @@ The function body has two indentation levels: four spaces for setup/return, eigh
 | Local role | General shape/type | Original driver | Continuous BPE example |
 | --- | --- | --- | --- |
 | x, y | long(B, T) | (2,3) | (2,3) |
-| mask | bool(B, T) | (2,3), K=3 | (2,3), K=5 |
+| mask | bool(B, T) | (2,3), $K=3$ | (2,3), $K=5$ |
 | logits | Floating(B, T, V) | (2,3,2) | (2,3,259) |
 | logits flattened for CE | Floating(B*T, V) | (6,2) | (6,259) |
 | y flattened for CE | long(B*T,) | (6,) | (6,) |
@@ -13175,11 +13053,11 @@ The function body has two indentation levels: four spaces for setup/return, eigh
 | Their mean loss | Floating scalar tensor, shape() | ln2 for zero logits | ln259 for zero logits |
 | loss.item() for history | Python float, no tensor shape | Approximately .693147 | Approximately 5.556828 |
 
-The numbers in the last two columns are analytic zero-logit cases. In your actual run the model predicts its own logits; do not replace them with zeros. No embedding-width axis D appears at the function boundary: the model handles embeddings and attention internally, then returns V output scores per position.
+The numbers in the last two columns are analytic zero-logit cases. In your actual run the model predicts its own logits; do not replace them with zeros. No embedding-width axis $D$ appears at the function boundary: the model handles embeddings and attention internally, then returns $V$ output scores per position.
 
-For flattening, read `.reshape(-1,V)` as: infer the number of position rows, but keep exactly V class columns. `.reshape(-1)` on y preserves the same order. `.reshape_as(y)` means use y's shape, not its values. Finally boolean indexing selects only positions where mask is True. You cannot select from the already-reduced scalar returned by the default cross-entropy reduction; individual losses must still exist at selection time.
+For flattening, read `.reshape(-1,V)` as: infer the number of position rows, but keep exactly $V$ class columns. `.reshape(-1)` on y preserves the same order. `.reshape_as(y)` means use y's shape, not its values. Finally boolean indexing selects only positions where mask is True. You cannot select from the already-reduced scalar returned by the default cross-entropy reduction; individual losses must still exist at selection time.
 
-`loss.backward()` applies the chain rule through the actual model. For any parameter coordinate θ_r:
+`loss.backward()` applies the chain rule through the actual model. For any parameter coordinate $\theta_r$:
 
 $$
 \frac{\partial L}{\partial\theta_r}
@@ -13187,7 +13065,7 @@ $$
 \frac{\partial Z_{b,t,c}}{\partial\theta_r}.
 $$
 
-Thus the model's attention/FFN/embedding parameters receive gradients through their effects on logits. In the separate lookup diagnostic W itself stores logits; in TinyDecoder, a logit is a computed output rather than a parameter you manually overwrite. AdamW updates model.parameters(), not the observed token IDs or target tensor. The detailed first-step lookup calculation above makes the arithmetic visible without pretending to expose every decoder parameter.
+Thus the model's attention/FFN/embedding parameters receive gradients through their effects on logits. In the separate lookup diagnostic $W$ itself stores logits; in TinyDecoder, a logit is a computed output rather than a parameter you manually overwrite. AdamW updates model.parameters(), not the observed token IDs or target tensor. The detailed first-step lookup calculation above makes the arithmetic visible without pretending to expose every decoder parameter.
 
 ### Guided implementation in ten steps
 
@@ -13197,7 +13075,7 @@ Edit only the learner region in the real exercise. Keep the supplied model loade
 2. **Set mode and initialize history at four spaces.** Call model.train() and create an empty list. model.train acts on the existing module; history will contain floats, not logits or loss tensors.
 3. **Start the loop at four spaces.** `for _ in range(updates):` repeats exactly updates times. `_` is an intentionally unused loop counter. range(0) runs zero times. All per-update work below uses eight spaces.
 4. **Clear gradients inside the loop.** Call optimizer.zero_grad(set_to_none=True). This removes old `.grad` values, including stale gradients from before this function call, without resetting moments or parameters.
-5. **Compute current raw logits.** Call model(x); expect(B, T, V), or(2,3,2) in the driver. Read V from logits.shape[-1]. y is already shifted; do not shift, generate or sample again.
+5. **Compute current raw logits.** Call model(x); expect(B, T, V), or(2,3,2) in the driver. Read $V$ from logits.shape[-1]. y is already shifted; do not shift, generate or sample again.
 6. **Compute individual position losses.** Reshape logits to(-1, V) and y to(-1); call F.cross_entropy with reduction='none', then reshape its returned vector with reshape_as(y). Expect(6,2),(6,) and then(2,3). Keep autograd connected and class columns together.
 7. **Select and average.** Use the bool mask to select per-position losses, then .mean(). In the uniform example, three selected values each equal ln2, so the scalar loss is ln2. Do not multiply by mask then mean all slots or ignore every target0.
 8. **Record the numerical loss before updating.** Append loss.item() to history, still at eight spaces. The list length increases by one; preserve the original scalar loss tensor for the next step. append returns None, so do not reassign history to that return.
@@ -13248,17 +13126,13 @@ For the original assignment diagnostic,80×3=240 selected-target exposures reuse
 
 A training run can now state what it learned from and how its updates were formed. Chapter07 asks how to evaluate that process and use its saved model for generation without changing the comparison conditions.
 
-<a id="chapter-07"></a>
-
-# 07 Measure and use the model
+# 07 Measure and use the model {#chapter-07}
 
 A small loss and a fluent sample answer different questions. Loss summarizes the probability of known targets under a defined protocol; a generated sample reveals behavior under a decoding policy. Neither can be compared meaningfully without preserving tokenization, target masks, aggregation rules and data ownership.
 
 We derive token-aware metrics before defining a fixed evaluation protocol. We then cache attention keys and values so that generation can reuse an unchanged prefix. Correct caching requires absolute position alignment and explicit causal visibility. The final interface keeps sampling, EOS handling and state ownership visible to the caller.
 
-<a id="section-07-01"></a>
-
-## 07.01 Token-aware language metrics
+## 07.01 Token-aware language metrics {#section-07-01}
 
 ### Method sources
 
@@ -13289,8 +13163,8 @@ Use one separate, constructed scoring example throughout the following metric ca
 
 | Scored target | Model probability of the correct target | Cross-entropy contribution |
 | --- | --- | --- |
-| First text chunk b"ab" | 1/2 | -ln(1/2)=ln2≈0.693147 |
-| Second text chunk b"cd", given its prefix | 1/8 | -ln(1/8)=3ln2≈2.079442 |
+| First text chunk b"ab" | $1/2$ | $-\ln(1/2)=\ln 2\approx0.693147$ |
+| Second text chunk b"cd", given its prefix | $1/8$ | $-\ln(1/8)=3\ln 2\approx2.079442$ |
 
 The probabilities are supplied for arithmetic practice, not measured model outputs. The familiar selected-loss tensor would therefore contain approximately [0.693147,2.079442]. This gives all three inputs:
 
@@ -13302,36 +13176,36 @@ utf8_bytes = 4 original scored text bytes
 
 #### First output: loss is the mean you already know
 
-Divide total loss by scored-target count: (4ln2)/2=2ln2≈1.386294361. This is precisely the operation valid_loss.mean() performed. tokens=2 means **two scored targets**, not ID 2, vocabulary size2, document count or embedding width. The byte denominator is not needed for this output.
+Divide total loss by scored-target count: $(4\ln 2)/2=2\ln 2\approx1.386294361$. This is precisely the operation valid_loss.mean() performed. tokens=2 means **two scored targets**, not ID 2, vocabulary size2, document count or embedding width. The byte denominator is not needed for this output.
 
 #### Second output: ppl puts the mean loss on another scale
 
-Perplexity (PPL) is exp(mean loss). Here exp(2ln2)=4. To understand the scale, imagine a reference situation in which every correct target gets probability1/4. Every loss is then -ln(1/4)=ln4, and exp(ln4)=4. Our two unequal probabilities produce that same mean loss, so they produce PPL4 too.
+Perplexity (PPL) is $\exp(L)$. Here $\exp(2\ln 2)=4$. To understand the scale, imagine a reference situation in which every correct target gets probability1/4. Every loss is then $-\ln(1/4)=\ln 4$, and $\exp(\ln 4)=4$. Our two unequal probabilities produce that same mean loss, so they produce PPL4 too.
 
-For the actual two probabilities, their product is (1/2)(1/8)=1/16. The equal probability that gives this same product across two targets is 1/4, since (1/4)(1/4)=1/16. This equal-per-target probability is the geometric mean; its reciprocal is 4. PPL4 therefore does not claim that there were literally four candidates or that accuracy was25%. Average the losses first, then exponentiate; do not exponentiate the total, which would give16.
+For the actual two probabilities, their product is $(1/2)(1/8)=1/16$. The equal probability that gives this same product across two targets is $1/4$, since $(1/4)(1/4)=1/16$. This equal-per-target probability is the geometric mean; its reciprocal is 4. PPL4 therefore does not claim that there were literally four candidates or that accuracy was25%. Average the losses first, then exponentiate; do not exponentiate the total, which would give16.
 
 #### Third output: bits_per_byte uses source bytes as its denominator
 
-Cross-entropy above used ln, so its unit is a nat. Binary information uses log base 2, whose unit is a bit. For a probability1/2 event, -ln(1/2)=ln2 nats and -log2(1/2)=1 bit. Thus **ln2 nats equals1 bit**. Convert the whole accumulated loss by dividing by ln2:
+Cross-entropy above used $\ln$, so its unit is a nat. Binary information uses log base 2, whose unit is a bit. For a probability $1/2$ event, $-\ln(1/2)=\ln 2$ nats and $-\log_2(1/2)=1$ bit. Thus **$\ln 2\ \mathrm{nats}$ equals1 bit**. Convert the whole accumulated loss by dividing by $\ln 2$:
 
 ```text
 4ln2 nats / ln2 = 4 ideal bits
 4 ideal bits / 4 original source bytes = 1 bit per byte
 ```
 
-The source "abcd" still occupies4×8=32 raw bits. The4 ideal bits describe the model's probability score in coding units; this function does not create a compressed file. utf8_bytes counts matching source text bytes, not the storage occupied by the token-ID tensor. For a whole scored text "你a", for example, len(text.encode("utf-8")) is 4, whereas len(text) is 2.
+The source "abcd" still occupies $4\times8=32$ raw bits. The4 ideal bits describe the model's probability score in coding units; this function does not create a compressed file. utf8_bytes counts matching source text bytes, not the storage occupied by the token-ID tensor. For a whole scored text "你a", for example, len(text.encode("utf-8")) is 4, whereas len(text) is 2.
 
 All three calculations from the **same inputs** are now:
 
 | Output key | Calculation | Result |
 | --- | --- | --- |
-| loss | nll_sum / tokens | 2ln2≈1.386294361 |
-| ppl | exp(loss) | 4 |
-| bits_per_byte | (nll_sum / ln2) / utf8_bytes | 1 |
+| loss | nll_sum / tokens | $2\ln 2\approx1.386294361$ |
+| ppl | $\exp(L)$ | 4 |
+| bits_per_byte | $S/(M\ln 2)$ | 1 |
 
-There are two kinds of denominator because token counts depend on tokenization while source-byte counts describe the covered text. If a deliberately constructed second setup holds nll_sum=4ln2 and utf8_bytes=4 fixed but has tokens=4, loss becomes ln2 and PPL2, while BPB stays 1. This is the second original check; it does not mean that retokenizing real text automatically preserves its score or improves the model. Compare PPL with the same tokenizer and scoring conditions.
+There are two kinds of denominator because token counts depend on tokenization while source-byte counts describe the covered text. If a deliberately constructed second setup holds nll_sum=$4\ln 2$ and utf8_bytes=4 fixed but has tokens=4, loss becomes $\ln 2$ and PPL2, while BPB stays 1. This is the second original check; it does not mean that retokenizing real text automatically preserves its score or improves the model. Compare PPL with the same tokenizer and scoring conditions.
 
-**Why keep totals?** A separate batch example has one target with loss 1 in batchA and three targets with loss 3 each in batchB. The complete target list is [1,3,3,3], so its mean is 10/4=2.5. Averaging the two batch means gives(1+3)/2=2, incorrectly giving the small batch the same weight as the large one. Keep each batch's sum and count, add them, then divide once; compute PPL only after this final mean. 07.02 prepares such totals.
+**Why keep totals?** A separate batch example has one target with loss 1 in batchA and three targets with loss 3 each in batchB. The complete target list is [1,3,3,3], so its mean is $10/4=2.5$. Averaging the two batch means gives $(1+3)/2=2$, incorrectly giving the small batch the same weight as the large one. Keep each batch's sum and count, add them, then divide once; compute PPL only after this final mean. 07.02 prepares such totals.
 
 **Connect the scoring policy too.** Your 06.06 training mask can include EOS targets. This 07.01 BPB example scores ordinary text only, excluding structural EOS and PAD from both the loss sum and target count. Do not combine an EOS-inclusive sum with ordinary-text bytes and assume it is this text-only metric. The full protocol discussion below explains alignment; this does not ask you to rewrite your accepted training code.
 
@@ -13347,7 +13221,7 @@ Prerequisites: target probabilities, natural logarithms and cross-entropy from 0
 
 ### Connect cross-entropy, NLL and the correct-target probability
 
-For position i, the model produces a vector of V logits z_i. Softmax turns it into probabilities, and the observed target ID t_i selects one component:
+For position $i$, the model produces a vector of $V$ logits $z_i$. Softmax turns it into probabilities, and the observed target ID $t_i$ selects one component:
 
 $$
 p_{i,v}=\frac{e^{z_{i,v}}}{\sum_{u=0}^{V-1}e^{z_{i,u}}},\qquad
@@ -13355,7 +13229,7 @@ q_{i,v}=\begin{cases}1&v=t_i\\0&v\ne t_i,\end{cases}\qquad
 \ell_i=-\sum_vq_{i,v}\ln p_{i,v}=-\ln p_{i,t_i}.
 $$
 
-Here v indexes vocabulary columns; i indexes scored target occurrences. q is a mathematical one-hot target distribution; the production API receives integer target IDs and need not build q explicitly. Ordinary hard-target cross-entropy is therefore the negative log-likelihood of the correct target. `F.cross_entropy` computes this stably from logits through log-softmax. The helper in this assignment starts after those operations and receives the accumulated scalar total.
+Here $v$ indexes vocabulary columns; $i$ indexes scored target occurrences. $q$ is a mathematical one-hot target distribution; the production API receives integer target IDs and need not build $q$ explicitly. Ordinary hard-target cross-entropy is therefore the negative log-likelihood of the correct target. `F.cross_entropy` computes this stably from logits through log-softmax. The helper in this assignment starts after those operations and receives the accumulated scalar total.
 
 ```text
 logits: [B,T,V] -> select correct-target log-probabilities: [B,T]
@@ -13363,33 +13237,33 @@ logits: [B,T,V] -> select correct-target log-probabilities: [B,T]
 original byte spans for exactly those selected text targets -> scalar M
 ```
 
-Bracketed entries above are tensor shapes, not token contents. With the main constructed example, selected losses have shape `[2]` and numerical values approximately `[0.693147,2.079442]`. The resulting `S`, `N` and `M` are scalars. The existing probability-to-metric figure below traces those same values.
+Bracketed entries above are tensor shapes, not token contents. With the main constructed example, selected losses have shape `[2]` and numerical values approximately `[0.693147,2.079442]`. The resulting $S$, $N$ and $M$ are scalars. The existing probability-to-metric figure below traces those same values.
 
-The model is evaluated on the observed prefix. In the two-token example, it scores `ab` after a fixed preceding context and then scores `cd` after that context plus the observed `ab`. It does not need to generate or guess a replacement first token to calculate this score. The probability of that specified two-token continuation is `(1/2)*(1/8)=1/16`; the identity `-ln(product)=sum(-ln)` explains why per-target NLLs add.
+The model is evaluated on the observed prefix. In the two-token example, it scores `ab` after a fixed preceding context and then scores `cd` after that context plus the observed `ab`. It does not need to generate or guess a replacement first token to calculate this score. The probability of that specified two-token continuation is $(1/2)(1/8)=1/16$; the identity $-\ln\!\left(\prod_i p_i\right)=\sum_i-\ln p_i$ explains why per-target NLLs add.
 
-At a single position, probabilities 1, 1/2, 1/4 and 1/8 yield losses 0, ln2, 2ln2 and 3ln2. Increasing probability of the correct target lowers its loss. A confident incorrect prediction can still give the true target very low probability and a large loss. Argmax accuracy keeps only the winning ID, while NLL retains how much probability the correct ID received.
+At a single position, probabilities 1, $1/2$, $1/4$ and $1/8$ yield losses 0, $\ln 2$, $2\ln 2$ and $3\ln 2$. Increasing probability of the correct target lowers its loss. A confident incorrect prediction can still give the true target very low probability and a large loss. Argmax accuracy keeps only the winning ID, while NLL retains how much probability the correct ID received.
 
 ### Start with the probability of each correct target
 
-Let t_i be an observed target token and let p_i be the model's probability of that token given its allowed prefix/context. The subscript i indexes **scored targets**, not vocabulary entries. We accumulate:
+Let $t_i$ be an observed target token and let $p_i$ be the model's probability of that token given its allowed prefix/context. The subscript $i$ indexes **scored targets**, not vocabulary entries. We accumulate:
 
 $$
 p_i=p_\theta(t_i\mid\text{allowed context}),\qquad
 \ell_i=-\ln p_i,\qquad S=\sum_{i=1}^{N}\ell_i.
 $$
 
-For positive probabilities at most 1, each loss is nonnegative. Probability 1 gives loss 0; a smaller correct-target probability gives a larger loss. Natural logarithms measure this information in **nats**. The helper receives the accumulated S; it does not compute probabilities or take their logarithms itself.
+For positive probabilities at most 1, each loss is nonnegative. Probability 1 gives loss 0; a smaller correct-target probability gives a larger loss. Natural logarithms measure this information in **nats**. The helper receives the accumulated $S$; it does not compute probabilities or take their logarithms itself.
 
 | Symbol | Actual parameter | Type and meaning | Unit |
 | --- | --- | --- | --- |
-| S | nll_sum | float: finite, nonnegative **sum** of scored negative log-likelihoods | nats |
-| N | tokens | int: positive count of those scored text-token targets | tokens |
-| M | utf8_bytes | int: positive count of the original UTF-8 bytes covered by those targets | bytes |
-| L | returned loss | float: S/N | nats/token |
-| PPL | returned ppl | float: exp(L) | Dimensionless, dependent on the token unit |
-| BPB | returned bits_per_byte | float: S/(M ln2) | bits/byte |
+| $S$ | nll_sum | float: finite, nonnegative **sum** of scored negative log-likelihoods | nats |
+| $N$ | tokens | int: positive count of those scored text-token targets | tokens |
+| $M$ | utf8_bytes | int: positive count of the original UTF-8 bytes covered by those targets | bytes |
+| $L$ | returned loss | float: $S/N$ | nats/token |
+| PPL | returned ppl | float: $\exp(L)$ | Dimensionless, dependent on the token unit |
+| BPB | returned bits_per_byte | float: $S/(M\ln 2)$ | bits/byte |
 
-All six quantities are scalars. N is not vocabulary size; M is not an embedding dimension, character count or tensor-memory allocation. Inputs satisfy the stated contract; new validation branches are not part of this assignment.
+All six quantities are scalars. $N$ is not vocabulary size; $M$ is not an embedding dimension, character count or tensor-memory allocation. Inputs satisfy the stated contract; new validation branches are not part of this assignment.
 
 ### Derive mean loss and perplexity before coding
 
@@ -13402,15 +13276,15 @@ $$
 Then exponentiate. Using log-product identities gives an interpretation, not just a rule to memorize:
 
 $$
-PPL=e^L
+\mathrm{PPL}=e^L
 =\exp\left(\frac1N\sum_i\ln\frac1{p_i}\right)
 =\left(\prod_i\frac1{p_i}\right)^{1/N}
 =\frac1{\left(\prod_i p_i\right)^{1/N}}.
 $$
 
-The denominator on the right is the **geometric mean** correct-target probability. Thus PPL 4 means that geometric mean is 1/4. It does not literally mean the model kept exactly four candidates or got one quarter of the targets correct. For a uniform distribution over V classes, p_i=1/V gives L=ln V and PPL=V; that is one special distribution, not a general upper bound.
+The denominator on the right is the **geometric mean** correct-target probability. Thus PPL 4 means that geometric mean is 1/4. It does not literally mean the model kept exactly four candidates or got one quarter of the targets correct. For a uniform distribution over $V$ classes, $p_i=1/V$ gives $L=\ln V$ and $\mathrm{PPL}=V$; that is one special distribution, not a general upper bound.
 
-![Two constructed target probabilities become summed NLL, mean token loss and perplexity](assets/07-01-language-metrics.en.png)
+![Two constructed target probabilities become summed NLL, mean token loss and perplexity](assets/07-01-language-metrics.en.png){width=100%}
 
 Read the figure from its probability rows down through the sum and the two green boxes. The row contents b"ab" and b"cd" are illustrative **token byte chunks**, not numeric IDs or tensor sizes. Count and unit labels sit outside them. The orange alternatives show two tempting but incorrect averages.
 
@@ -13418,29 +13292,29 @@ Read the figure from its probability rows down through the sum and the two green
 
 Use the self-authored scored text "abcd", whose UTF-8 byte values are [97,98,99,100]. Assume its entire four-byte span is scored with a suitable fixed context, as two chunks b"ab" and b"cd". These are constructed conditional probabilities, not observations from a trained model:
 
-1. The correct first chunk has probability 1/2. Its loss is −ln(1/2)=ln2≈0.693147.
-2. The correct second chunk, conditioned on the prefix, has probability 1/8. Its loss is −ln(1/8)=3ln2≈2.079442.
-3. The product of the conditional probabilities is 1/16. The total is S=4ln2≈2.772588722, with N=2 and M=4.
-4. Mean token loss is L=(4ln2)/2=2ln2≈1.386294361.
-5. Perplexity is exp(2ln2)=4. Equivalently, the geometric mean probability is sqrt((1/2)(1/8))=1/4, then take its reciprocal.
+1. The correct first chunk has probability 1/2. Its loss is $-\ln(1/2)=\ln 2\approx0.693147$.
+2. The correct second chunk, conditioned on the prefix, has probability 1/8. Its loss is $-\ln(1/8)=3\ln 2\approx2.079442$.
+3. The product of the conditional probabilities is 1/16. The total is $S=4\ln 2\approx2.772588722$, with $N=2$ and $M=4$.
+4. Mean token loss is $L=(4\ln 2)/2=2\ln 2\approx1.386294361$.
+5. Perplexity is $\exp(2\ln 2)=4$. Equivalently, the geometric mean probability is $\sqrt{(1/2)(1/8)}=1/4$, then take its reciprocal.
 
-Taking the inverse of the arithmetic mean probability gives 1/((.5+.125)/2)=3.2, which is wrong. Averaging the inverse probabilities gives(2+8)/2=5, also wrong. The logs are averaged **before** exponentiation.
+Taking the inverse of the arithmetic mean probability gives $1/((0.5+0.125)/2)=3.2$, which is wrong. Averaging the inverse probabilities gives $(2+8)/2=5$, also wrong. The logs are averaged **before** exponentiation.
 
-### Why divide by ln2 for bits per byte?
+### Why divide by $\ln 2$ for bits per byte?
 
 A bit uses a base 2 logarithm, whereas our cross-entropy uses the natural logarithm. The change-of-base identity is:
 
 $$
 -\log_2 p=\frac{-\ln p}{\ln2},\qquad
 C_{\mathrm{bits}}=\frac{S}{\ln2},\qquad
-BPB=\frac{C_{\mathrm{bits}}}{M}=\frac{S}{M\ln2}.
+\mathrm{BPB}=\frac{C_{\mathrm{bits}}}{M}=\frac{S}{M\ln2}.
 $$
 
-An event with probability 1/2 costs −ln(1/2)=ln2 nats, or exactly 1 bit. Therefore 1 nat is 1/ln2≈1.442695 bits. We divide by ln2; multiplying by it would convert in the opposite direction.
+An event with probability $1/2$ costs $-\ln(1/2)=\ln 2$ nats, or exactly 1 bit. Therefore 1 nat is $1/\ln 2\approx1.442695$ bits. We divide by $\ln 2$; multiplying by it would convert in the opposite direction.
 
-![Natural-log total converted to ideal bits and normalized by source bytes, with a separate Unicode count](assets/07-01-nats-bits-and-bytes.en.png)
+![Natural-log total converted to ideal bits and normalized by source bytes, with a separate Unicode count](assets/07-01-nats-bits-and-bytes.en.png){width=100%}
 
-Read the top row left to right. For the original fixture, 4ln2 nats becomes 4 ideal bits. Divide by the four **source bytes** to obtain BPB 1. The source still occupies4×8=32 raw bits before compression. BPB is an ideal model code-length statistic; the helper does not produce a compressed file, include coding overhead or promise a four-bit file.
+Read the top row left to right. For the original fixture, $4\ln 2\ \mathrm{nats}$ becomes 4 ideal bits. Divide by the four **source bytes** to obtain BPB 1. The source still occupies $4\times8=32$ raw bits before compression. BPB is an ideal model code-length statistic; the helper does not produce a compressed file, include coding overhead or promise a four-bit file.
 
 The lower row is a **separate byte-count illustration**: "你a" has two Unicode code points but four UTF-8 bytes, [228,189,160,97]. Use len(text.encode("utf-8")), not len(text), **when the entire text is scored**. This does not assign "你a" the probabilities or NLL of the ASCII fixture. BPE can split a character's bytes among tokens; do not try to decode each token separately just to count bytes.
 
@@ -13457,30 +13331,30 @@ Floating-point results may have tiny rounding differences; use math.isclose in c
 
 
 
-**Clarification:** M counts scored source UTF-8 bytes, not embedding width D, vocabulary size V, target count N or tensor memory. With unscored prefix b and scored target你a, a defined tokenizer can yield two targets covering3+1=4 bytes, so M=4 even if an embedding lookup stores16 float32 values/64 bytes. See the [complete source-byte/embedding Q&A](#section-07-02) for the tokenizer, mask and coverage trace.
+**Clarification:** $M$ counts scored source UTF-8 bytes, not embedding width $D$, vocabulary size $V$, target count $N$ or tensor memory. With unscored prefix b and scored target你a, a defined tokenizer can yield two targets covering $3+1=4$ bytes, so $M=4$ even if an embedding lookup stores16 float32 values/64 bytes. See the [complete source-byte/embedding Q&A](#section-07-02) for the tokenizer, mask and coverage trace.
 
 Think of BPB as **average model-based surprise, in bits, per original byte of scored text**. A model that predicts the actual text well assigns it higher probability. Higher probability means fewer ideal coding bits. Dividing by the source-byte count tells us how much information is needed for the same amount of original text.
 
-First connect a probability to bits. One fair yes/no choice has two equally likely outcomes: selecting the observed outcome costs 1 bit, because −log2(1/2)=1. Selecting one of eight equally likely outcomes costs 3 bits, because −log2(1/8)=3. These are coding interpretations of probability; the model need not literally have two or eight candidate tokens.
+First connect a probability to bits. One fair yes/no choice has two equally likely outcomes: selecting the observed outcome costs 1 bit, because $-\log_2(1/2)=1$. Selecting one of eight equally likely outcomes costs 3 bits, because $-\log_2(1/8)=3$. These are coding interpretations of probability; the model need not literally have two or eight candidate tokens.
 
 Use the **same** abcd fixture from the figure, with its fixed preceding context:
 
-| Scored token contents | Original bytes | Model probability of this target | Ideal contribution −log2(p) |
+| Scored token contents | Original bytes | Model probability of this target | Ideal contribution $-\log_2(p)$ |
 | --- | --- | --- | --- |
-| b"ab" | 2 | 1/2 | 1 bit |
-| b"cd" | 2 | 1/8 | 3 bits |
-| Whole scored text | 4 | Product1/16 along this token path | 4 bits |
+| b"ab" | 2 | $1/2$ | 1 bit |
+| b"cd" | 2 | $1/8$ | 3 bits |
+| Whole scored text | 4 | Product $1/16$ along this token path | 4 bits |
 
 The source occupies 32 raw bits. Its model-based ideal score is 4 bits, so:
 
 $$
-BPB=\frac{(1+3)\ \text{ideal bits}}{(2+2)\ \text{source bytes}}=1\ \text{bit/byte},\qquad
-\text{ideal size / raw size}=\frac{4}{32}=\frac{BPB}{8}=12.5\%.
+\mathrm{BPB}=\frac{(1+3)\ \text{ideal bits}}{(2+2)\ \text{source bytes}}=1\ \text{bit/byte},\qquad
+\text{ideal size / raw size}=\frac{4}{32}=\frac{\mathrm{BPB}}{8}=12.5\%.
 $$
 
-Read “1 bit per byte” as an **average conditional information cost**. Every original byte still contains 8 physical bits; token IDs and embeddings do not become one-bit objects. The intuition is that a shared predictor lets an encoder and decoder exploit patterns instead of explicitly transmitting every raw bit. This interpretation assumes the model, tokenizer, conditioning context and coding rules are already shared. The ratio excludes transmitting those resources, finite coding overhead and file headers. Individual −log2(p) terms can be fractional; actual coding works over sequences and need not assign that exact number of whole bits to each token. This metric calculation alone creates no compressed artifact.
+Read “1 bit per byte” as an **average conditional information cost**. Every original byte still contains 8 physical bits; token IDs and embeddings do not become one-bit objects. The intuition is that a shared predictor lets an encoder and decoder exploit patterns instead of explicitly transmitting every raw bit. This interpretation assumes the model, tokenizer, conditioning context and coding rules are already shared. The ratio excludes transmitting those resources, finite coding overhead and file headers. Individual $-\log_2(p)$ terms can be fractional; actual coding works over sequences and need not assign that exact number of whole bits to each token. This metric calculation alone creates no compressed artifact.
 
-**What improves when BPB falls?** Keep the same text, tokenization, coverage and allowed context. A hypothetical second predictor assigns 1/4 and 1/16 to these same two targets, costing 2+4=6 ideal bits, or BPB 1.5. The original predictor costs 4 bits, or BPB 1. Its probability product 1/16 is higher than the second predictor's 1/64: it predicts this observed token path better overall. It need not give every individual target a higher probability to achieve a lower total score. On a fixed held-out corpus, lower BPB similarly means a better aggregate probability score under that protocol; it does not directly measure answer accuracy or reasoning ability.
+**What improves when BPB falls?** Keep the same text, tokenization, coverage and allowed context. A hypothetical second predictor assigns $1/4$ and $1/16$ to these same two targets, costing $2+4=6$ ideal bits, or BPB 1.5. The original predictor costs 4 bits, or BPB 1. Its probability product $1/16$ is higher than the second predictor's $1/64$: it predicts this observed token path better overall. It need not give every individual target a higher probability to achieve a lower total score. On a fixed held-out corpus, lower BPB similarly means a better aggregate probability score under that protocol; it does not directly measure answer accuracy or reasoning ability.
 
 **Why divide by bytes rather than tokens?** Different tokenizers can split the same text into different numbers of targets. A common source-byte denominator avoids changing the reporting unit solely because one tokenizer uses larger chunks. It does not remove differences in the assigned score, context availability, special-token policy or preprocessing; those conditions still need to be aligned. Across different languages or corpora, UTF-8 byte patterns and text difficulty can differ too, so an unaligned BPB comparison is not a clean model ranking.
 
@@ -13488,53 +13362,53 @@ For a separate scale example, 1000 scored source bytes costing 2000 ideal bits g
 
 ### Hold bytes and total score fixed, then change token count
 
-Construct another hypothetical scoring setup for the **same** bytes "abcd": four chunks b"a", b"b", b"c", b"d", each with correct-target conditional probability 1/2. Their product is also 1/16 and their total loss is also 4ln2, but now N=4.
+Construct another hypothetical scoring setup for the **same** bytes "abcd": four chunks b"a", b"b", b"c", b"d", each with correct-target conditional probability 1/2. Their product is also $1/16$ and their total loss is also $4\ln 2$, but now $N=4$.
 
 $$
-L_B=\frac{4\ln2}{4}=\ln2,\quad PPL_B=2,\quad
-BPB_B=\frac{4\ln2}{4\ln2}=1.
+L_B=\frac{4\ln2}{4}=\ln2,\quad \mathrm{PPL}_B=2,\quad
+\mathrm{BPB}_B=\frac{4\ln2}{4\ln2}=1.
 $$
 
-![Equal constructed total scores over the same bytes yield different token-normalized perplexities](assets/07-01-same-bytes-different-tokens.en.png)
+![Equal constructed total scores over the same bytes yield different token-normalized perplexities](assets/07-01-same-bytes-different-tokens.en.png){width=100%}
 
-Read the two segmentations against the same four byte cells. A reports PPL 4; B reports PPL 2. Both assign the chosen target path a probability product 1/16 and both report BPB 1. The smaller PPL here follows from the different token denominator, not a better total score for those bytes. The second original call is language_metrics(4*math.log(2),4,4), returning loss≈0.693147181, ppl≈2 and bits_per_byte≈1.
+Read the two segmentations against the same four byte cells. A reports PPL 4; B reports PPL 2. Both assign the chosen target path a probability product $1/16$ and both report BPB 1. The smaller PPL here follows from the different token denominator, not a better total score for those bytes. The second original call is language_metrics(4*math.log(2),4,4), returning loss≈0.693147181, ppl≈2 and bits_per_byte≈1.
 
-**Equal S is a deliberate assumption in this counterexample.** Retokenizing real text does not guarantee the same NLL. At fixed S, increasing N lowers PPL; using fewer, longer tokens would raise PPL. Vocabulary size alone implies no direction. This corrects the earlier draft's misleading suggestion that a larger vocabulary inherently lowers perplexity.
+**Equal $S$ is a deliberate assumption in this counterexample.** Retokenizing real text does not guarantee the same NLL. At fixed $S$, increasing $N$ lowers PPL; using fewer, longer tokens would raise PPL. Vocabulary size alone implies no direction. This corrects the earlier draft's misleading suggestion that a larger vocabulary inherently lowers perplexity.
 
 Compare perplexity under the same tokenizer and scoring protocol. BPB can help across tokenizers because bytes supply a common denominator, but the text, scored coverage, preprocessing, context policy and boundary treatment must still match. [Official Transformers perplexity guide](https://huggingface.co/docs/transformers/en/perplexity) explains tokenization and context-window sensitivity. The BPB definition using UTF-8 byte counts also appears in the primary [Paloma evaluation paper, Appendix B](https://arxiv.org/html/2312.10523v2#A2).
 
-A precision note for later study: S here scores the tokenizer's chosen token sequence. If several token sequences decode to the same bytes, their probabilities would need to be summed to obtain a marginal byte-string probability. Merely dividing the chosen path's score by bytes does not perform that marginalization. The toy example compares its explicitly specified paths. Further primary reading: [Exact Byte-Level Probabilities](https://arxiv.org/abs/2410.09303).
+A precision note for later study: $S$ here scores the tokenizer's chosen token sequence. If several token sequences decode to the same bytes, their probabilities would need to be summed to obtain a marginal byte-string probability. Merely dividing the chosen path's score by bytes does not perform that marginalization. The toy example compares its explicitly specified paths. Further primary reading: [Exact Byte-Level Probabilities](https://arxiv.org/abs/2410.09303).
 
 ### Add totals before computing a corpus metric
 
 Suppose two batches cover disjoint scored text spans:
 
-| Batch | NLL sum S | Scored tokens N | Source bytes M | Mean loss | PPL | BPB |
+| Batch | NLL sum $S$ | Scored tokens $N$ | Source bytes $M$ | Mean loss | PPL | BPB |
 | --- | --- | --- | --- | --- | --- | --- |
-| A | ln2 | 1 | 1 | ln2 | 2 | 1 |
-| B | 9ln2 | 3 | 3 | 3ln2=ln8 | 8 | 3 |
-| Combined | 10ln2 | 4 | 4 | 2.5ln2 | $\sqrt{32}\approx5.656854$ | 2.5 |
+| A | $\ln 2$ | 1 | 1 | $\ln 2$ | 2 | 1 |
+| B | $9\ln 2$ | 3 | 3 | $3\ln 2=\ln 8$ | 8 | 3 |
+| Combined | $10\ln 2$ | 4 | 4 | $2.5\ln 2$ | $\sqrt{32}\approx5.656854$ | 2.5 |
 
-![Accumulate NLL, target counts and byte counts before normalization; contrast incorrect PPL averages](assets/07-01-aggregate-before-normalizing.en.png)
+![Accumulate NLL, target counts and byte counts before normalization; contrast incorrect PPL averages](assets/07-01-aggregate-before-normalizing.en.png){width=100%}
 
-The combined PPL is exp((ln2+9ln2)/(1+3))=2^2.5≈5.656854. The plain mean of batch perplexities is 5; even a token-weighted **linear** mean gives 6.5. Neither is correct. An unweighted mean of batch losses would give 2ln2 and PPL 4, also wrong because the batches have different target counts.
+The combined PPL is $\exp((\ln 2+9\ln 2)/(1+3))=2^{2.5}\approx5.656854$. The plain mean of batch perplexities is 5; even a token-weighted **linear** mean gives 6.5. Neither is correct. An unweighted mean of batch losses would give $2\ln 2$ and PPL 4, also wrong because the batches have different target counts.
 
-For batches j, the correct identities are:
+For batches $j$, the correct identities are:
 
 $$
 L=\frac{\sum_j S_j}{\sum_j N_j}
 =\frac{\sum_jN_j L_j}{\sum_jN_j},\qquad
-PPL=\exp\left(\frac{\sum_jN_j\ln PPL_j}{\sum_jN_j}\right),\qquad
-BPB=\frac{\sum_jS_j}{(\sum_jM_j)\ln2}.
+\mathrm{PPL}=\exp\left(\frac{\sum_jN_j\ln \mathrm{PPL}_j}{\sum_jN_j}\right),\qquad
+\mathrm{BPB}=\frac{\sum_jS_j}{(\sum_jM_j)\ln2}.
 $$
 
-Thus losses are token-weighted, PPL is a token-weighted **geometric** mean, and BPB is byte-weighted. The simplest reporting pipeline accumulates S, N, M, then calls this helper once. Accumulating these sufficient statistics is also useful when workers report different valid-target counts. The assigned helper receives totals; it does not implement that outer loop.
+Thus losses are token-weighted, PPL is a token-weighted **geometric** mean, and BPB is byte-weighted. The simplest reporting pipeline accumulates $S$, $N$, $M$, then calls this helper once. Accumulating these sufficient statistics is also useful when workers report different valid-target counts. The assigned helper receives totals; it does not implement that outer loop.
 
-If F.cross_entropy returned a mean L over N selected targets, recover S=L*N using the **same selection**. Do not pass that mean directly as nll_sum, and do not multiply by the number of padded slots. Lesson 07.02's evaluator will provide accumulated NLL and selected-target count, but the caller must also preserve matching byte coverage and special-target policy.
+If F.cross_entropy returned a mean $L$ over $N$ selected targets, recover $S=LN$ using the **same selection**. Do not pass that mean directly as nll_sum, and do not multiply by the number of padded slots. Lesson 07.02's evaluator will provide accumulated NLL and selected-target count, but the caller must also preserve matching byte coverage and special-target policy.
 
 ### Keep the numerator and denominator about the same text
 
-This lesson uses a **text-only target protocol**. Exclude structural EOS/BOS/role targets and PAD from S and N consistently; count only the corresponding ordinary-text bytes in M. Literal text "<eos>" is ordinary text, unlike 06.04's appended structural EOS. A structural token can still be conditioning context without being a scored target.
+This lesson uses a **text-only target protocol**. Exclude structural EOS/BOS/role targets and PAD from $S$ and $N$ consistently; count only the corresponding ordinary-text bytes in $M$. Literal text "<eos>" is ordinary text, unlike 06.04's appended structural EOS. A structural token can still be conditioning context without being a scored target.
 
 This convention does not retroactively change 06.06's training objective or 06.05's mask. A later evaluator sums whatever targets its mask selects; if its mask includes EOS, its totals are not automatically this text-only metric. Specify a different protocol explicitly or align the mask before supplying totals. There is no universal special-token policy implicit in the three numbers.
 
@@ -13542,18 +13416,18 @@ Check these alignment cases before calling the helper:
 
 - A prompt used only as context contributes no scored targets or bytes. If next-token shifting omits the first token, omit its byte coverage too; use the whole-string byte count only if the whole string is scored.
 - Overlapping windows can supply repeated context. Count each intended target once for this protocol; do not score a target several times while dividing by unique bytes once. Repeated document occurrences are separate scored occurrences when the evaluation includes them.
-- For partially scored strings, retain token-byte lengths or byte-span metadata from the fixed tokenizer. Summing the byte lengths of selected ordinary token chunks works when those chunks exactly cover the intended spans. Guessing M from character count or token count does not.
+- For partially scored strings, retain token-byte lengths or byte-span metadata from the fixed tokenizer. Summing the byte lengths of selected ordinary token chunks works when those chunks exactly cover the intended spans. Guessing $M$ from character count or token count does not.
 - Match normalization, document boundaries, allowed context, resets, window length and stride across compared runs. The same bytes with different conditioning contexts can have different NLLs.
 
 The function trusts its inputs; a mathematically correct division cannot detect a mismatched scoring protocol. Report the tokenizer/data version, coverage policy and counts alongside the metrics. Keep actual infrastructure mappings in ignored local configuration.
 
 ### Connect these metrics to an actual training report
 
-A reported mean loss of approximately 3.27 nats per selected target corresponds to perplexity `exp(3.27)`, approximately 26.31, for that same selection and context protocol. This transforms the probability score; it does not turn it into an accuracy percentage. A uniform reference distribution over V classes has PPL V, but a nonuniform model's PPL can exceed V if it assigns very small probability to the observed targets.
+A reported mean loss of approximately 3.27 nats per selected target corresponds to perplexity $\exp(3.27)$, approximately 26.31, for that same selection and context protocol. This transforms the probability score; it does not turn it into an accuracy percentage. A uniform reference distribution over $V$ classes has PPL $V$, but a nonuniform model's PPL can exceed $V$ if it assigns very small probability to the observed targets.
 
 The web-training report keeps EOS-inclusive loss and text-only loss/BPB separate. Exponentiate each mean only for its own selected targets. This exercise's text-only `nll_sum`, `tokens` and `utf8_bytes` must all describe the same scored ordinary text. For BPB, compute total bits from total NLL; dividing an already token-averaged loss by bytes would normalize twice.
 
-When tokenizers differ, a constructed same-text, same-total-NLL case can have different token PPLs solely because N differs. BPB supplies a common byte denominator, but comparable reports still need matching text, normalization, scored coverage and context policy. A lower score on the same held-out protocol means improved probability prediction there. Instruction following, factual accuracy and other capabilities require their own evaluations.
+When tokenizers differ, a constructed same-text, same-total-NLL case can have different token PPLs solely because $N$ differs. BPB supplies a common byte denominator, but comparable reports still need matching text, normalization, scored coverage and context policy. A lower score on the same held-out protocol means improved probability prediction there. Instruction following, factual accuracy and other capabilities require their own evaluations.
 
 ### Translate the exact interface into your implementation
 
@@ -13561,26 +13435,26 @@ When tokenizers differ, a constructed same-text, same-total-NLL case can have di
 def language_metrics(nll_sum: float, tokens: int, utf8_bytes: int) -> dict:
 ```
 
-Return a **new dictionary** with exactly the string keys 'loss', 'ppl' and 'bits_per_byte', each mapped to a float. Do not return a tuple, tensors, per-batch arrays or different key names. Python / is true division, so dividing a float by an int returns a float. math.log(2) is ln2, not log base 2; math.exp(value) computes e to that value. [Python math reference](https://docs.python.org/3/library/math.html#math.exp)
+Return a **new dictionary** with exactly the string keys 'loss', 'ppl' and 'bits_per_byte', each mapped to a float. Do not return a tuple, tensors, per-batch arrays or different key names. Python / is true division, so dividing a float by an int returns a float. math.log(2) is $\ln 2$, not log base 2; math.exp(value) computes e to that value. [Python math reference](https://docs.python.org/3/library/math.html#math.exp)
 
 Edit only between the START/END LEARNER CODE markers in the shared exercise. These steps are also saved beside that region. Keep run_checks unchanged.
 
-1. **Read the inputs as totals.** S=nll_sum, N=tokens and M=utf8_bytes are already scalars. For the original call they are 4ln2, 2, 4. No encoding, tensor reshape or loop is needed.
-2. **Compute loss.** At four spaces inside the function, use / to divide the total nll_sum by tokens and store the float in a local variable such as loss. Expected intermediate value:2ln2≈1.386294361.
+1. **Read the inputs as totals.** $S$=nll_sum, $N$=tokens and $M$=utf8_bytes are already scalars. For the original call they are $4\ln 2$, 2, 4. No encoding, tensor reshape or loop is needed.
+2. **Compute loss.** At four spaces inside the function, use / to divide the total nll_sum by tokens and store the float in a local variable such as loss. Expected intermediate value:$2\ln 2\approx1.386294361$.
 3. **Compute ppl from that mean.** At the same four-space indentation, call math.exp on loss and store the result. Expected value:4. Exponentiating nll_sum would instead give 16, the inverse probability product before taking the Nth root.
 4. **Convert total nats to total bits.** Use math.log(2) as the conversion divisor. You may name a temporary total_bits; its original value is 4. This is still a total, not a per-token average.
-5. **Normalize those bits by utf8_bytes.** Store bits_per_byte; the original value is 4/4=1. Equivalently use one fraction with the parenthesized denominator utf8_bytes*math.log(2). Do not use loss here, which has already been divided by N.
+5. **Normalize those bits by utf8_bytes.** Store bits_per_byte; the original value is $4/4=1$. Equivalently use one fraction with the parenthesized denominator utf8_bytes*math.log(2). Do not use loss here, which has already been divided by $N$.
 6. **Build and return the named dictionary.** Use a dictionary literal, whose fields use the syntax 'key': value separated by commas. The keys match the three names above; values come from your local results. return exits the function with that dictionary. It belongs at four spaces, after the calculations; continuation lines inside braces may be indented further for readability.
 7. **Remove only the placeholder raise.** raise NotImplementedError currently stops execution. Replace it with your own calculations; preserve imports, function signature, region markers and the supplied check driver. No new for, if, try or tensor operation is required.
-8. **Trace all three original calls before running.** First predicts loss 2ln2/PPL 4/BPB1. Second keeps S, M but doubles N: loss ln2 / PPL 2 / BPB 1. Zero NLL predicts loss 0/PPL1/BPB0 even though its positive counts are 3 and 8. Then run the unchanged driver.
+8. **Trace all three original calls before running.** First predicts loss $2\ln 2$/PPL 4/BPB1. Second keeps $S$, $M$ but doubles $N$: loss $\ln 2$ / PPL 2 / BPB 1. Zero NLL predicts loss 0/PPL1/BPB0 even though its positive counts are 3 and 8. Then run the unchanged driver.
 
 ### Boundaries worth understanding, without expanding the assignment
 
-For valid nonnegative S, loss≥0, PPL≥1 and BPB≥0. At S=0, exp(0)=1; perplexity is not 0. tokens=0 or utf8_bytes=0 violates the precondition and has no defined result in this exercise; an outer evaluator must handle an empty scored set explicitly.
+For valid nonnegative $S$, $L\ge0$, $\mathrm{PPL}\ge1$ and $\mathrm{BPB}\ge0$. At $S=0$, $\exp(0)=1$; perplexity is not 0. tokens=0 or utf8_bytes=0 violates the precondition and has no defined result in this exercise; an outer evaluator must handle an empty scored set explicitly.
 
-PPL is not generally bounded by vocabulary size. In a two-class model, a true target assigned probability 1/1024 has loss ln1024 and PPL 1024. If that target covers one byte, its ideal length is 10 bits and BPB 10, greater than 8. An inaccurate model can assign much less probability than a uniform byte model; raw byte width does not cap surprise.
+PPL is not generally bounded by vocabulary size. In a two-class model, a true target assigned probability $1/1024$ has loss $\ln 1024$ and PPL 1024. If that target covers one byte, its ideal length is 10 bits and BPB 10, greater than 8. An inaccurate model can assign much less probability than a uniform byte model; raw byte width does not cap surprise.
 
-math.exp can overflow even for a finite mean loss: exp(1000) cannot fit an ordinary Python float. exp(700) is still representable. Retain log-perplexity, which equals loss, in real reports; do not clip the loss or silently substitute a finite PPL. The supplied exercise fixtures avoid overflow, and adding an exception handler is not part of the learner task. Stable accumulation and evaluator mode/no-gradient handling belong to 07.02.
+math.exp can overflow even for a finite mean loss: $\exp(1000)$ cannot fit an ordinary Python float. $\exp(700)$ is still representable. Retain log-perplexity, which equals loss, in real reports; do not clip the loss or silently substitute a finite PPL. The supplied exercise fixtures avoid overflow, and adding an exception handler is not part of the learner task. Stable accumulation and evaluator mode/no-gradient handling belong to 07.02.
 
 Lower held-out NLL under a fixed protocol means a better probability score on those targets. It does not prove truthfulness, instruction following or general reasoning. Those need separate task evaluations. No training-quality claim follows from these arithmetic examples.
 
@@ -13600,7 +13474,7 @@ Lesson 07.01 checks passed.
 
 The unchanged supplied driver checks PPL/BPB for both equal-score tokenizations and the complete zero-NLL dictionary. It does not explicitly check nonzero 'loss', exact keys/types on those calls, Unicode coverage, aggregation or overflow. These scalar checks do not validate a caller's real-corpus byte coverage or overflow handling.
 
-Before moving on, explain these in your own words: why convert nats by dividing by ln2; why PPL uses a geometric mean; why its value changes when only N changes; why len("你a") is the wrong byte denominator; and why mean batch PPL is wrong. For a short prediction drill, double S, N, M together: all three metrics should stay unchanged. Keeping S, N fixed and doubling M halves only BPB.
+Before moving on, explain these in your own words: why convert nats by dividing by $\ln 2$; why PPL uses a geometric mean; why its value changes when only $N$ changes; why len("你a") is the wrong byte denominator; and why mean batch PPL is wrong. For a short prediction drill, double $S$, $N$, $M$ together: all three metrics should stay unchanged. Keeping $S$, $N$ fixed and doubling $M$ halves only BPB.
 
 All examples are self-authored arithmetic fixtures, including deliberately constructed conditional probabilities. There is no external corpus/tokenizer artifact, model-training budget or retained checkpoint.
 
@@ -13644,9 +13518,7 @@ iteration 2:  [256, 256, 257, 97, 99, 257]
 
 extend adds the contents; append would instead add the entire list as one nested element. If a record dictionary were passed directly, extend would iterate its keys, producing ["id","text"], not tokens. Do not change this valid packing loop to document["text"]: its input has already been encoded. Read the [06.05 representation diagram and full handoff](#section-06-05) alongside this trace. The original packing check's IDs 1,2,3,4 are a separate hand-written fixture, not the BPE IDs above.
 
-<a id="section-07-02"></a>
-
-## 07.02 Fixed evaluation protocols
+## 07.02 Fixed evaluation protocols {#section-07-02}
 
 ### Method sources
 
@@ -13682,22 +13554,22 @@ report = evaluate_fixed(model, validation_batches)
 
 This is caller wiring. validation_records contains cleaned held-out dictionaries; extracting text and encoding happen before this function. Its supplied driver provides tensors directly, so it does not call language_metrics or require a real corpus to run. Do not call pretrain inside evaluation.
 
-The continuous BPE example from 06.06 also fits: x/y/mask have shape(2,3), EOS257/PAD258, and a compatible model has V≥259. It selects five targets and gives ln259 under an explicitly zero-logit diagnostic. That fixture demonstrates interface continuity, not a held-out quality measurement. The original 07.02 driver below deliberately uses a different, smaller vocabulary.
+The continuous BPE example from 06.06 also fits: x/y/mask have shape(2,3), EOS257/PAD258, and a compatible model has $V\ge259$. It selects five targets and gives $\ln 259$ under an explicitly zero-logit diagnostic. That fixture demonstrates interface continuity, not a held-out quality measurement. The original 07.02 driver below deliberately uses a different, smaller vocabulary.
 
 ### Guided session: collect the numbers that 07.01 received
 
-In 07.01, language_metrics received nll_sum, tokens and utf8_bytes as already known scalars. This lesson moves one step upstream: **run the existing model on evaluation batches to obtain the first two totals**. The K used below is the same target-occurrence count called N in 07.01. It is not vocabulary size. The byte count M still comes from matching source-text coverage outside this function.
+In 07.01, language_metrics received nll_sum, tokens and utf8_bytes as already known scalars. This lesson moves one step upstream: **run the existing model on evaluation batches to obtain the first two totals**. The $K$ used below is the same target-occurrence count called $N$ in 07.01. It is not vocabulary size. The byte count $M$ still comes from matching source-text coverage outside this function.
 
 ```text
 07.02: model + [(x, y, mask), ...] → {'nll_sum': S, 'tokens': K, 'loss': S/K}
 07.01: S + K + matching source bytes M → mean loss, PPL, BPB
 ```
 
-06.06 uses forward → loss → backward → optimizer update. Here the path ends at forward → selected losses → report. Parameters stay fixed. The caller supplies held-out batches if the goal is held-out evaluation; the function cannot decide whether a tensor came from training or validation data. The list contains tuples of tensors, not the earlier source-record dictionaries. If batches=[(x, y, mask)], there is one batch containing B=2 rows; its list length 1 does not mean B=1.
+06.06 uses forward → loss → backward → optimizer update. Here the path ends at forward → selected losses → report. Parameters stay fixed. The caller supplies held-out batches if the goal is held-out evaluation; the function cannot decide whether a tensor came from training or validation data. The list contains tuples of tensors, not the earlier source-record dictionaries. If batches=[(x, y, mask)], there is one batch containing $B=2$ rows; its list length 1 does not mean $B=1$.
 
 #### Formula and exact inputs before the trace
 
-Let Z=model(x) be raw logits of shape(B, T, V), with b indexing rows, t positions and c vocabulary classes. The aligned target y[b, t] selects one class. Softmax gives its probability; categorical cross-entropy gives its negative log:
+Let Z=model(x) be raw logits of shape($B$, $T$, $V$), with b indexing rows, $t$ positions and $c$ vocabulary classes. The aligned target y[b, $t$] selects one class. Softmax gives its probability; categorical cross-entropy gives its negative log:
 
 $$
 p_{b,t,c}=\frac{e^{Z_{b,t,c}}}{\sum_{j=0}^{V-1}e^{Z_{b,t,j}}},\qquad
@@ -13709,22 +13581,22 @@ F.cross_entropy performs this log-softmax/target-selection calculation from raw 
 
 #### One complete nonuniform example using the actual driver layout
 
-Use the original x=[[0,1],[1,2]], y=[[1,2],[2,0]], mask=[[True, False],[True, True]], all with shape(2,2). x and y have dtype torch.long; mask has dtype torch.bool. B=2, T=2 and V=3. y is already shifted/aligned, so evaluation does not shift it again.
+Use the original x=[[0,1],[1,2]], y=[[1,2],[2,0]], mask=[[True, False],[True, True]], all with shape(2,2). x and y have dtype torch.long; mask has dtype torch.bool. $B=2$, $T=2$ and $V=3$. y is already shifted/aligned, so evaluation does not shift it again.
 
 For calculable probabilities, use a **separate constructed predictor**: input 0 gives class probabilities [1/4,1/2,1/4]; inputs 1 and 2 give [1/2,1/4,1/4]. Each vector sums to 1. Raw logits equal to the elementwise natural logs of those vectors realize these probabilities exactly, because their exponentials sum to 1. This is a fixed lookup fixture, not a numerical prediction about the driver's randomly initialized embedding/dropout/linear model. Its per-position result is:
 
-| Flattened q | Original(b, t) | Input ID | Target ID | Correct-target probability | Loss | Selected? |
+| Flattened q | Original $(b,t)$ | Input ID | Target ID | Correct-target probability | Loss | Selected? |
 | --- | --- | --- | --- | --- | --- | --- |
-| 0 | (0,0) | 0 | 1 | 1/2 | ln2 | True |
-| 1 | (0,1) | 1 | 2 | 1/4 | 2ln2 | False |
-| 2 | (1,0) | 1 | 2 | 1/4 | 2ln2 | True |
-| 3 | (1,1) | 2 | 0 | 1/2 | ln2 | True |
+| 0 | (0,0) | 0 | 1 | $1/2$ | $\ln 2$ | True |
+| 1 | (0,1) | 1 | 2 | $1/4$ | $2\ln 2$ | False |
+| 2 | (1,0) | 1 | 2 | $1/4$ | $2\ln 2$ | True |
+| 3 | (1,1) | 2 | 0 | $1/2$ | $\ln 2$ | True |
 
-![Exact driver input contents, hypothetical probabilities, selected losses and the 07.01 reporting connection](assets/07-02-guided-probability-trace.en.png)
+![Exact driver input contents, hypothetical probabilities, selected losses and the 07.01 reporting connection](assets/07-02-guided-probability-trace.en.png){width=100%}
 
-Read the top matrices as contents, with shape/dtype labels outside their cells. In the middle, each probability-vector coordinate is an output class, not a sequence position. The target ID picks one coordinate. Green entries count toward S and K; the gray entry still has a legal computed loss but contributes to neither total. Target ID 0 is valid and selected in the final row.
+Read the top matrices as contents, with shape/dtype labels outside their cells. In the middle, each probability-vector coordinate is an output class, not a sequence position. The target ID picks one coordinate. Green entries count toward $S$ and $K$; the gray entry still has a legal computed loss but contributes to neither total. Target ID 0 is valid and selected in the final row.
 
-Flatten only the position axes for the cross-entropy interface: logits(2,2,3)→(4,3), y(2,2)→(4,). The four resulting losses reshape back to (2,2), preserving q=b*T+t:
+Flatten only the position axes for the cross-entropy interface: logits(2,2,3)→(4,3), y(2,2)→(4,). The four resulting losses reshape back to (2,2), preserving $q=bT+t$:
 
 ```text
 losses contents = [[ln2, 2ln2],      shape=(2,2)
@@ -13732,13 +13604,13 @@ losses contents = [[ln2, 2ln2],      shape=(2,2)
 losses[mask]   = [ln2, 2ln2, ln2]   shape=(3,)
 ```
 
-Therefore S=4ln2≈2.772588722 nats, K=3, and loss=S/K≈0.924196241 nats/target. The exact return keys are 'nll_sum', 'tokens', 'loss'; their values are a Python float, int and float respectively. torch.sum() produces a scalar tensor of shape(); .item() extracts its Python number. mask.sum().item() counts 3 True entries, not 4 allocated positions.
+Therefore $S=4\ln 2\approx2.772588722$ nats, $K=3$, and loss=$S/K\approx0.924196241$ nats/target. The exact return keys are 'nll_sum', 'tokens', 'loss'; their values are a Python float, int and float respectively. torch.sum() produces a scalar tensor of shape(); .item() extracts its Python number. mask.sum().item() counts 3 True entries, not 4 allocated positions.
 
-Now evaluate the same rows as two batches. Row 0 contributes(S0, K0)=(ln2,1); row 1 contributes(S1, K1)=(3ln2,2). Running totals progress(0,0)→(ln2,1)→(4ln2,3). Their mean losses are ln2 and(3/2)ln2. Equally averaging them gives (5/4)ln2≈0.866433976, whereas the correct target-weighted result is (4/3)ln2≈0.924196241. Keep sums/counts and divide only after every batch. A zero-selected batch contributes sum 0/count 0 to the totals; taking its own mean would be undefined.
+Now evaluate the same rows as two batches. Row 0 contributes $(S_0,K_0)=(\ln 2,1)$; row 1 contributes $(S_1,K_1)=(3\ln 2,2)$. Running totals progress $(0,0)\to(\ln 2,1)\to(4\ln 2,3)$. Their mean losses are $\ln 2$ and $(3/2)\ln 2$. Equally averaging them gives $(5/4)\ln 2\approx0.866433976$, whereas the correct target-weighted result is $(4/3)\ln 2\approx0.924196241$. Keep sums/counts and divide only after every batch. A zero-selected batch contributes sum 0/count 0 to the totals; taking its own mean would be undefined.
 
 #### Send the result back to 07.01
 
-07.01 uses the returned `nll_sum` and `tokens`: loss remains $(4/3)\ln 2$ and $\mathrm{PPL}=\exp(L)=2^{4/3}\approx2.519842100$. For text-only targets with matching source-byte coverage $M$, BPB would be $S/(M\ln 2)=4/M$. These synthetic ID tensors have no source-byte mapping, so **no numeric M or BPB is inferred here**. Do not substitute `x.numel()`, tensor memory size or vocabulary size for $M$. An actual text-only caller can connect the completed helpers as follows:
+07.01 uses the returned `nll_sum` and `tokens`: loss remains $(4/3)\ln 2$ and $\mathrm{PPL}=\exp(L)=2^{4/3}\approx2.519842100$. For text-only targets with matching source-byte coverage $M$, BPB would be $S/(M\ln 2)=4/M$. These synthetic ID tensors have no source-byte mapping, so **no numeric $M$ or BPB is inferred here**. Do not substitute `x.numel()`, tensor memory size or vocabulary size for $M$. An actual text-only caller can connect the completed helpers as follows:
 
 ```python
 evaluation = evaluate_fixed(model, batches)
@@ -13753,7 +13625,7 @@ The implementation plan below supplies the control-flow syntax and indentation. 
 
 ### Define the quantity before choosing code
 
-Let k index batches. A batch may have its own B_k rows and T_k positions; the model's output vocabulary size is V. For each legal target y, define:
+Let $k$ index batches. A batch may have its own $B_k$ rows and $T_k$ positions; the model's output vocabulary size is $V$. For each legal target y, define:
 
 $$
 Z^{(k)}=f_\theta(x^{(k)}),\qquad
@@ -13779,11 +13651,11 @@ $$
 
 | Quantity | Meaning | Python result |
 | --- | --- | --- |
-| S | Total selected negative log-likelihood, natural-log units/nats | 'nll_sum': float |
-| K | Number of selected target occurrences | 'tokens': int |
-| L-hat | Mean selected loss, nats per target | 'loss': float |
+| $S$ | Total selected negative log-likelihood, natural-log units/nats | 'nll_sum': float |
+| $K$ | Number of selected target occurrences | 'tokens': int |
+| $\widehat L$ | Mean selected loss, nats per target | 'loss': float |
 
-K is not vocabulary size, number of documents, number of batches or allocated tensor slots. Count repeated scored occurrences when the protocol includes them. The evaluator implements the supplied selection; the caller must prevent unintended overlapping-window double counting.
+$K$ is not vocabulary size, number of documents, number of batches or allocated tensor slots. Count repeated scored occurrences when the protocol includes them. The evaluator implements the supplied selection; the caller must prevent unintended overlapping-window double counting.
 
 ### Trace the exact original driver
 
@@ -13795,9 +13667,9 @@ y    = [[1,2], [2,0]]
 mask = [[True,False], [True,True]]
 ```
 
-Here B=2, T=2, V=3. The embedding width 4 is internal to the model; it is neither T nor V. The embedding produces(2,2,4), dropout preserves that shape, and the linear head produces raw logits(2,2,3).
+Here $B=2$, $T=2$, $V=3$. The embedding width 4 is internal to the model; it is neither $T$ nor $V$. The embedding produces(2,2,4), dropout preserves that shape, and the linear head produces raw logits(2,2,3).
 
-| Flattened q=b*T+t | Original(b, t) | Input ID | Target ID | Selected? |
+| Flattened $q=bT+t$ | Original $(b,t)$ | Input ID | Target ID | Selected? |
 | --- | --- | --- | --- | --- |
 | 0 | (0,0) | 0 | 1 | True |
 | 1 | (0,1) | 1 | 2 | False |
@@ -13806,22 +13678,22 @@ Here B=2, T=2, V=3. The embedding width 4 is internal to the model; it is neithe
 
 The final target 0 is valid. The excluded target at (0,1) has the same ID 2 as the selected target at (1,0); selection depends on the mask, not on the ID value. These are hand-written synthetic IDs, not outputs of the BPE fixture. Do not give them EOS257/PAD258 meanings.
 
-![Original tensors, target selection and a clearly labeled uniform-logit baseline](assets/07-02-fixed-evaluation.en.png)
+![Original tensors, target selection and a clearly labeled uniform-logit baseline](assets/07-02-fixed-evaluation.en.png){width=100%}
 
-Read the three upper tables as contents, with shapes/dtypes outside the cells. For a fully calculable **analytic baseline**, suppose all three logits at every position equal 0. Each correct-target probability is 1/3 and each loss is ln3. Select three values:
+Read the three upper tables as contents, with shapes/dtypes outside the cells. For a fully calculable **analytic baseline**, suppose all three logits at every position equal 0. Each correct-target probability is $1/3$ and each loss is $\ln 3$. Select three values:
 
 $$
 S=3\ln3\approx3.295836866,\qquad K=3,\qquad
 \widehat L=\ln3\approx1.098612289.
 $$
 
-The conceptual return is {'nll_sum':3ln3,'tokens':3,'loss':ln3}. Actual random model weights are not zero and the original driver does not prescribe a numeric score. Its main comparison evaluates the same rows once as a full batch and once as two one-row batches. In eval mode this particular model is independent across rows, so both ways must agree within floating-point tolerance.
+The conceptual return is {'nll_sum':$3\ln 3$,'tokens':3,'loss':$\ln 3$}. Actual random model weights are not zero and the original driver does not prescribe a numeric score. Its main comparison evaluates the same rows once as a full batch and once as two one-row batches. In eval mode this particular model is independent across rows, so both ways must agree within floating-point tolerance.
 
 ### Show why unequal batches require sums and counts
 
 The uniform example cannot expose every aggregation error: averaging equal batch means gives the same answer accidentally. Use a separate two-class lookup diagnostic with deliberately different losses.
 
-A fixed table W maps input IDs to raw logits; its columns are output classes 0 and 1:
+A fixed table $W$ maps input IDs to raw logits; its columns are output classes 0 and 1:
 
 $$
 W=\begin{bmatrix}
@@ -13830,7 +13702,7 @@ W=\begin{bmatrix}
 \end{bmatrix},\qquad Z=W[x].
 $$
 
-Each row's exponentials sum to 1. Therefore input 0 gives target 0 probability e^(−1), with loss 1; input 1 gives target 1 probability e^(−2), with loss 2. This table is an arithmetic fixture, not the original embedding/dropout model and not a trained checkpoint.
+Each row's exponentials sum to 1. Therefore input 0 gives target 0 probability $e^{-1}$, with loss 1; input 1 gives target 1 probability $e^{-2}$, with loss 2. This table is an arithmetic fixture, not the original embedding/dropout model and not a trained checkpoint.
 
 Use these synthetic batches, with all targets legal:
 
@@ -13840,26 +13712,26 @@ B: x=[[1,1,1],[1,0,0]], y=[[1,1,1],[1,1,1]],
    mask=[[True,True,True],[True,False,False]]
 ```
 
-The deliberately excluded labels need not have a particular ID. Their losses are computed before selection and then omitted. For input 0/target 1 those excluded losses are −ln(1−e^(−1))≈.458675; their values do not affect S or K.
+The deliberately excluded labels need not have a particular ID. Their losses are computed before selection and then omitted. For input 0/target 1 those excluded losses are $-\ln(1-e^{-1})\approx0.458675$; their values do not affect $S$ or $K$.
 
 | Batch | Selected losses | Selected sum | Count | Batch mean |
 | --- | --- | --- | --- | --- |
 | A | [1,1] | 2 | 2 | 1 |
-| B | [2,2,2,2] | 8 | 4 | 2 |
-| Combined | Six values above | 10 | 6 | 10/6=5/3≈1.666667 |
+| $B$ | [2,2,2,2] | 8 | 4 | 2 |
+| Combined | Six values above | 10 | 6 | $10/6=5/3\approx1.666667$ |
 
-![Nonuniform selected counts and the correct global denominator](assets/07-02-aggregate-sums-and-counts.en.png)
+![Nonuniform selected counts and the correct global denominator](assets/07-02-aggregate-sums-and-counts.en.png){width=100%}
 
-The green cells contribute; gray cells do not. After A, running totals are S=2, K=2. After B, S=10, K=6. Divide once after all batches. The unweighted mean of batch means,(1+2)/2=1.5, gives the smaller batch too much weight. The equivalent weighted mean is:
+The green cells contribute; gray cells do not. After A, running totals are $S=2$, $K=2$. After $B$, $S=10$, $K=6$. Divide once after all batches. The unweighted mean of batch means,$(1+2)/2=1.5$, gives the smaller batch too much weight. The equivalent weighted mean is:
 
 $$
 \widehat L=\frac{\sum_kK_k L_k}{\sum_kK_k}
 =\frac{2\cdot1+4\cdot2}{6}=\frac53.
 $$
 
-An individual batch may select zero targets even though the complete list selects at least one. Its empty selection has sum 0 and count 0, so accumulation still works. Taking that batch's empty mean would give NaN. The exercise does not require a new special-case branch or a defined result for total K=0.
+An individual batch may select zero targets even though the complete list selects at least one. Its empty selection has sum 0 and count 0, so accumulation still works. Taking that batch's empty mean would give NaN. The exercise does not require a new special-case branch or a defined result for total $K=0$.
 
-Regrouping is equivalent only when it retains the same input rows, prefixes, positions and target mask under a row-independent evaluation model. Splitting along B, as the original driver does, retains each row's context. Cutting a causal sequence along T or repacking text changes context/position treatment and may change predictions. Accumulation-order rounding also means comparison should use a tolerance rather than bitwise equality.
+Regrouping is equivalent only when it retains the same input rows, prefixes, positions and target mask under a row-independent evaluation model. Splitting along $B$, as the original driver does, retains each row's context. Cutting a causal sequence along $T$ or repacking text changes context/position treatment and may change predictions. Accumulation-order rounding also means comparison should use a tolerance rather than bitwise equality.
 
 ### Understand two independent controls
 
@@ -13867,9 +13739,9 @@ Regrouping is equivalent only when it retains the same input rows, prefixes, pos
 
 `with torch.no_grad():` temporarily disables reverse-mode graph recording for ordinary new operations in its block. This avoids building the parameter-gradient graph we will not use during evaluation. It does **not** switch off dropout, clear existing .grad tensors or change parameter requires_grad flags. Leaving the block restores the caller's preceding grad-enabled/disabled context. [Official no_grad definition](https://docs.pytorch.org/docs/stable/generated/torch.no_grad.html)
 
-![Module mode and autograd recording are separate switches](assets/07-02-mode-and-grad-controls.en.png)
+![Module mode and autograd recording are separate switches](assets/07-02-mode-and-grad-controls.en.png){width=100%}
 
-Read rows as module mode and columns as grad mode. The numerical dropout example uses h=[1,2,3,4], p=.5 and an illustrative keep-mask[1,0,1,0]. In training, retained entries are divided by 1−p, giving [2,0,6,0]. In evaluation, dropout is the identity, giving [1,2,3,4]. The training keep-mask is an explicit illustration, not a promised random sample. The graph labels describe whether recording is permitted, not whether an identity operation necessarily creates a new graph.
+Read rows as module mode and columns as grad mode. The numerical dropout example uses h=[1,2,3,4], p=.5 and an illustrative keep-mask[1,0,1,0]. In training, retained entries are divided by $1-p$, giving [2,0,6,0]. In evaluation, dropout is the identity, giving [1,2,3,4]. The training keep-mask is an explicit illustration, not a promised random sample. The graph labels describe whether recording is permitted, not whether an identity operation necessarily creates a new graph.
 
 Use both controls for this evaluator. Neither is a universal reproducibility switch: custom forward randomness, batch-coupled behavior or nondeterministic operations can still matter. For example, a custom model can call a random operation even in eval mode. This helper does not restore arbitrary RNG streams or enforce deterministic kernels. The supplied ordinary dropout model is deterministic in evaluation under the checked conditions.
 
@@ -13887,7 +13759,7 @@ Ordinary eval-mode dropout/linear/embedding do not mutate weights; the helper is
 
 Suppose a later batch raises an exception during forward or cross-entropy. A restoration statement placed only at the bottom of the successful path would be skipped. Python try/finally gives a cleanup path that runs on normal completion and exception propagation. No except block is needed to swallow or transform the error. [Python cleanup explanation](https://docs.python.org/3/tutorial/errors.html#defining-clean-up-actions)
 
-![Mode and grad context are restored on normal completion and failure](assets/07-02-restore-on-success-and-error.en.png)
+![Mode and grad context are restored on normal completion and failure](assets/07-02-restore-on-success-and-error.en.png){width=100%}
 
 Follow the success and failure arrows into the same finally box. The no_grad context exits first and restores grad mode; finally restores module mode. After successful cleanup, return the final metrics. If evaluation fails, let the original exception propagate rather than returning a partial score. Do not put return inside finally, where it could suppress an error.
 
@@ -13916,23 +13788,23 @@ def evaluate_fixed(
 ) -> dict:
 ```
 
-model is an existing module returning floating logits(B, T, V). batches is a nonempty list of tuples(x, y, mask). x/y are torch.long(B, T), mask is torch.bool(B, T). Within a batch their shapes match; different batches may have different B/T compatible with the model. Inputs/devices and model capacity are compatible. All evaluated target IDs, including excluded ones, are legal classes 0…V−1. A negative ignore label is not part of this lesson's mask contract. At least one target is selected across the whole list; individual zero-selection batches are valid. No additional input-validation task is assigned.
+model is an existing module returning floating logits($B$, $T$, $V$). batches is a nonempty list of tuples(x, y, mask). x/y are torch.long(B, T), mask is torch.bool(B, T). Within a batch their shapes match; different batches may have different $B$/$T$ compatible with the model. Inputs/devices and model capacity are compatible. All evaluated target IDs, including excluded ones, are legal classes 0…$V$−1. A negative ignore label is not part of this lesson's mask contract. At least one target is selected across the whole list; individual zero-selection batches are valid. No additional input-validation task is assigned.
 
 Return a new dictionary with exactly 'nll_sum' as float, 'tokens' as int and 'loss' as float. The first is a **sum**, the last is that sum divided by the total count. The function receives no utf8_bytes and cannot infer source-byte coverage from token IDs. It neither returns BPB/PPL nor calls language_metrics; these remain a caller reporting step.
 
 | Intermediate | General shape/type | Original one-batch fixture |
 | --- | --- | --- |
-| model(x) | Floating(B, T, V) | (2,2,3) |
-| Flattened logits | Floating(B*T, V) | (4,3) |
-| Flattened y | long(B*T,) | (4,) |
-| CE with reduction='none' | Floating(B*T,) | (4,) |
-| Losses restored to y shape | Floating(B, T) | (2,2) |
-| Mask-selected losses | Floating(K_k,) | (3,) |
-| Selected .sum() | Scalar tensor, shape() | 3ln3 under zero logits |
+| model(x) | Floating($B$, $T$, $V$) | (2,2,3) |
+| Flattened logits | Floating($B$*$T$, $V$) | (4,3) |
+| Flattened y | long($B$*$T$,) | (4,) |
+| CE with reduction='none' | Floating($B$*$T$,) | (4,) |
+| Losses restored to y shape | Floating($B$, $T$) | (2,2) |
+| Mask-selected losses | Floating $(K_k,)$ | (3,) |
+| Selected .sum() | Scalar tensor, shape() | $3\ln 3$ under zero logits |
 | .sum().item() | Python float | Approximately 3.295837 |
 | mask.sum().item() | Python int | 3 |
 
-Use reshape rather than assuming contiguous storage for view. Read V from logits.shape[-1]. The vocabulary axis stays together when flattening positions. As in 06.06, F.cross_entropy accepts raw logits; do not softmax first. `.reshape_as(y)` uses y's shape, not its values. `.item()` is appropriate here because evaluation does not need parameter gradients and totals should be Python numbers. [Official cross-entropy interface](https://docs.pytorch.org/docs/stable/generated/torch.nn.functional.cross_entropy.html)
+Use reshape rather than assuming contiguous storage for view. Read $V$ from logits.shape[-1]. The vocabulary axis stays together when flattening positions. As in 06.06, F.cross_entropy accepts raw logits; do not softmax first. `.reshape_as(y)` uses y's shape, not its values. `.item()` is appropriate here because evaluation does not need parameter gradients and totals should be Python numbers. [Official cross-entropy interface](https://docs.pytorch.org/docs/stable/generated/torch.nn.functional.cross_entropy.html)
 
 ### Guided implementation in twelve steps
 
@@ -13942,9 +13814,9 @@ Edit only the START/END learner region in the actual exercise. Its comments repe
 2. **Open try at four spaces.** Inside it at eight spaces call model.eval(). The saved old_mode remains available for cleanup. Do not replace the passed model with a new model or a training clone.
 3. **Open the grad-disabled context at eight spaces.** Use with torch.no_grad():. Its body starts at twelve spaces. This temporarily controls graph recording independently of the module mode.
 4. **Loop over batches at twelve spaces.** Use for x, y, mask in batches:. Each iteration unpacks one tuple. The repeated body uses sixteen spaces. Do not shift y, tokenize, generate or deduplicate positions.
-5. **Compute raw logits at sixteen spaces.** Call model(x), then read V from its last dimension. The original fixture gives(2,2,3); after row splitting each call gives(1,2,3). The different B does not change the three classes.
-6. **Preserve position alignment for CE.** At sixteen spaces reshape logits to(-1, V) and y to(-1), call F.cross_entropy with reduction='none', and restore the returned vector using reshape_as(y). The original shapes are(4,3),(4,), then(2,2). Keep every class column and individual position loss until selection.
-7. **Accumulate the selected sum.** Select with the bool mask, call .sum(), then .item(), and add that float to total_nll using +=. Do not take a batch mean. In the separate nonuniform fixture, the running sum is 2 after A and 10 after B.
+5. **Compute raw logits at sixteen spaces.** Call model(x), then read $V$ from its last dimension. The original fixture gives(2,2,3); after row splitting each call gives(1,2,3). The different $B$ does not change the three classes.
+6. **Preserve position alignment for CE.** At sixteen spaces reshape logits to(-1, $V$) and y to(-1), call F.cross_entropy with reduction='none', and restore the returned vector using reshape_as(y). The original shapes are(4,3),(4,), then(2,2). Keep every class column and individual position loss until selection.
+7. **Accumulate the selected sum.** Select with the bool mask, call .sum(), then .item(), and add that float to total_nll using +=. Do not take a batch mean. In the separate nonuniform fixture, the running sum is 2 after A and 10 after $B$.
 8. **Accumulate the corresponding count.** Add mask.sum().item() to total_tokens; it is an integer count. In that fixture the totals are 2 then 6. A batch with no selected targets contributes 0 to both sums naturally.
 9. **Finish all iterations before dividing.** Keep both accumulation statements inside the loop. Exiting for/with leaves the final Python totals available and restores the previous grad context. Do not return after the first batch or calculate a mean of an empty per-batch selection.
 10. **Write finally at four spaces.** At eight spaces within it call model.train(old_mode). It runs after success or an evaluation exception. Restore the saved Boolean rather than always forcing train mode. Do not call zero_grad or return here.
@@ -13953,19 +13825,19 @@ Edit only the START/END learner region in the actual exercise. Its comments repe
 
 ### Connect the returned totals to 07.01 without changing the protocol
 
-The evaluator sums **whatever mask selects**, including EOS if the caller includes EOS targets. It does not silently impose 07.01's text-only BPB protocol. To use language_metrics(S, K, M), select ordinary-text targets consistently and retain the corresponding original UTF-8 byte count M. Exclude unscored prompts/padding and structural targets from both numerator and denominators under that stated text-only convention. Repacking must not double-count target occurrences. A token count alone cannot recover M.
+The evaluator sums **whatever mask selects**, including EOS if the caller includes EOS targets. It does not silently impose 07.01's text-only BPB protocol. To use language_metrics(S, K, M), select ordinary-text targets consistently and retain the corresponding original UTF-8 byte count $M$. Exclude unscored prompts/padding and structural targets from both numerator and denominators under that stated text-only convention. Repacking must not double-count target occurrences. A token count alone cannot recover $M$.
 
-#### Classroom Q&A: what exactly is M? Is it embedding/token size?
+#### Classroom Q&A: what exactly is $M$? Is it embedding/token size?
 
-**Question:** after completing 07.02, the learner asked whether BPB means bits per byte and whether M is the size of the whole embedding or its tokens.
+**Question:** after completing 07.02, the learner asked whether BPB means bits per byte and whether $M$ is the size of the whole embedding or its tokens.
 
-Yes: **BPB = bits per byte**. M is the number of **original UTF-8 bytes covered by the scored ordinary-text targets**. It is not the vocabulary size V, target occurrence count N, embedding width D, embedding parameter count or tensor storage size. An embedding row contains learned numeric features, not a sequence of the token's UTF-8 bytes. The tokenizer supplies that separate byte mapping.
+Yes: **BPB = bits per byte**. $M$ is the number of **original UTF-8 bytes covered by the scored ordinary-text targets**. It is not the vocabulary size $V$, target occurrence count $N$, embedding width $D$, embedding parameter count or tensor storage size. An embedding row contains learned numeric features, not a sequence of the token's UTF-8 bytes. The tokenizer supplies that separate byte mapping.
 
 $$
 BPB=\frac{\sum_i-\log_2p_i}{M}=\frac{S}{M\ln2}.
 $$
 
-The original three-ID synthetic driver still supplies no byte mapping, so its M is unknown. For a **new, explicit tokenizer example**, begin with 256 byte tokens and learn (228,189)→256, then (256,160)→257. ID 257 now covers the three UTF-8 bytes of "你"; ID 97 covers the one byte of "a". EOS 258 / PAD 259 give vocabulary size V=260.
+The original three-ID synthetic driver still supplies no byte mapping, so its $M$ is unknown. For a **new, explicit tokenizer example**, begin with 256 byte tokens and learn (228,189)→256, then (256,160)→257. ID 257 now covers the three UTF-8 bytes of "你"; ID 97 covers the one byte of "a". EOS 258 / PAD 259 give vocabulary size $V=260$.
 
 Use unscored prefix "b" and scored continuation "你a". The aligned input/target IDs are x=[[98,257]], y=[[257,97]], mask=[[True, True]]:
 
@@ -13973,17 +13845,17 @@ Use unscored prefix "b" and scored continuation "你a". The aligned input/target
 | --- | --- | --- | --- |
 | 257 | 你 | [228,189,160] | 3 |
 | 97 | a | [97] | 1 |
-| Total | 你a | Four bytes above | M=4 |
+| Total | 你a | Four bytes above | $M=4$ |
 
-![Source byte accounting separated from target counts, vocabulary capacity and embedding dimensions](assets/07-02-bpb-source-bytes.en.png)
+![Source byte accounting separated from target counts, vocabulary capacity and embedding dimensions](assets/07-02-bpb-source-bytes.en.png){width=100%}
 
-The prefix b is input context and contributes no scored bytes. The complete string b你a occupies 5 bytes, but this evaluation scores only "你a", so M=4. Here N=2 target occurrences, V=260 vocabulary entries, and choose D=8 embedding features. The embedding table shape is(260,8); the looked-up E[x] shape is(1,2,8), containing 16 floating numbers. Float32 storage for that lookup occupies 64 bytes. An int64 y tensor occupies 16 bytes and y.numel()=2. **None of 64,16,2,260,8 is the source-byte count 4.** Changing D to 16 changes lookup storage to 128 bytes while M remains 4.
+The prefix b is input context and contributes no scored bytes. The complete string b你a occupies 5 bytes, but this evaluation scores only "你a", so $M=4$. Here $N=2$ target occurrences, $V=260$ vocabulary entries, and choose $D=8$ embedding features. The embedding table shape is(260,8); the looked-up E[x] shape is(1,2,8), containing 16 floating numbers. Float32 storage for that lookup occupies 64 bytes. An int64 y tensor occupies 16 bytes and y.numel()=2. **None of 64,16,2,260,8 is the source-byte count 4.** Changing $D$ to 16 changes lookup storage to 128 bytes while $M$ remains 4.
 
-If the loss mask selects only "a", N=1 and M=1; if it selects only "你", N=1 and M=3. The embedding shapes stay unchanged. Recompute the NLL numerator S with the same selection too. For these ordinary tokens, matching target-byte metadata is [[3,1]], which can be summed under the text-target mask. Byte-BPE token byte chunks can provide these lengths even if one chunk alone is not valid decoded text. Structural EOS/PAD have no ordinary-text byte contribution and are excluded from the text-only NLL/count policy as well.
+If the loss mask selects only "a", $N=1$ and $M=1$; if it selects only "你", $N=1$ and $M=3$. The embedding shapes stay unchanged. Recompute the NLL numerator $S$ with the same selection too. For these ordinary tokens, matching target-byte metadata is [[3,1]], which can be summed under the text-target mask. Byte-BPE token byte chunks can provide these lengths even if one chunk alone is not valid decoded text. Structural EOS/PAD have no ordinary-text byte contribution and are excluded from the text-only NLL/count policy as well.
 
-Compute len(scored_text.encode('utf-8')) when the entire provided target text is scored. With partial spans/windows/masks, retain aligned byte coverage or derive it from the tokenizer's byte chunks under the exact scoring policy. The model's embedding weights alone cannot provide M. This also explains why evaluate_fixed returns NLL/counts but has no utf8_bytes field: its interface receives neither source text nor tokenizer/byte metadata.
+Compute len(scored_text.encode('utf-8')) when the entire provided target text is scored. With partial spans/windows/masks, retain aligned byte coverage or derive it from the tokenizer's byte chunks under the exact scoring policy. The model's embedding weights alone cannot provide $M$. This also explains why evaluate_fixed returns NLL/counts but has no utf8_bytes field: its interface receives neither source text nor tokenizer/byte metadata.
 
-For any fixed selected-token protocol, log-perplexity is the reported loss and PPL=exp(loss), subject to representability. Across different tokenizers, token-normalized perplexities require care as explained in 07.01. Never average batch perplexities or pass a batch-mean loss as the summed NLL. This function supplies S and K specifically so reporting can aggregate correctly.
+For any fixed selected-token protocol, log-perplexity is the reported loss and $\mathrm{PPL}=\exp(L)$, subject to representability. Across different tokenizers, token-normalized perplexities require care as explained in 07.01. Never average batch perplexities or pass a batch-mean loss as the summed NLL. This function supplies $S$ and $K$ specifically so reporting can aggregate correctly.
 
 In a later experiment, evaluate the same frozen validation batches before and after a budgeted 06.06 training run. The evaluator's old-mode restoration lets it fit between training updates without clearing pending gradients or leaving dropout in the wrong mode. The existing integration lab additionally needs 07.04 inference components; preparing 07.02 does not fill those future learner regions or make the whole lab complete.
 
@@ -14018,17 +13890,15 @@ Lesson 07.02 checks passed.
 
 The unchanged driver checks tokens=3, one-batch versus two-row-batch mean agreement, restoration from both starting train/eval modes, unchanged state_dict values and preservation of existing gradient object identities.
 
-Numerical boundary: losses*mask is equivalent to selection for finite losses, but 0*inf is NaN. A two-position finite-logit fixture gives losses [ln2, inf] with mask [True, False]; the selected sum is ln2 while multiplying before selection gives NaN. Boolean-index the losses before summing; preserve the loop and mode restoration. An infinite *selected* loss should still be reported as such rather than silently discarded. Returning loss=0 for total_tokens=0 would extend the positive-total contract; an empty mean is undefined.
+Numerical boundary: losses*mask is equivalent to selection for finite losses, but $0\cdot\infty$ is NaN. A two-position finite-logit fixture gives losses [$\ln 2$, inf] with mask [True, False]; the selected sum is $\ln 2$ while multiplying before selection gives NaN. Boolean-index the losses before summing; preserve the loop and mode restoration. An infinite *selected* loss should still be reported as such rather than silently discarded. Returning loss=0 for total_tokens=0 would extend the positive-total contract; an empty mean is undefined.
 
-Before coding, predict the A/B totals and explain why they cannot be averaged equally. Then explain why eval alone permits graphs, why no_grad alone leaves training dropout active, why existing gradients should remain untouched, and why cleanup needs finally.
+Before coding, predict the A/$B$ totals and explain why they cannot be averaged equally. Then explain why eval alone permits graphs, why no_grad alone leaves training dropout active, why existing gradients should remain untouched, and why cleanup needs finally.
 
 Originally expanded ahead after actual 06.06 review. The submission review and edited byte-count Q&A are preserved above. The earlier eval/no_grad determinism claim remains narrowed to those controls' actual separate effects.
 
 The original driver, uniform baseline, two-class aggregation fixture and BPE byte examples are distinct self-authored diagnostics with no external corpus, tokenizer download, capability evaluation or retained learned checkpoint. Evaluation figure source and byte/cache figure source retain verified arithmetic and localized PNG/SVG assets. Continue with [07.03](#section-07-03).
 
-<a id="section-07-03"></a>
-
-## 07.03 KV cache and position alignment
+## 07.03 KV cache and position alignment {#section-07-03}
 
 ### Method sources
 
@@ -14050,7 +13920,7 @@ Use the illustrative token labels `I`, `like`, `tea`, `.`; these labels do not a
 2. The next call processes only `tea`. Each layer computes its new Q/K/V at position 2, reuses positions 0 and 1 from its cache, and selects the following token `.`.
 3. The following call processes only `.` at position 3. The old three positions remain cached.
 
-![Three calls with and without cached prefix work; position slots and vector shapes are labeled separately](assets/07-03-generation-storyboard.en.png)
+![Three calls with and without cached prefix work; position slots and vector shapes are labeled separately](assets/07-03-generation-storyboard.en.png){width=100%}
 
 The upper lane recomputes 2, then 3, then 4 rows. The lower lane computes 2, then 1, then 1 new rows. The small cache tiles label **positions covered by vectors**, rather than showing vector contents. Each layer has its own K/V tensors; actual contents appear in the next matrix figure.
 
@@ -14070,20 +13940,20 @@ Changing feature width or reshaping heads does not erase the position axis. The 
 
 The zero-Q/K fixture later in the worksheet is a useful arithmetic check, but every allowed weight becomes equal. It does not explain matching or position offsets. Start here instead.
 
-For one layer/head, let `B=H=1`, `P=2`, `S=1`, `d=dv=2`. These are **post-RoPE** Q/K values, with their position transformation already applied. The first two rows of K/V are cached; the third row is new:
+For one layer/head, let $B=H=1$, $P=2$, $S=1$, $d=d_v=2$. These are **post-RoPE** Q/K values, with their position transformation already applied. The first two rows of K/V are cached; the third row is new:
 
 $$
 q_2=[\sqrt2,0],\qquad
-K_{all}=\begin{bmatrix}0&1\\\ln2&1\\\ln3&1\end{bmatrix},\qquad
-V_{all}=\begin{bmatrix}2&0\\0&4\\6&6\end{bmatrix}.
+K_{\mathrm{all}}=\begin{bmatrix}0&1\\\ln2&1\\\ln3&1\end{bmatrix},\qquad
+V_{\mathrm{all}}=\begin{bmatrix}2&0\\0&4\\6&6\end{bmatrix}.
 $$
 
-Full tensor shapes are `q [1,1,1,2]`, `K_all [1,1,3,2]`, `V_all [1,1,3,2]`. The displayed matrices fix the batch/head indices. The integer 2 in `d=2` counts coordinates; a cell entry such as `ln 2` is a numeric value, approximately 0.693.
+Full tensor shapes are `q [1,1,1,2]`, `K_all [1,1,3,2]`, `V_all [1,1,3,2]`. The displayed matrices fix the batch/head indices. The integer 2 in $d=2$ counts coordinates; a cell entry such as $\ln 2$ is a numeric value, approximately 0.693.
 
 Scaled dot products give:
 
 $$
-r_2=\frac{q_2K_{all}^{\mathsf T}}{\sqrt2}=[0,\ln2,\ln3].
+r_2=\frac{q_2K_{\mathrm{all}}^{\mathsf T}}{\sqrt2}=[0,\ln2,\ln3].
 $$
 
 Query position 2 can see all three available key positions, so nothing is masked in this one-query example. Applying softmax means exponentiating and normalizing:
@@ -14098,7 +13968,7 @@ $$
 o_2=\tfrac16[2,0]+\tfrac26[0,4]+\tfrac36[6,6]=[10/3,13/3].
 $$
 
-![Nonzero Q/K, explicit transposition shapes, nonuniform softmax and a two-coordinate weighted output](assets/07-03-nonuniform-attention.en.png)
+![Nonzero Q/K, explicit transposition shapes, nonuniform softmax and a two-coordinate weighted output](assets/07-03-nonuniform-attention.en.png){width=100%}
 
 Read this figure from the saved/new rows, through Q times transposed K, then through weights times V. Blue rows are retained; green rows are new. Shape labels sit outside numeric cells. The result has shape `[1,1,1,2]`; it is not a token ID or the entire layer cache.
 
@@ -14114,14 +13984,14 @@ def cached_attention(q: torch.Tensor, k: torch.Tensor,
 
 | Symbol | Meaning | Unit |
 | --- | --- | --- |
-| B | Batch rows | Samples |
-| H | Attention heads | Heads |
-| P | Cached earlier positions | Token positions |
-| S | New positions in this call | Token positions |
-| d | Query/key matching width; positive and even | Feature coordinates per head |
-| dv | Value width; may differ from d | Feature coordinates per head |
+| $B$ | Batch rows | Samples |
+| $H$ | Attention heads | Heads |
+| $P$ | Cached earlier positions | Token positions |
+| $S$ | New positions in this call | Token positions |
+| $d$ | Query/key matching width; positive and even | Feature coordinates per head |
+| $d_v$ | Value width; may differ from $d$ | Feature coordinates per head |
 
-Here S is a position count, unrelated to 07.01's summed-NLL symbol S. BPB's source-byte count M is not an attention dimension.
+Here $S$ is a position count, unrelated to 07.01's summed-NLL symbol $S$. BPB's source-byte count $M$ is not an attention dimension.
 
 | Parameter | Shape/type | Meaning |
 | --- | --- | --- |
@@ -14132,13 +14002,13 @@ Here S is a position count, unrelated to 07.01's summed-NLL symbol S. BPB's sour
 | cache['keys'] | Floating [B, H, P, d] | Old keys, already rotated at their positions |
 | cache['values'] | Floating [B, H, P, dv] | Old unrotated values |
 
-Sizes/devices/dtypes are compatible, and B, H, S, d, dv are positive. Return output [B, H, S, dv] for **new queries only**, plus a **new dictionary** with keys [B, H, P+S, d] and values [B, H, P+S, dv]. Preserve inputs and old cache; inference outputs/cache should not retain autograd history. Cloning values inside no_grad on first use also gives independent storage.
+Sizes/devices/dtypes are compatible, and $B$, $H$, $S$, $d$, $d_v$ are positive. Return output [B, H, S, dv] for **new queries only**, plus a **new dictionary** with keys [B, H, P+S, d] and values [B, H, P+S, dv]. Preserve inputs and old cache; inference outputs/cache should not retain autograd history. Cloning values inside no_grad on first use also gives independent storage.
 
 The original driver uses float32. The existing 05.02 helper's half-dtype restoration follow-up remains open; this lesson's original/reference examples use float32/float64. The cache is not an embedding table, stored text, model weights or all layers combined.
 
 ### Formulas first
 
-New query index i=0,…, S−1 corresponds to absolute sequence position:
+New query index $i=0,\ldots,S-1$ corresponds to absolute sequence position:
 
 $$
 p_i=P+i,\qquad p=[P,P+1,\ldots,P+S-1].
@@ -14148,26 +14018,26 @@ Use the supplied 05.02 apply_rope(x, positions, base=10000.0) on new q/k:
 
 $$
 \widetilde Q=\operatorname{RoPE}(q,p),\qquad
-\widetilde K_{new}=\operatorname{RoPE}(k,p),
+\widetilde K_{\mathrm{new}}=\operatorname{RoPE}(k,p),
 $$
 
 $$
-K_{all}=K_{past}\Vert_{time}\widetilde K_{new},\qquad
-V_{all}=V_{past}\Vert_{time}values.
+K_{\mathrm{all}}=K_{\mathrm{past}}\Vert_{\mathrm{time}}\widetilde K_{\mathrm{new}},\qquad
+V_{\mathrm{all}}=V_{\mathrm{past}}\Vert_{\mathrm{time}}\mathrm{values}.
 $$
 
-The concatenation symbol means old rows followed by new rows. Without a cache, P=0 and these are just the new tensors. **Do not rotate cached keys again or rotate values.** Compute scores R, weights A and outputs O:
+The concatenation symbol means old rows followed by new rows. Without a cache, $P=0$ and these are just the new tensors. **Do not rotate cached keys again or rotate values.** Compute scores $R$, weights A and outputs $O$:
 
 $$
-R=\frac{\widetilde QK_{all}^{\mathsf T}}{\sqrt d},\qquad
-R^{masked}_{b,h,i,j}=\begin{cases}R_{b,h,i,j},&j\le P+i,\\-\infty,&j>P+i,\end{cases}
+R=\frac{\widetilde QK_{\mathrm{all}}^{\mathsf T}}{\sqrt d},\qquad
+R^{\mathrm{masked}}_{b,h,i,j}=\begin{cases}R_{b,h,i,j},&j\le P+i,\\-\infty,&j>P+i,\end{cases}
 $$
 
 $$
-A_{b,h,i,:}=\operatorname{softmax}(R^{masked}_{b,h,i,:}),\qquad O=AV_{all}.
+A_{b,h,i,:}=\operatorname{softmax}(R^{\mathrm{masked}}_{b,h,i,:}),\qquad O=AV_{\mathrm{all}}.
 $$
 
-Only the last two K axes transpose. The first product contracts d; the second contracts the full key-position count P+S:
+Only the last two K axes transpose. The first product contracts $d$; the second contracts the full key-position count $P+S$:
 
 ```text
 Qrot       [B,H,S,d]
@@ -14178,13 +14048,13 @@ Vall       [B,H,P+S,dv]
 output     [B,H,S,dv]
 ```
 
-Softmax runs over the last/key axis. Blocking with −inf gives zero weight because exp(−inf)=0. Replacing a blocked score with 0 still gives exp(0)=1, so it does not block attention.
+Softmax runs over the last/key axis. Blocking with $-\infty$ gives zero weight because $\exp(-\infty)=0$. Replacing a blocked score with 0 still gives $\exp(0)=1$, so it does not block attention.
 
 ### Keep absolute RoPE positions
 
-If P=2, S=2, new positions are [2,3], not [0,1]. Their integer vector has shape (2,), shared across batch/head axes. Cached keys already carry positions [0,1].
+If $P=2$, $S=2$, new positions are [2,3], not [0,1]. Their integer vector has shape (2,), shared across batch/head axes. Cached keys already carry positions [0,1].
 
-For a **separate nonzero illustration**, take d=2 and raw [1,0]. The single feature-pair frequency is 1 radian/position, giving [cos(p), sin(p)]:
+For a **separate nonzero illustration**, take $d=2$ and raw [1,0]. The single feature-pair frequency is 1 radian/position, giving $[\cos p,\sin p]$:
 
 | Position | Status | Rotated contents |
 | --- | --- | --- |
@@ -14193,13 +14063,13 @@ For a **separate nonzero illustration**, take d=2 and raw [1,0]. The single feat
 | 2 | New | [−0.416147,0.909297] |
 | 3 | New | [−0.989992,0.141120] |
 
-![Nonzero RoPE position-offset illustration](assets/07-03-rope-position-offset.en.png)
+![Nonzero RoPE position-offset illustration](assets/07-03-rope-position-offset.en.png){width=100%}
 
 Resetting position 2 to 0 gives the wrong [1,0]. Rotating the cached position 1 key again by angle 1 incorrectly changes its existing angle 1 to angle 2. Rotate each key once at its own position; new q and k share positions. This nonzero illustration is distinct from the zero-vector arithmetic example below.
 
 ### A rectangular causal mask
 
-For P=2, S=2, query rows are at absolute positions 2,3 and key columns at 0,1,2,3. Query 2 sees keys 0,1,2 but blocks 3; query 3 sees all four. Define future_mask[i, j]=(j>P+i):
+For $P=2$, $S=2$, query rows are at absolute positions 2,3 and key columns at 0,1,2,3. Query 2 sees keys 0,1,2 but blocks 3; query 3 sees all four. Define future_mask[i, j]=(j>P+i):
 
 ```text
 key columns: 0      1      2      3
@@ -14207,15 +14077,15 @@ query p=2: [False, False, False, True ]
 query p=3: [False, False, False, False]   shape=(2,4)
 ```
 
-![Allowed entries, future-mask values and broadcasting shapes](assets/07-03-rectangular-causal-mask.en.png)
+![Allowed entries, future-mask values and broadcasting shapes](assets/07-03-rectangular-causal-mask.en.png){width=100%}
 
-positions[:, None] has shape (S,1); key_positions[None,:] has (1, P+S). Comparing key>query broadcasts to (S, P+S), then masked_fill broadcasts over B/H. None inserts a size-one axis without adding positions. A plain upper-left triangle incorrectly treats the first new query as position 0 and blocks keys 1,2. For S=1, the latest query should see **all P+1 keys**. Do not assume an API's default rectangular is_causal convention matches that alignment.
+positions[:, None] has shape ($S$,1); key_positions[None,:] has (1, $P+S$). Comparing key>query broadcasts to ($S$, $P+S$), then masked_fill broadcasts over $B$/$H$. None inserts a size-one axis without adding positions. A plain upper-left triangle incorrectly treats the first new query as position 0 and blocks keys 1,2. For $S=1$, the latest query should see **all $P+1$ keys**. Do not assume an API's default rectangular is_causal convention matches that alignment.
 
 Boolean meaning follows the receiving operation:07.02's loss mask uses True to **score a target**; this future_mask uses True to **block attention**.
 
 ### Optional uniform sanity check: the worksheet fixture
 
-Set B=H=1, P=S=d=2, dv=1. An earlier call processed positions 0,1. Old/new q/k are zero, so all their RoPE results are zero:
+Set $B=H=1$, $P=S=d=2$, $d_v=1$. An earlier call processed positions 0,1. Old/new q/k are zero, so all their RoPE results are zero:
 
 ```text
 old cache['keys']   [[[[0,0],[0,0]]]]  shape=(1,1,2,2)
@@ -14225,9 +14095,9 @@ new k              [[[[0,0],[0,0]]]]  shape=(1,1,2,2)
 new values         [[[[8],[10]]]]     shape=(1,1,2,1)
 ```
 
-1. Read P=2 from the old key time axis and S=2 from q. Build positions [2,3].
-2. Rotate new q/k; zero stays zero. Append to get K_all(1,1,4,2) and V_all(1,1,4,1), whose value contents are [2,4,8,10].
-3. Every q·k score is 0; division by sqrt(2) leaves 0. Scores have shape (1,1,2,4).
+1. Read $P=2$ from the old key time axis and $S=2$ from q. Build positions [2,3].
+2. Rotate new q/k; zero stays zero. Append to get $K_{\mathrm{all}}$(1,1,4,2) and $V_{\mathrm{all}}$(1,1,4,1), whose value contents are [2,4,8,10].
+3. Every $q\cdot k$ score is 0; division by $\sqrt2$ leaves 0. Scores have shape (1,1,2,4).
 4. The displayed b=0, h=0 masked rows are [0,0,0,−inf] and [0,0,0,0].
 5. Their exponentials [1,1,1,0] and [1,1,1,1] normalize to [1/3,1/3,1/3,0] and [1/4,1/4,1/4,1/4].
 6. Multiply these weights by values:
@@ -14236,7 +14106,7 @@ $$
 o_2=\frac{2+4+8}{3}=\frac{14}{3},\qquad o_3=\frac{2+4+8+10}{4}=6.
 $$
 
-![Complete weighted-value arithmetic with labeled matrix-product shapes](assets/07-03-weighted-values-trace.en.png)
+![Complete weighted-value arithmetic with labeled matrix-product shapes](assets/07-03-weighted-values-trace.en.png){width=100%}
 
 Return output contents [[[[14/3],[6]]]], shape (1,1,2,1), and a new four-position cache. Preserve the old two-position cache. Earlier prefill outputs [2,3] plus these new outputs [14/3,6] equal full-prefix outputs [2,3,14/3,6]. Caching preserves predictions rather than improving them.
 
@@ -14247,16 +14117,16 @@ Zero vectors make hand calculation easy but cannot expose an incorrect RoPE offs
 The following hints refer to the separate uniform worksheet fixture. Edit only the learner region in 07_03_kv_cache.py. Its adjacent comments repeat these steps. Preserve imports/signature/markers and the supplied driver.
 
 1. **Four spaces: enter with torch.no_grad():.** Its body uses eight spaces. Inputs are tensors, so this helper has no model.eval() call.
-2. **Eight spaces: read S and d from q's last two axes.** Branch with if cache is None:; statements inside if/else use twelve spaces. None is the missing-state sentinel: P=0. Otherwise read cache['keys'].shape[-2]. Testing is None does not test whether tensor entries are zero.
+2. **Eight spaces: read $S$ and $d$ from q's last two axes.** Branch with if cache is None:; statements inside if/else use twelve spaces. None is the missing-state sentinel: $P=0$. Otherwise read cache['keys'].shape[-2]. Testing is None does not test whether tensor entries are zero.
 3. **Eight spaces: build positions.** torch.arange(P, P+S, device=q.device) gives integer positions [S]. The end is exclusive; expect [2,3] in the append example.
 4. **Rotate only new q/k.** Call apply_rope separately on q and k with the same positions. Both retain [B, H, S, d]; leave values and cached keys unrotated by this call.
 5. **Eight/twelve spaces: build all K/V.** Branch again on cache is None. First call: retain new rotated k and clone values inside no_grad. clone makes an independent tensor; simply returning an existing input inside no_grad would not remove its existing requires_grad flag. Later calls: torch.cat accepts a tuple/list of old then new tensors; use dim=-2 for keys and values. Do not assign into the passed cache.
-6. **Eight spaces: scores.** Multiply rotated q by `all_keys.transpose(-2,-1)`, then divide by `math.sqrt(d)`. Contract d, not S or dv. The toy scores have shape (1,1,2,4), all zero.
-7. **Eight spaces: future mask.** Make key indices 0…P+S−1 on q.device. Compare `key_positions[None,:]>positions[:, None]`. Shapes(1,4) and(2,1) yield(2,4); the first row blocks only key 3.
-8. **Mask, then softmax.** Use masked_fill with −inf, then softmax(dim=-1). Keep B/H axes and normalize over keys. Expected toy weights are [1/3,1/3,1/3,0] and [1/4,1/4,1/4,1/4].
-9. **Multiply by all_values.** Contract P+S to obtain [B, H, S, dv]. The toy output contains 14/3 then 6. No flattening across batches/heads is needed.
-10. **Return a fresh state.** Return output and a new dictionary with exactly 'keys' and 'values'. Return at eight spaces inside with, or four spaces afterward; either exit restores the preceding grad mode. Cache K/V, not old Q or output O.
-11. **Check cases.** P=0 gives normal causal prefill; P=2 appends positions [2,3]; S=1 permits every available key. Preserve old state and avoid autograd history. No loop is required in this helper.
+6. **Eight spaces: scores.** Multiply rotated q by `all_keys.transpose(-2,-1)`, then divide by `math.sqrt(d)`. Contract $d$, not $S$ or $d_v$. The toy scores have shape (1,1,2,4), all zero.
+7. **Eight spaces: future mask.** Make key indices 0…$P+S-1$ on q.device. Compare `key_positions[None,:]>positions[:, None]`. Shapes(1,4) and(2,1) yield(2,4); the first row blocks only key 3.
+8. **Mask, then softmax.** Use masked_fill with $-\infty$, then softmax(dim=-1). Keep $B$/$H$ axes and normalize over keys. Expected toy weights are [1/3,1/3,1/3,0] and [1/4,1/4,1/4,1/4].
+9. **Multiply by all_values.** Contract $P+S$ to obtain [B, H, S, dv]. The toy output contains $14/3$ then 6. No flattening across batches/heads is needed.
+10. **Return a fresh state.** Return output and a new dictionary with exactly 'keys' and 'values'. Return at eight spaces inside with, or four spaces afterward; either exit restores the preceding grad mode. Cache K/V, not old Q or output $O$.
+11. **Check cases.** $P=0$ gives normal causal prefill; $P=2$ appends positions [2,3]; $S=1$ permits every available key. Preserve old state and avoid autograd history. No loop is required in this helper.
 12. **Replace the placeholder and run below.** No optimizer, data download or new environment belongs in this task.
 
 ```bash
@@ -14269,21 +14139,19 @@ Expected after implementation:
 Lesson 07.03 checks passed.
 ```
 
-The actual driver uses seed 33, B=2, H=3, total length 4, d=6, dv=5. It compares full versus prefill 2 + append 2, checks cache lengths/contents, old-key preservation and output grad status. Random driver values differ from the toy. It does not cover every partition, value ownership, requires_grad input or generation policy. A preparation reference is not the future implementation.
+The actual driver uses seed 33, $B=2$, $H=3$, total length 4, $d=6$, $d_v=5$. It compares full versus prefill 2 + append 2, checks cache lengths/contents, old-key preservation and output grad status. Random driver values differ from the toy. It does not cover every partition, value ownership, requires_grad input or generation policy. A preparation reference is not the future implementation.
 
 ### Boundaries and understanding
 
-One layer's cache stores B*H*P*(d+dv) scalars. Multiply by layers and bytes per scalar for physical memory. The optional four-position float32 worksheet fixture stores 4*(2+1)=12 scalars=48 bytes; this is unrelated to BPB's source-byte denominator M. Attention still reads old K/V; decode is not constant-cost as context grows.
+One layer's cache stores $BHP(d+d_v)$ scalars. Multiply by layers and bytes per scalar for physical memory. The optional four-position float32 worksheet fixture stores $4(2+1)=12$ scalars=48 bytes; this is unrelated to BPB's source-byte denominator $M$. Attention still reads old K/V; decode is not constant-cost as context grows.
 
 This exercise is append-only. Reset state for a different request; do not reuse it after changing prefix/model weights/layer identity. It does not extend context limits, handle padding positions or implement window eviction. Raw completion/scoring retain the standalone reference's sliding protocol and rebuild when its visible window shifts; chat instead reserves answer room and removes old complete turns. Silently dropping cache rows does not establish equivalent context/position behavior.
 
-Explain why past states remain unchanged under causal attention, why query 2 sees key 2 but not 3, why d stays fixed while P grows, and why resetting RoPE is wrong.
+Explain why past states remain unchanged under causal attention, why query 2 sees key 2 but not 3, why $d$ stays fixed while $P$ grows, and why resetting RoPE is wrong.
 
 This revision adds an explicit generation storyboard, the causal per-layer argument and nonuniform matrix arithmetic. Storyboard source and earlier diagnostic source retain arithmetic checks and paired PNG/SVG exports. The older zero-vector example remains a separately labeled worksheet sanity check. Main assignment: [08.01](#section-08-01).
 
-<a id="section-07-04"></a>
-
-## 07.04 Turn a KV cache into a generation loop
+## 07.04 Turn a KV cache into a generation loop {#section-07-04}
 
 ### Method sources
 
@@ -14311,7 +14179,7 @@ if continuing, send that selected token into the NEXT model call
 
 ### Formulas before implementation
 
-Let `s` count generation iterations from zero. Let the prompt contain `T0` IDs. `U_s` is the sequence actually sent into the model on this iteration, and `C_s` is the cache before that call:
+Let $s$ count generation iterations from zero. Let the prompt contain $T_0$ IDs. $U_s$ is the sequence actually sent into the model on this iteration, and $C_s$ is the cache before that call:
 
 $$
 U_s=\begin{cases}
@@ -14321,7 +14189,7 @@ U_s=\begin{cases}
 \qquad (Z_s,C_{s+1})=\operatorname{model}(U_s,C_s),\quad C_0=\mathrm{None}.
 $$
 
-The first call is **prefill**. Subsequent calls are **incremental decoding**. Here `g_(s-1)` is the ID selected on the preceding iteration. Keep the entire generated ID list separately; do not resend it with an existing cache.
+The first call is **prefill**. Subsequent calls are **incremental decoding**. Here $g_{s-1}$ is the ID selected on the preceding iteration. Keep the entire generated ID list separately; do not resend it with an existing cache.
 
 Take the last new-position logit vector:
 
@@ -14329,7 +14197,7 @@ $$
 z_s=Z_s[0,-1,:]\in\mathbb R^V.
 $$
 
-If temperature is positive, define the probability of next ID `j` by:
+If temperature is positive, define the probability of next ID $j$ by:
 
 $$
 \pi_{s,j}=\frac{\exp(z_{s,j}/\tau)}{\sum_{k=0}^{V-1}\exp(z_{s,k}/\tau)},\qquad g_s\sim\operatorname{Categorical}(\pi_s).
@@ -14341,13 +14209,13 @@ $$
 g_s=\operatorname*{argmax}_j z_{s,j}.
 $$
 
-There is no division by zero. Append `g_s`, then stop if it is the configured EOS. The budget counts newly selected IDs, including a selected EOS.
+There is no division by zero. Append $g_s$, then stop if it is the configured EOS. The budget counts newly selected IDs, including a selected EOS.
 
 ### Read the supplied wrapper before writing the loop
 
 The exercise already defines `CachedModernLM.forward(ids, cache=None)`. You do not implement this class. Its two returns are **logits and the next per-layer cache list**.
 
-For the original driver, `V=5`, model width `D=8`, heads `H=2`, per-head width `d=4`, FFN width `16` and layers `L=2`. Generation uses batch size `B=1`.
+For the original driver, $V=5$, model width $D=8$, heads $H=2$, per-head width $d=4$, FFN width `16` and layers $L=2$. Generation uses batch size $B=1$.
 
 | Object | Prefill with two IDs | Later one-ID call |
 | --- | --- | --- |
@@ -14359,7 +14227,7 @@ For the original driver, `V=5`, model width `D=8`, heads `H=2`, per-head width `
 
 These bracketed entries in the shape columns are **dimensions**. The separately labeled `[[0,1]]` and `[[2]]` are **tensor contents**.
 
-![New hidden states cross layers; each layer owns its K/V state](assets/07-04-layer-cache-shapes.en.png)
+![New hidden states cross layers; each layer owns its K/V state](assets/07-04-layer-cache-shapes.en.png){width=100%}
 
 Inside each block, `n @ block.q/k/v` independently projects the normalized hidden state. Reshaping `[B,S,D]` to `[B,S,H,d]` and transposing gives `[B,H,S,d]`. Your 07.03 helper attends to that layer's old/new K/V. Merging heads returns `[B,S,D]`; the residual and FFN preserve the same new-position axis before the next layer.
 
@@ -14388,7 +14256,7 @@ Use this explicitly defined **teaching vocabulary**, not the project's real byte
 
 Set `prompt=[0,1]`, `budget=3`, `eos_id=4`, `temperature=0`. The logits below belong to a scripted teaching model. They are not claimed to be the actual random driver's logits.
 
-![Three calls: input tensor, per-layer cache length, logit values, selected ID and returned list](assets/07-04-inference-interface.en.png)
+![Three calls: input tensor, per-layer cache length, logit values, selected ID and returned list](assets/07-04-inference-interface.en.png){width=100%}
 
 **Iteration 0 — process the prompt.** Start with `sequence=[0,1]`, `cache=None`. Send `[[0,1]]`, shape `[1,2]`. Each layer stores two processed positions. The wrapper returns logits `[1,2,5]`; choose the last row:
 
@@ -14426,9 +14294,9 @@ $$
 \exp(z_0)=[1,2,4,2,1],\qquad \pi=[0.1,0.2,0.4,0.2,0.1].
 $$
 
-At temperature `0.5`, the exponentials are `[1,4,16,4,1]`, with total 26. ID 2 gets probability `16/26`, about `0.615`. At temperature `2`, the distribution is flatter. A probability of `0.4` is not a guarantee that ID 2 will be sampled.
+At temperature `0.5`, the exponentials are `[1,4,16,4,1]`, with total 26. ID 2 gets probability $16/26$, about `0.615`. At temperature `2`, the distribution is flatter. A probability of `0.4` is not a guarantee that ID 2 will be sampled.
 
-![The same five logits at three temperatures](assets/07-04-temperature.en.png)
+![The same five logits at three temperatures](assets/07-04-temperature.en.png){width=100%}
 
 The supplied `generator` controls sampling randomness. Use it in `torch.multinomial`; do not recreate or reseed it inside the loop. In the checked CPU fixture, first-row sampling at temperature `0.7` with a fresh seed-4 generator selects ID 2. This is one seeded draw, not the definition of sampling.
 
@@ -14506,17 +14374,13 @@ Before moving on, explain why ID 2 is in the returned sequence before it is in t
 
 Efficient generation makes a model usable, but pretraining alone does not define a useful conversational response. The next chapter treats conversation structure and response objectives as new data and learning contracts.
 
-<a id="chapter-08"></a>
-
-# 08 Teach responses and preferences
+# 08 Teach responses and preferences {#chapter-08}
 
 A conversation is more than several text strings placed next to each other. Roles, turn boundaries and end markers determine who said what and where the next answer begins. The target mask determines which part of that serialization directly contributes to the training objective.
 
 We first build complete conversation examples, then distinguish learning a demonstrated answer from preferring one answer over another. A final section introduces a clipped policy objective and explains the additional machinery a reinforcement-learning system would need. These methods optimize supplied signals; their names do not certify factual correctness, good judgment or reliable conversation.
 
-<a id="section-08-01"></a>
-
-## 08.01 Give a conversation an exact token format
+## 08.01 Give a conversation an exact token format {#section-08-01}
 
 ### Method sources
 
@@ -14561,35 +14425,35 @@ Caller preconditions: content is a string; roles are supported; structural IDs a
 
 ### Serialization formula: one message at a time
 
-Let message index be `r`. Its role is `role_r`, its text is `content_r`, and its encoded content has length `n_r`:
+Let message index be $r$. Its role is $\mathrm{role}_r$, its text is $\mathrm{content}_r$, and its encoded content has length $n_r$:
 
 $$
-b_r=\operatorname{encode\_bpe}(content_r,merges),\qquad n_r=|b_r|.
+b_r=\operatorname{encode\_bpe}(\mathrm{content}_r,\mathrm{merges}),\qquad n_r=|b_r|.
 $$
 
 Construct one complete message segment:
 
 $$
-s^{(r)}=[\operatorname{role\_ids}[role_r]]\;\Vert\;b_r\;\Vert\;[eos\_id].
+s^{(r)}=[\operatorname{role\_ids}[\mathrm{role}_r]]\;\Vert\;b_r\;\Vert\;[\mathrm{eos\_id}].
 $$
 
-The symbol `\Vert` means list concatenation: put the elements of the right list after the left list. It does not add the numeric IDs. Preserve message order:
+The symbol $\Vert$ means list concatenation: put the elements of the right list after the left list. It does not add the numeric IDs. Preserve message order:
 
 $$
 s=s^{(0)}\Vert s^{(1)}\Vert\cdots,\qquad T=\sum_r(n_r+2).
 $$
 
-Each message contributes one role ID, `n_r` content IDs, and one EOS ID. `T` is the resulting number of positions. It is not the vocabulary size and is not the largest token ID.
+Each message contributes one role ID, $n_r$ content IDs, and one EOS ID. $T$ is the resulting number of positions. It is not the vocabulary size and is not the largest token ID.
 
 Role labels such as `USER` in a diagram are display names for IDs, not text sent to BPE. Only `content` enters `encode_bpe`; the formatter directly inserts structural IDs.
 
-![Message dictionaries become token IDs and aligned target flags](assets/08-01-chat-format.en.png)
+![Message dictionaries become token IDs and aligned target flags](assets/08-01-chat-format.en.png){width=100%}
 
 Read the position row separately from the numeric ID row. Every colored ID cell is one token occurrence. The Boolean row describes supervision, not causal attention visibility. Both returns are Python lists; after batching the main example, ID and mask tensors would have shape `[1,6]`.
 
 ### What the learning mask means
 
-Define `a_r = (role_r == 'assistant')`. For one message, the aligned target flags are:
+Define $a_r$ to be true exactly when $\mathrm{role}_r=\text{assistant}$. For one message, the aligned target flags are:
 
 $$
 m^{(r)}=[\mathrm{False}]\;\Vert\;[a_r]\text{ repeated }(n_r+1)\text{ times}.
@@ -14638,13 +14502,13 @@ Return these two lists as a tuple. There are six positions, but the highest ID i
 
 ### Connect the mask to next-token prediction
 
-The flag at position `i` describes whether **that token** is a target we want to learn. A causal model's logit row at position `t` predicts position `t+1`. Therefore later loss computation aligns:
+The flag at position $i$ describes whether **that token** is a target we want to learn. A causal model's logit row at position $t$ predicts position $t+1$. Therefore later loss computation aligns:
 
 $$
 X=s[:-1],\quad Y=s[1:],\quad M=m[1:],\quad Z_{\mathrm{used}}=Z[:,:-1,:].
 $$
 
-For this lesson's later full-sequence-forward convention, `Z` has shape `[1,6,259]`; we use five rows and five shifted targets. `X` here describes the prefixes' input positions; it is not an additional model call after already computing full `Z`.
+For this lesson's later full-sequence-forward convention, $Z$ has shape `[1,6,259]`; we use five rows and five shifted targets. $X$ here describes the prefixes' input positions; it is not an additional model call after already computing full $Z$.
 
 ```text
 logit position t       0      1      2      3      4
@@ -14653,11 +14517,11 @@ target ID            97    258    257     98    258
 shifted mask          F      F      F      T      T
 ```
 
-![The mask must shift with targets, not remain aligned to input rows](assets/08-01-shifted-target-mask.en.png)
+![The mask must shift with targets, not remain aligned to input rows](assets/08-01-shifted-target-mask.en.png){width=100%}
 
 At logit position 3, the prefix ends with the assistant role marker. That marker's own flag is False, but its logits predict `b` at position 4, whose flag is True. This distinction is why an unshifted mask would supervise the wrong positions.
 
-If the model assigns probabilities `p(b)=1/2` and `p(EOS)=1/4` at the two selected rows, the assistant-only mean loss is:
+If the model assigns probabilities $p(\texttt{b})=1/2$ and $p(\mathrm{EOS})=1/4$ at the two selected rows, the assistant-only mean loss is:
 
 $$
 L=-\frac{1}{N}\sum_{t=0}^{T-2}m_{t+1}\log p_\theta(s_{t+1}\mid s_0,\ldots,s_t),
@@ -14669,7 +14533,7 @@ L=\frac{-\ln(1/2)-\ln(1/4)}{2}
 =\frac{3\ln2}{2}\approx1.039721.
 $$
 
-The denominator is two selected targets, not six tokens or five prediction slots. This equation describes mathematical selection; implementation should select valid losses rather than multiply excluded infinities by zero, as discussed in 07.02. Uniform logits across 259 candidates would instead give `ln(259) ≈ 5.556828` for every selected target. These are illustrative probability fixtures, not results from a trained model.
+The denominator is two selected targets, not six tokens or five prediction slots. This equation describes mathematical selection; implementation should select valid losses rather than multiply excluded infinities by zero, as discussed in 07.02. Uniform logits across 259 candidates would instead give $\ln(259)\approx5.556828$ for every selected target. These are illustrative probability fixtures, not results from a trained model.
 
 **Do not implement shifting or loss inside `format_chat`.** Return aligned, unshifted lists. 08.02 will perform this next step; shifting in both places would be wrong. A training loader that already supplies aligned X/Y needs its own explicitly matched protocol, not another automatic shift.
 
@@ -14686,7 +14550,7 @@ ids        = [257,256,259,258,256,97,259]
 learn_mask = [F,  F,  F,  F,  T, T,  T]
 ```
 
-![BPE content and inserted structure use disjoint IDs](assets/08-01-bpe-structure-boundaries.en.png)
+![BPE content and inserted structure use disjoint IDs](assets/08-01-bpe-structure-boundaries.en.png){width=100%}
 
 Do not infer token type from `id >= 256`: both ordinary merges and special IDs can satisfy that condition. Reserve IDs against the actual frozen vocabulary. A model with new IDs also needs sufficient embedding/output capacity and training; inserting an integer cannot create a meaningful trained embedding automatically.
 
@@ -14718,7 +14582,7 @@ append assistant role ID           → [256,97,258,257]
 
 This prefix is what 07.04 accepts as `prompt`. Do not construct an empty completed assistant message as a shortcut: our formatter would produce `[257,258]`, ending that message before generation begins.
 
-![The full training sequence and unfinished assistant inference prefix](assets/08-01-inference-prefix.en.png)
+![The full training sequence and unfinished assistant inference prefix](assets/08-01-inference-prefix.en.png){width=100%}
 
 In an illustrative rollout, prefill `[1,4]` might select ID 98; feed only `[[98]]` next, then stop if ID 258 is selected. The selected token enters K/V only on its next forward call, exactly as in 07.04. This is a protocol example, not a claim that formatting makes the random model generate `b`.
 
@@ -14768,9 +14632,7 @@ The unchanged original driver checks the six-ID example, empty message list and 
 
 Before the next lesson, explain which flags change if the first message's role changes; why `learn_mask[3]` can be False while logit row 3 still receives supervised loss; why EOS needs a flag even for empty content; and why a special ID must not collide with an ordinary BPE merge. Code checks and your independently demonstrated reasoning remain separate evidence.
 
-<a id="section-08-02"></a>
-
-## 08.02 Assistant-only supervised fine-tuning
+## 08.02 Assistant-only supervised fine-tuning {#section-08-02}
 
 ### Method sources
 
@@ -14784,10 +14646,10 @@ This is a continuation of next-token learning, with a different data distributio
 
 ### Formulas and principles
 $$
-L_{SFT}=-\frac{\sum_{b=0}^{B-1}\sum_{t=1}^{T-1}m_{b,t}\log p_\theta(ids_{b,t}\mid ids_{b,<t})}{\sum_{b=0}^{B-1}\sum_{t=1}^{T-1}m_{b,t}}
+L_{\mathrm{SFT}}=-\frac{\sum_{b=0}^{B-1}\sum_{t=1}^{T-1}m_{b,t}\log p_\theta(\mathrm{ids}_{b,t}\mid \mathrm{ids}_{b,<t})}{\sum_{b=0}^{B-1}\sum_{t=1}^{T-1}m_{b,t}}
 $$
 
-Here $ids$ has shape $[B,T]$, and the model returns logits $[B,T,V]$. The formula indexes **target positions** $t=1,\ldots,T-1$: logits at position $t-1$ predict the ID at position $t$. The Boolean value $m_{b,t}$ says whether that target belongs to the response we want to learn. It does not say whether the input at that position may be read as context.
+Here $\mathrm{ids}$ has shape $[B,T]$, and the model returns logits $[B,T,V]$. The formula indexes **target positions** $t=1,\ldots,T-1$: logits at position $t-1$ predict the ID at position $t$. The Boolean value $m_{b,t}$ says whether that target belongs to the response we want to learn. It does not say whether the input at that position may be read as context.
 
 Define $K=\sum_{b,t}m_{b,t}$. The exercise assumes $K>0$. The numerator is the sum of the selected negative log probabilities; dividing by $K$ gives a mean per selected target. Padding must already be excluded from $m$. An EOS marker may have zero source-text bytes and still be a meaningful training target: learning when to stop is part of the demonstrated response.
 
@@ -14795,7 +14657,7 @@ For one selected class score $z_c$, the logit derivative is $(p_c-\mathbf1[c=y])
 
 Do not apply softmax before `F.cross_entropy`. That operation accepts logits and combines log-softmax with the target selection in a numerically stable calculation. Likewise, keep a different loader convention separate: if the loader already supplies aligned `x` and `y`, do not shift those targets a second time.
 
-![Assistant-only supervised fine-tuning：08.02](assets/08-02-assistant-sft.en.png)
+![Assistant-only supervised fine-tuning：08.02](assets/08-02-assistant-sft.en.png){width=100%}
 
 Read the six-position strip from left to right. The upper row shows the full conversation; the lower row aligns each prediction with its next-position target. Only the assistant character and EOS columns enter the mean. Context remains visible even where the direct target loss is masked.
 
@@ -14860,9 +14722,7 @@ Can user token embeddings still receive gradients with assistant-only target los
 
 Fine-tune a saved base checkpoint on a small, licensed instruction dataset using this loss. Freeze a held-out prompt set and compare base versus SFT using the same seeds and decoding policy. Track answer correctness, format following, EOS behavior and regression on held-out base text.
 
-<a id="section-08-03"></a>
-
-## 08.03 Direct preference optimization
+## 08.03 Direct preference optimization {#section-08-03}
 
 ### Method sources
 
@@ -14876,7 +14736,7 @@ The comparison is relative to a frozen reference policy. The reference records h
 
 ### Formulas and principles
 $$
-L_{DPO}=-\mathbb E\log\sigma\left(\beta\left[(\log\pi_\theta(y_w|x)-\log\pi_\theta(y_l|x))-(\log\pi_{ref}(y_w|x)-\log\pi_{ref}(y_l|x))\right]\right)
+L_{\mathrm{DPO}}=-\mathbb E\log\sigma\left(\beta\left[(\log\pi_\theta(y_w|x)-\log\pi_\theta(y_l|x))-(\log\pi_{\mathrm{ref}}(y_w|x)-\log\pi_{\mathrm{ref}}(y_l|x))\right]\right)
 $$
 
 A response is a sequence, so its log probability is the sum of the next-token log probabilities of its selected answer tokens. The prompt is conditioning context. Both responses must use the same prompt, tokenizer and boundary convention, including a consistent EOS policy.
@@ -14887,9 +14747,9 @@ At $z=0$ the loss is $\ln2$: the policy has not improved its margin over the ref
 
 The four inputs already contain sequence log probabilities and have shape $[B]$. They are not logits $[B,T,V]$, and this function does not compute their token sums. The reference inputs must be detached. In a real implementation, freeze the reference parameters and exclude them from the optimizer as well. Sequence sums are sensitive to length; replacing them with token means would define a different objective.
 
-![Direct preference optimization：08.03](assets/08-03-direct-preference.en.png)
+![Direct preference optimization：08.03](assets/08-03-direct-preference.en.png){width=100%}
 
-Compare the policy margin and reference margin in the first panel, then follow their difference into the logistic loss curve. The marked zero-margin point is ln2. A higher relative margin moves right and lowers the loss; the plotted values are analytic examples, not measured preference accuracy.
+Compare the policy margin and reference margin in the first panel, then follow their difference into the logistic loss curve. The marked zero-margin point is $\ln 2$. A higher relative margin moves right and lowers the loss; the plotted values are analytic examples, not measured preference accuracy.
 
 ### Function contract
 
@@ -14946,9 +14806,7 @@ After passing, change one example dimension or input, predict the result before 
 
 [Primary paper or official documentation (further reading)](https://arxiv.org/abs/2305.18290)
 
-<a id="section-08-04"></a>
-
-## 08.04 Rewards, advantages and clipped policy objectives
+## 08.04 Rewards, advantages and clipped policy objectives {#section-08-04}
 
 ### Method sources
 
@@ -14962,18 +14820,18 @@ We isolate the clipped policy term used in PPO. The exercise accepts already com
 
 ### Formulas and principles
 $$
-\nabla J=\mathbb E[A\nabla\log\pi_\theta(a|s)];\quad r=e^{\log\pi_{new}-\log\pi_{old}};\quad L=-\mathbb E\min(rA,\operatorname{clip}(r,1-\epsilon,1+\epsilon)A)
+\nabla J=\mathbb E[A\nabla\log\pi_\theta(a|s)];\quad r=e^{\log\pi_{\mathrm{new}}-\log\pi_{\mathrm{old}}};\quad L=-\mathbb E\min(rA,\operatorname{clip}(r,1-\epsilon,1+\epsilon)A)
 $$
 
 A reward $R$ evaluates an outcome. An advantage $A$ expresses how much better that outcome was than a baseline under the chosen estimator. Positive advantage favors the sampled action; negative advantage discourages it. In this policy term, the advantage is treated as fixed data rather than differentiated through.
 
-The probability ratio is $r=\pi_{new}(a|s)/\pi_{old}(a|s)$ for the **same sampled action and state**. Subtracting the corresponding log probabilities and exponentiating computes this ratio. The old policy describes how the sample was collected; it is not the frozen DPO reference from 08.03. Both may appear in a real system for different purposes.
+The probability ratio is $r=\pi_{\mathrm{new}}(a|s)/\pi_{\mathrm{old}}(a|s)$ for the **same sampled action and state**. Subtracting the corresponding log probabilities and exponentiating computes this ratio. The old policy describes how the sample was collected; it is not the frozen DPO reference from 08.03. Both may appear in a real system for different purposes.
 
 The surrogate compares $rA$ with a version whose ratio is clipped to $[1-\epsilon,1+\epsilon]$, then selects the smaller value. When $A>0$, the upper cap prevents the objective from continuing to reward an excessive probability increase. When $A<0$, the lower cap prevents continued reward for an excessive decrease. The minimum handles both cases because multiplying by a negative number reverses order.
 
 The loss is the **negative** mean because the optimizer minimizes, whereas the surrogate is an objective to maximize. Clipping is not a hard constraint that every updated probability ratio remains inside the interval. Shared parameters and other losses can still move ratios outside it.
 
-![Rewards, advantages and clipped policy objectives：08.04](assets/08-04-policy-objective.en.png)
+![Rewards, advantages and clipped policy objectives：08.04](assets/08-04-policy-objective.en.png){width=100%}
 
 Read the positive-advantage and negative-advantage curves separately. The horizontal part shows where further movement in the favorable direction no longer increases the clipped objective. The function returns the negative average of these objective values.
 
@@ -14989,7 +14847,7 @@ new_logp, old_logp, advantage: float[B] action log probabilities and precomputed
 
 Take $\epsilon=0.2$, ratios `[1.5,0.5]`, and advantages `[1,-1]`.
 
-| Sample | Ratio | Advantage | Unclipped rA | Clipped ratio | Clipped product | Selected minimum |
+| Sample | Ratio | Advantage | Unclipped $rA$ | Clipped ratio | Clipped product | Selected minimum |
 | --- | --- | --- | --- | --- | --- | --- |
 |0 |1.5 |1 |1.5 |1.2 |1.2 |1.2 |
 |1 |0.5 |-1 |-0.5 |0.8 |-0.8 |-0.8 |
@@ -15041,17 +14899,13 @@ Complete stage runbook
 
 We can now specify what a conversational update tries to improve. Before scaling the workload, we must understand where memory and time go and which optimizations preserve the calculation.
 
-<a id="chapter-09"></a>
-
-# 09 Scale execution without losing meaning
+# 09 Scale execution without losing meaning {#chapter-09}
 
 A mathematically correct model can still use resources badly. A memory estimate may omit activations; a timer may stop before the accelerator finishes; a microbatch mean may give the wrong weight to a short final batch. Performance work begins by making those contracts measurable.
 
 This chapter separates persistent state from temporary storage, derives target-weighted gradient accumulation, explains autocast and loss scaling, checks an efficient attention implementation against a reference, and models distributed gradient reduction. Each technique is tied to an equivalence condition before a speed or memory claim is made. Measurements belong to the actual backend and workload, not to a CPU arithmetic fixture.
 
-<a id="section-09-01"></a>
-
-## 09.01 Memory, compute and profiling
+## 09.01 Memory, compute and profiling {#section-09-01}
 
 ### Method sources
 
@@ -15065,7 +14919,7 @@ We build a small accounting function before measuring a complete model. Its esti
 
 ### Formulas and principles
 $$
-M_{state}\approx P(b_\theta+4+8);\quad C_{train}\approx6PN;\quad throughput=N/t
+M_{\mathrm{state}}\approx P(b_\theta+4+8);\quad C_{\mathrm{train}}\approx6PN;\quad \mathrm{throughput}=N/t
 $$
 
 $P$ counts parameters. A float32 number occupies four bytes; Adam's two moment buffers therefore use $8P$ bytes under this exercise's assumptions. The three reported state components are $P b_\theta$, $4P$ and $8P$. If weights also use float32, their sum is $16P$ bytes before activations. Bytes, decimal GB and binary GiB are different units: divide bytes by $10^9$ for GB and by $2^{30}$ for GiB.
@@ -15076,7 +14930,7 @@ A timer must surround completed work. Accelerator calls can return after schedul
 
 Optimization priorities follow the measured fractions. If data preparation uses30% of iteration time, eliminating it entirely leaves70%; the maximum speedup from that change alone is $1/0.7\approx1.43$. This is a bound for that workload, not a predicted speedup from adding workers.
 
-![Memory, compute and profiling：09.01](assets/09-01-budget-profiling.en.png)
+![Memory, compute and profiling：09.01](assets/09-01-budget-profiling.en.png){width=100%}
 
 The memory stack separates weights, gradients and two moment buffers, with activations explicitly outside the estimate. The timing panel uses a hypothetical one-second iteration; its fractions explain the speedup bound without implying a hardware benchmark.
 
@@ -15094,10 +14948,10 @@ Take `parameters=1000`, `tokens=2000`, `seconds=2`, and `parameter_bytes=4`.
 
 | Component | Calculation | Bytes |
 | --- | --- | --- |
-| Parameters |1000 times4 |4000 |
-| Gradients |1000 times4 |4000 |
-| Adam moments |1000 times2 times4 |8000 |
-| State subtotal |4000+4000+8000 |16000 |
+| Parameters |$1000\times4$ |4000 |
+| Gradients |$1000\times4$ |4000 |
+| Adam moments |$1000\times2\times4$ |8000 |
+| State subtotal |$4000+4000+8000$ |16000 |
 
 Estimated work is $6\times1000\times2000=12{,}000{,}000$ FLOPs, and measured-count throughput is $2000/2=1000$ tokens per second. No activation or allocator overhead has been included.
 
@@ -15138,9 +14992,7 @@ Why can asynchronous device timing overstate throughput?
 
 Measure10 warmup and 30 timed updates using time.perf_counter, synchronizing accelerated devices at the timing boundaries. Record peak allocated memory, tokens/s, optimizer state bytes and profiler stage shares. Preserve summarized portable measurements, not raw infrastructure logs.
 
-<a id="section-09-02"></a>
-
-## 09.02 Position-weighted gradient accumulation
+## 09.02 Position-weighted gradient accumulation {#section-09-02}
 
 ### Method sources
 
@@ -15163,7 +15015,7 @@ This is an equivalence statement about an objective evaluated at one parameter s
 
 For a faithful deterministic comparison, disable stochastic dropout and avoid batch-dependent operations such as BatchNorm. Even then, floating-point reduction order can produce small numerical differences. An optimizer schedule counts combined updates rather than backward calls. If gradients are clipped, clip once after accumulation; with loss scaling, unscale before that clip.
 
-![Position-weighted gradient accumulation：09.02](assets/09-02-gradient-accumulation.en.png)
+![Position-weighted gradient accumulation：09.02](assets/09-02-gradient-accumulation.en.png){width=100%}
 
 The two microbatch boxes contain different target counts. Their loss numerators join a single total denominator; both backward paths enter one gradient buffer before the optimizer step. Read the step as a single event after the entire accumulation group.
 
@@ -15189,8 +15041,8 @@ Implement `accumulated_step` on the supplied `(X,Y,mask)` list.
 
 1. Count all selected Boolean entries before any forward pass, obtaining the positive global denominator `N`.
 2. Call `optimizer.zero_grad` once at function indentation, before the microbatch loop.
-3. For each microbatch, obtain logits `[B_k,T_k,V]`, form one cross-entropy value per aligned target and select its valid mask entries.
-4. Sum those selected losses and divide by the global `N`. In the example, the two contributions must be1/3 and 4/3.
+3. For each microbatch, obtain logits $[B_k,T_k,V]$, form one cross-entropy value per aligned target and select its valid mask entries.
+4. Sum those selected losses and divide by the global `N`. In the example, the two contributions must be $1/3$ and $4/3$.
 5. Add a detached Python value to the reported loss, but call `.backward()` on the connected contribution tensor. Each pass adds to the same parameter gradient buffers.
 6. Leave the loop before calling `optimizer.step()`. Return the accumulated pre-update loss. The return and step must not be indented inside the loop.
 
@@ -15218,9 +15070,7 @@ Why does the optimizer step belong outside the microbatch loop?
 
 After passing, change one example dimension or input, predict the result before running, and explain any mismatch. Record the check separately from your explanation. Continue in book order.
 
-<a id="section-09-03"></a>
-
-## 09.03 Autocast and gradient scaling
+## 09.03 Autocast and gradient scaling {#section-09-03}
 
 ### Method sources
 
@@ -15245,7 +15095,7 @@ Clipping must inspect the unscaled gradients. For norm threshold1, clipping a sc
 
 An autocast context chooses eligible operation dtypes. The original float32 parameter objects remain float32 in this exercise. Backward runs outside the autocast context. For accumulation, complete all scaled backward calls before one unscale/clip/step/update sequence.
 
-![Autocast and gradient scaling：09.03](assets/09-03-mixed-precision.en.png)
+![Autocast and gradient scaling：09.03](assets/09-03-mixed-precision.en.png){width=100%}
 
 The arithmetic path tracks both loss and gradient through scaling and unscaling. The order diagram places clipping after unscale. The numerical scale example illustrates exact multiplication; it does not claim that the chosen unscaled gradient necessarily underflows in every backend.
 
@@ -15261,7 +15111,7 @@ model: module; x, y: long[B, T]; optimizer: model optimizer; scaler: None for CP
 
 Let the unscaled loss be0.01, a true scalar gradient be0.000001, and scale be1024. The scaled loss is 10.24 and the scaled gradient is 0.001024. Dividing that gradient by 1024 restores0.000001 before updating. This example demonstrates the algebra; whether an intermediate value underflows depends on its format and the operations that produced it.
 
-For a separate clipping example, let the true gradient norm be2 and the scale1024. The stored norm is 2048. Correct unscaling restores norm 2, then clipping limits it to 1. Incorrectly clipping2048 down to 1 before unscaling leaves true norm 1/1024, an excessively small update.
+For a separate clipping example, let the true gradient norm be2 and the scale1024. The stored norm is 2048. Correct unscaling restores norm 2, then clipping limits it to 1. Incorrectly clipping2048 down to 1 before unscaling leaves true norm $1/1024$, an excessively small update.
 
 The supplied CPU model contains an embedding and a linear projection. Its parameter storage stays float32, while eligible forward operations may produce BF16 outputs. The returned Python loss reports the pre-update objective; the scalar tensor is used for backward before that conversion.
 
@@ -15302,9 +15152,7 @@ After passing, change one example dimension or input, predict the result before 
 
 [Primary paper or official documentation (further reading)](https://docs.pytorch.org/docs/stable/notes/amp_examples.html)
 
-<a id="section-09-04"></a>
-
-## 09.04 Efficient attention with equivalence checks
+## 09.04 Efficient attention with equivalence checks {#section-09-04}
 
 ### Method sources
 
@@ -15318,7 +15166,7 @@ A fused backend is an implementation choice, not a new permission rule for token
 
 ### Formulas and principles
 $$
-O=\operatorname{softmax}(QK^\top/\sqrt d+M)V;\quad\text{equivalence: }O_{fast}\approx O_{reference},\;\nabla O_{fast}\approx\nabla O_{reference}
+O=\operatorname{softmax}(QK^\top/\sqrt d+M)V;\quad\text{equivalence: }O_{\mathrm{fast}}\approx O_{\mathrm{reference}},\;\nabla O_{\mathrm{fast}}\approx\nabla O_{\mathrm{reference}}
 $$
 
 Queries and keys share a matching width $d$, while values may have a different width $d_v$. In this interface the common layout is $Q:[B,H,T_q,d]$, $K:[B,H,T_k,d]$, $V:[B,H,T_k,d_v]$, with output $[B,H,T_q,d_v]$. The causal default assumes aligned self-attention positions.
@@ -15329,7 +15177,7 @@ The Boolean mask in PyTorch SDPA uses `True` for **allowed** entries. Section 04
 
 For a cache with $P$ past positions, a new query index $i$ has absolute position $P+i$. Its allowed keys satisfy $j\leq P+i$. A rectangular `is_causal=True` interpretation may align at the upper left instead; provide the explicit absolute-position mask for this exercise's cached case. Set dropout to zero for the deterministic equivalence check.
 
-![Efficient attention with equivalence checks：09.04](assets/09-04-efficient-attention.en.png)
+![Efficient attention with equivalence checks：09.04](assets/09-04-efficient-attention.en.png){width=100%}
 
 The left panel shows the 3-by 3 causal visibility matrix; the right panel separates a one-query, three-key cached case. White or colored cells must be read according to the explicit allowed-mask legend. Output values are compared with the original zero-score fixture.
 
@@ -15347,7 +15195,7 @@ With three zero query/key scores, a causal query averages only the visible value
 
 The three outputs are $2$, $(2+4)/2=3$, and $(2+4+8)/3=14/3$. The output shape is `[1,1,3,1]`, not the query/key shape. Equal scores produce uniform weights over the allowed keys, not all keys.
 
-Now suppose two positions are already cached and one new query has absolute position 2. It must see keys0,1,2, so the explicit allowed mask `[True,True,True]` has shape `[1,3]`. Its output is 14/3. A mistakenly upper-left mask would keep only key 0 and produce2, even though the operation would still return a tensor of the expected shape.
+Now suppose two positions are already cached and one new query has absolute position 2. It must see keys0,1,2, so the explicit allowed mask `[True,True,True]` has shape `[1,3]`. Its output is $14/3$. A mistakenly upper-left mask would keep only key 0 and produce2, even though the operation would still return a tensor of the expected shape.
 
 ### Guided implementation
 
@@ -15386,9 +15234,7 @@ After passing, change one example dimension or input, predict the result before 
 
 [Primary paper or official documentation (further reading)](https://docs.pytorch.org/docs/stable/generated/torch.nn.functional.scaled_dot_product_attention.html)
 
-<a id="section-09-05"></a>
-
-## 09.05 Distributed gradients and recovery
+## 09.05 Distributed gradients and recovery {#section-09-05}
 
 ### Method sources
 
@@ -15402,7 +15248,7 @@ The CPU function in this section models the reduction contract. It does not star
 
 ### Formulas and principles
 $$
-g_{global}=\frac{\sum_rn_rg_r}{\sum_rn_r};\quad\text{DDP mean reduction requires local loss scale }R n_r/N
+g_{\mathrm{global}}=\frac{\sum_rn_rg_r}{\sum_rn_r};\quad\text{DDP mean reduction requires local loss scale }R n_r/N
 $$
 
 Rank $r$ has $n_r$ selected targets and local target-mean gradient $g_r$. Its loss-sum gradient is $n_rg_r$. The global target mean is therefore $\sum_rn_rg_r/\sum_rn_r$, exactly the same accounting rule used for microbatches in09.02.
@@ -15413,7 +15259,7 @@ Sharding is a different storage decision: parameters, gradients or optimizer sta
 
 All ranks must enter matching collectives in the same order. A rank that exits early while its peers wait for a gradient reduction can deadlock the program. Validation, exceptions and zero-target cases therefore require a coordinated policy in a real system.
 
-![Distributed gradients and recovery：09.05](assets/09-05-distributed-recovery.en.png)
+![Distributed gradients and recovery：09.05](assets/09-05-distributed-recovery.en.png){width=100%}
 
 The two ranks carry different target counts and local gradients. Weighted numerators are summed before one global division. The separate DDP scaling expression explains how this contract can be obtained from an averaging collective; the CPU exercise itself performs no communication.
 
@@ -15476,17 +15322,13 @@ Complete stage runbook
 
 An optimization has meaning only when its result can be compared with a preserved baseline. The final chapter turns that discipline into experiment records, budget models and tests of original ideas.
 
-<a id="chapter-10"></a>
-
-# 10 Make experiments explainable
+# 10 Make experiments explainable {#chapter-10}
 
 An experiment is a chain of identities and decisions. Which code ran? Which data and tokenizer were fixed? How many targets were actually processed? Which validation rule selected the saved weights, and which independent test was reserved for the final comparison? A result becomes useful when another person can reconstruct that chain.
 
 We finish by making a portable experiment snapshot, fitting a deliberately limited scaling model, and estimating a paired effect with a bootstrap interval. The objective is to make a claim precise enough to be challenged. A new architectural idea becomes evidence when controlled comparisons, ablations and failure cases show what it changes and under which conditions.
 
-<a id="section-10-01"></a>
-
-## 10.01 Reproducible experiment records
+## 10.01 Reproducible experiment records {#section-10-01}
 
 ### Method sources
 
@@ -15515,7 +15357,7 @@ Deep copying matters because nested dictionaries remain shared after a shallow c
 
 A digest is not encryption or anonymization. Hashing a configuration that contains a personal hostname still leaves that hostname in the stored configuration. Use portable compute labels and keep actual private mappings outside the record. The conclusion should separate a measured difference from the next hypothesis it suggests.
 
-![Reproducible experiment records：10.01](assets/10-01-experiment-provenance.en.png)
+![Reproducible experiment records：10.01](assets/10-01-experiment-provenance.en.png){width=100%}
 
 Follow a portable configuration into a stable byte serialization and digest, then into a snapshot beside code, data and protocol identities. The later caller mutation is drawn on a different branch: it must not change the saved snapshot.
 
@@ -15570,9 +15412,7 @@ What evidence is missing from a screenshot showing only the final loss?
 
 Use templates/experiment-record.json and templates/model-card.md for each real run and release candidate. Record full commit, data/tokenizer checksums, portable configuration, measured budget, fixed evaluation, artifact digest and limitations. Keep model/data weights outside Git.
 
-<a id="section-10-02"></a>
-
-## 10.02 Measured scaling and budget choices
+## 10.02 Measured scaling and budget choices {#section-10-02}
 
 ### Method sources
 
@@ -15597,9 +15437,9 @@ An assumed floor can strongly change the fitted curve. If a loss is at or below 
 
 Large-model scaling studies consider more than this one variable. The compute-optimal literature motivates balancing model size and tokens under a budget, but it does not certify that a particular small model has learned enough to chat. Keep unique corpus tokens separate from repeated training exposures and actual achieved throughput.
 
-![Measured scaling and budget choices：10.02](assets/10-02-scaling-fit.en.png)
+![Measured scaling and budget choices：10.02](assets/10-02-scaling-fit.en.png){width=100%}
 
-The left plot shows the three hypothetical loss measurements and their fitted power law. The right plot shows the same points after logarithms: the slope is -0.5. The extrapolated C=64 marker is a prediction to test, not an additional observation.
+The left plot shows the three hypothetical loss measurements and their fitted power law. The right plot shows the same points after logarithms: the slope is -0.5. The extrapolated $C=64$ marker is a prediction to test, not an additional observation.
 
 ### Function contract
 
@@ -15607,19 +15447,19 @@ The left plot shows the three hypothetical loss measurements and their fitted po
 def fit_scaling(compute: list[float], losses: list[float], floor: float = 0.) -> dict:
 ```
 
-compute: at least 2 distinct positive budgets; losses: same-length measured held-out losses, each>floor; floor: assumed fixed irreducible-loss estimate. Return coefficient a, exponent b for loss≈floor+a*C^(-b) using log-space least squares. This is a toy fit, not a universal law.
+compute: at least 2 distinct positive budgets; losses: same-length measured held-out losses, each>floor; floor: assumed fixed irreducible-loss estimate. Return coefficient $a$, exponent $b$ for $L(C)\approx L_\infty+aC^{-b}$ using log-space least squares. This is a toy fit, not a universal law.
 
 ### A worked example
 
 Use compute `[1,4,16]`, losses `[4,2,1]`, and floor0. Multiplying compute by 4 halves the loss. Therefore $4^{-b}=1/2$, giving $b=1/2$; the first point then gives $a=4$.
 
-| C | L | ln C | ln L |
+| $C$ | $L$ | $\ln C$ | $\ln L$ |
 | --- | --- | --- | --- |
 |1 |4 |0 |1.386294 |
 |4 |2 |1.386294 |0.693147 |
 |16 |1 |2.772589 |0 |
 
-The centered least-squares slope is-0.5 and intercept is$\ln4$. At compute64, the model predicts $4/\sqrt{64}=0.5$. That budget was not included in the fit, so a real experiment there would test the extrapolation.
+The centered least-squares slope is-0.5 and intercept is $\ln4$. At compute64, the model predicts $4/\sqrt{64}=0.5$. That budget was not included in the fit, so a real experiment there would test the extrapolation.
 
 For the separate floor1 fixture with losses `[5,3,2]`, subtracting1 yields the same residual losses `[4,2,1]`. The fitted $a,b$ stay4 and 0.5, but the compute64 prediction is now1.5. Adding the floor back is part of the model, not an optional reporting choice.
 
@@ -15660,9 +15500,7 @@ After passing, change one example dimension or input, predict the result before 
 
 [Primary paper or official documentation (further reading)](https://arxiv.org/abs/2203.15556)
 
-<a id="section-10-03"></a>
-
-## 10.03 Original ideas, ablations and uncertainty
+## 10.03 Original ideas, ablations and uncertainty {#section-10-03}
 
 ### Method sources
 
@@ -15676,10 +15514,10 @@ Use paired runs when a matched seed and data schedule can make baseline and vari
 
 ### Formulas and principles
 $$
-d_i=L_{base,i}-L_{var,i};\quad \Delta=\frac1n\sum_i d_i;\quad CI=[Q_{.025}(\overline d^*),Q_{.975}(\overline d^*)]
+d_i=L_{\mathrm{base},i}-L_{\mathrm{var},i};\quad \Delta=\frac1n\sum_i d_i;\quad \mathrm{CI}=[Q_{.025}(\overline d^*),Q_{.975}(\overline d^*)]
 $$
 
-For pair $i$, define $d_i=L_{base,i}-L_{var,i}$. A positive difference means the variant has lower loss under this convention. The mean improvement is $\Delta=\sum_i d_i/n$. Pairing occurs before resampling: a bootstrap draw samples indices into the **differences**, keeping each baseline/variant pairing intact.
+For pair $i$, define $d_i=L_{\mathrm{base},i}-L_{\mathrm{var},i}$. A positive difference means the variant has lower loss under this convention. The mean improvement is $\Delta=\sum_i d_i/n$. Pairing occurs before resampling: a bootstrap draw samples indices into the **differences**, keeping each baseline/variant pairing intact.
 
 Each bootstrap replicate draws $n$ indices with replacement from the $n$ observed pairs and averages the selected differences. Quantiles0.025 and 0.975 give a percentile interval for this empirical resampling procedure. The local generator seed makes that numerical procedure repeatable without changing global NumPy randomness.
 
@@ -15687,7 +15525,7 @@ The interval reflects variation present in the observed pairs under the resampli
 
 Before a real comparison, define the primary metric, the fixed evaluation split and the budget-matching rule. Use validation to develop the method and reserve an independent final evaluation. Report all planned variants and seeds, rather than only the best-looking checkpoint or task.
 
-![Original ideas, ablations and uncertainty：10.03](assets/10-03-ablations-uncertainty.en.png)
+![Original ideas, ablations and uncertainty：10.03](assets/10-03-ablations-uncertainty.en.png){width=100%}
 
 The left panel keeps baseline and variant losses paired by seed and shows the per-pair differences. The right panel contrasts constant differences with the exact resampling distribution of a three-value synthetic example. A narrow toy interval is not independent evidence of generalization.
 

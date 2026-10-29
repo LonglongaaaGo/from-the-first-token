@@ -4,7 +4,7 @@
 
 [简体中文](README.zh-CN.md)
 
-The book contains ten chapters, 71 bilingual sections, two reader PDFs, illustrations, and 70 numbered exercises with supplied checks.
+The book contains ten chapters and 71 sections, with reader PDFs, illustrations, and 70 numbered exercises with supplied checks.
 
 The book and illustrations use **CC BY-NC-ND 4.0**; teaching code uses **PolyForm Noncommercial 1.0.0**. See [LICENSE.md](LICENSE.md) and [NOTICE.md](NOTICE.md) for the scope of each license.
 

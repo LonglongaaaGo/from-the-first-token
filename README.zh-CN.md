@@ -4,7 +4,7 @@
 
 [English](README.md)
 
-本书包含十章、71节的中英文书稿、两本 PDF、配套插图，以及70个编号练习和检查程序。
+本书包含十章、71节，附 PDF、配套插图，以及70个编号练习和检查程序。
 
 书稿和插图采用 **CC BY-NC-ND 4.0**，教学代码采用 **PolyForm Noncommercial 1.0.0**。具体使用范围见 [LICENSE.md](LICENSE.md) 和 [NOTICE.md](NOTICE.md)。
 
