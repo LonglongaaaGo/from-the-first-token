@@ -20,15 +20,15 @@
   "teaching_data_manifest": "examples/data/manifest.json",
   "teaching_data_license": "PolyForm-Noncommercial-1.0.0",
   "distribution": "github-source",
-  "release_package_manifest_sha256": "175aff1190824bf7bbb2ab2e65953ac1acd4258a9bffbfd61e7917e10fcc84bd",
+  "release_package_manifest_sha256": "62954c04ae3924b671b0e9c27e286268e547c031ccc0918c72bc6ae0b38b468f",
   "pdf_release_assets": {
     "book/en/book.pdf": {
-      "sha256": "4f741133dc332764bbc3e4eb2eba06501a0da17cbfdf272a8627a240323e68dd",
-      "bytes": 18039748
+      "sha256": "1e9dfde34009c5a6299a01e3af8515e4ae42c5b817f57d8edd497887cc102e8b",
+      "bytes": 17872780
     },
     "book/zh-CN/book.pdf": {
-      "sha256": "344ab509ac81ca575c7ce083b85907b0bde968f1e51b75281fda76569376f66d",
-      "bytes": 36871918
+      "sha256": "98ec0e237f081cc649bcb3013fa18fd3d7f710a4411c89c5873096a9c33ac5ab",
+      "bytes": 36442792
     }
   },
   "files": {
@@ -81,28 +81,28 @@
       "bytes": 110244
     },
     "book/en/assets/02-01-adjacent-pairs.en.png": {
-      "sha256": "14c443c9e55b15b50c8385216c63846b479e7ea43c5defa92a8d7651c4f6d9b4",
-      "bytes": 38350
+      "sha256": "b43a2bd502aed1ec88d02174c5a107e7b5cb3bba164dfab98d27dce9cf5d2db3",
+      "bytes": 38307
     },
     "book/en/assets/02-01-adjacent-pairs.en.svg": {
-      "sha256": "72853d88ea50d77aeff705eb1555a32fa4a88a523286b17e0152945cf97b785b",
-      "bytes": 96686
+      "sha256": "2edf1527053f24b7d03ddff4f9c32ecd870dbc8a977f2f6b3dd055f7bd442ee9",
+      "bytes": 95905
     },
     "book/en/assets/02-02-nonoverlapping-merge.en.png": {
-      "sha256": "a57b6c968355550db1997a402ed2b5374eadeccb25555acd5e557606f7009848",
-      "bytes": 32019
+      "sha256": "0a8ccbcc104d820d30268f721a25453c3ca868a86fc6fa6c29abb4afb8153d1c",
+      "bytes": 32009
     },
     "book/en/assets/02-02-nonoverlapping-merge.en.svg": {
-      "sha256": "a7abe664e3c9d36ff455a01f64d1b91fce416fb844198d8a7301fdb4b2010c82",
-      "bytes": 87226
+      "sha256": "8ded3896b6f0dada624a988161f95653947806731f2a668864cb48b603a447ce",
+      "bytes": 86442
     },
     "book/en/assets/02-03-training-rounds.en.png": {
-      "sha256": "fa30c560b16cf67e8d53d3373a5f0fbf1269ad946f4a4d9128e94d1c39a3881b",
-      "bytes": 42605
+      "sha256": "bbcd96c8c791d26d485ce2e1fb5cf473dfc0eedcd2ee0a6f662e165b4f51a72e",
+      "bytes": 42529
     },
     "book/en/assets/02-03-training-rounds.en.svg": {
-      "sha256": "c3fdd7f14ffc8328d42c5d8667c6064d2f51c921dc7793faeca833de8f74fbb4",
-      "bytes": 93538
+      "sha256": "35db17e0427012da177ac02e4c71086ce10f2c239d298e19ad10c1b267b3aa78",
+      "bytes": 92754
     },
     "book/en/assets/02-04-learned-rule-priority.en.png": {
       "sha256": "2dcae84c81fe790f8fb58ac7cf248fb5df48f6677862872b4263510e0e3afc95",
@@ -113,28 +113,28 @@
       "bytes": 106446
     },
     "book/en/assets/02-05-frozen-encoding.en.png": {
-      "sha256": "7d750576080569bca54d7cb3f641f0e6aafb4be5a48c48e48fdfa163148a1a59",
-      "bytes": 44861
+      "sha256": "ef96080025c315f048bf27d7779f7773d62f0cd54cadcc426ea1c95099377895",
+      "bytes": 44791
     },
     "book/en/assets/02-05-frozen-encoding.en.svg": {
-      "sha256": "04894238f46047e455dfa61f6d7c3fe184f1d94430d8655d782e86b696437ed6",
-      "bytes": 94867
+      "sha256": "16dd633e9b74c4476fb6582039ccdfffb7ab6c525dd61ec73da0ff455669a7bc",
+      "bytes": 94083
     },
     "book/en/assets/02-06-join-before-decode.en.png": {
-      "sha256": "4c150c5435336b4c24aaa6fdf7d86a747f6dc0f9326ad1fc0312f69e336253fd",
-      "bytes": 54345
+      "sha256": "bc53bbe5b850714527f1f4c4a2f765f6bb7cd89d5e0bc7859fb3956fba7a1db2",
+      "bytes": 54310
     },
     "book/en/assets/02-06-join-before-decode.en.svg": {
-      "sha256": "0821c6e3da3877a7e34b13c72dc5816cd3aca46f2f1e05d551de144b0d1a25c6",
-      "bytes": 136885
+      "sha256": "a0fa099f1d4d675a1a285f22017e7bbdfaa574e4cc1c97f8ebc05a1e231cd2c1",
+      "bytes": 136111
     },
     "book/en/assets/02-07-tokenizer-roundtrip.en.png": {
-      "sha256": "ccff78cb55939bf83542a1638f66bd5603c7fe83c712d847d667842d9c221427",
-      "bytes": 46654
+      "sha256": "01def4166c8fd4a8174bb62439efd4a057dc3f28d4a271e8bc6ace62792de39f",
+      "bytes": 46657
     },
     "book/en/assets/02-07-tokenizer-roundtrip.en.svg": {
-      "sha256": "ae81216c502af333fcffe33911afa0a0d0655f7c1c841a29b7697a53f8666426",
-      "bytes": 115402
+      "sha256": "4ce700e93a1a5e66b5fa7f2f46ad8a7806344e8d15f7d741ecdfa7af1b6f2985",
+      "bytes": 114618
     },
     "book/en/assets/03-01-embedding-rows.en.png": {
       "sha256": "526c254d091cbbb947781fcec684389398db5b5f2a7616402c973b1cd9c4947a",
@@ -281,12 +281,12 @@
       "bytes": 136502
     },
     "book/en/assets/03-13-training-to-prediction.en.png": {
-      "sha256": "3895f735310e7be1465429335cceb4382a37942c948ec8cee7bd353039c3c97f",
-      "bytes": 117200
+      "sha256": "c2b94e1fd2cbafee3aa4af5791299c70af0351536d2c77cad26a5055bec6845c",
+      "bytes": 117326
     },
     "book/en/assets/03-13-training-to-prediction.en.svg": {
-      "sha256": "f7253b090c4953cec5f2029762baa2e47df29d72b3b99eb832beae3312fef472",
-      "bytes": 137462
+      "sha256": "d113cb83231a74869135a13f5a933320a85fbbf8a2946ef2d22c67ea252948e0",
+      "bytes": 137076
     },
     "book/en/assets/03-14-prompt-growth.en.png": {
       "sha256": "9f036e5f03234fb74feabd46c60221714512a9c00ebfd51d01e4a9a3a7312146",
@@ -337,28 +337,28 @@
       "bytes": 145709
     },
     "book/en/assets/03-17-stopping-budget.en.png": {
-      "sha256": "a14ed12a973811cc5d136bfde8108bdae1882c1c580f053507f6396fc002f5a3",
-      "bytes": 128851
+      "sha256": "19ce3416364db35207404d4aee2f7b58accf5df260e6cc9473470f9bd8135554",
+      "bytes": 128714
     },
     "book/en/assets/03-17-stopping-budget.en.svg": {
-      "sha256": "26d4b568f18304c3b9885f12da95a411e1c53ff3245510b97c3d8e4a98cd2680",
-      "bytes": 148814
+      "sha256": "ce149e7fff6ef1a75ffbd0ed026b7339be53cd3f8c03e05709cc8d3772e5d7e7",
+      "bytes": 148442
     },
     "book/en/assets/03-17-stopping-flow.en.png": {
-      "sha256": "38aa1160b7f5104e454439df847b26f252df3d1363aceef5ccc2583855e29a90",
-      "bytes": 118160
+      "sha256": "3ca33754742c7faf2ff6a5beba040a336bf4cd2edbcba24a726f1c2cf50fcb64",
+      "bytes": 118086
     },
     "book/en/assets/03-17-stopping-flow.en.svg": {
-      "sha256": "882a49c0c2b9b3615f2458c98d445d08f2a7b5ecce6e92b43c4d83ea595ce1b7",
-      "bytes": 125993
+      "sha256": "cf3c2ff36a1cb4688a0b01a00a8b8371afb633fb494effdf3d92f3fa2f9b5b93",
+      "bytes": 125609
     },
     "book/en/assets/03-18-decoding-flow.en.png": {
-      "sha256": "f655c604feb21d4b792874bcf3c21b6e596da523934978d5664733e36ea53fe8",
-      "bytes": 172473
+      "sha256": "3c050486a1cc6be73428e06174298b5248c3faeff872b8309566c89b220cd9fa",
+      "bytes": 172087
     },
     "book/en/assets/03-18-decoding-flow.en.svg": {
-      "sha256": "ae82859328dc2cc468ac3733a34dee38a7937ecabe70f8ce31e5a8893ee06d41",
-      "bytes": 162440
+      "sha256": "88173d15c222871791515b5c4ff1359f1a62f630d46d80808728fe2ab508e4b3",
+      "bytes": 162932
     },
     "book/en/assets/03-18-utf8-boundary.en.png": {
       "sha256": "3d17a3b87269e5860c9b11be3a14eb53ae354d24f20bc2c2acbe3952be4c31db",
@@ -449,12 +449,12 @@
       "bytes": 172531
     },
     "book/en/assets/03-24-baseline-pipeline.en.png": {
-      "sha256": "e6b9ad563d6f2d9d7725ffd7f0beea3e7b28be043a203adcdb46429bf7f32d45",
-      "bytes": 136858
+      "sha256": "949f08ffc66a4a3ee06b5f8e99bf003723a9c66ff6c6a054d8802fdcdc7cd18f",
+      "bytes": 136647
     },
     "book/en/assets/03-24-baseline-pipeline.en.svg": {
-      "sha256": "a93a15715de76edead73381fb41397684de11629c7d297f55554889fb27468ca",
-      "bytes": 144151
+      "sha256": "da73e7e076632465512cbfffec8677d15841ca9327ba30bc11437e68dd38a677",
+      "bytes": 143370
     },
     "book/en/assets/03-24-training-trace.en.png": {
       "sha256": "585ff906f82f0bdbd4d731a8781802d7c14f51f3d3b2b6b96669907b8bda49f4",
@@ -945,28 +945,28 @@
       "bytes": 178842
     },
     "book/en/assets/06-01-byte-sensitivity.en.png": {
-      "sha256": "1a942feff2b036731281ac0d4e673cae6d0a991f6b47e185f7d3891859e997bb",
-      "bytes": 203714
+      "sha256": "908c3c554cd1e1aaccdfe4c3068a959903860a8caccda8b80444a713c37b5781",
+      "bytes": 203701
     },
     "book/en/assets/06-01-byte-sensitivity.en.svg": {
-      "sha256": "c04457b1642860f2765c7befe9818f80fa430ab5b7995453546490ee1e33154c",
-      "bytes": 226314
+      "sha256": "43e714e83e7c371290e0a22c0e959da83cac1897658bf67ba368931aea785bb7",
+      "bytes": 225528
     },
     "book/en/assets/06-01-data-manifest.en.png": {
-      "sha256": "88d82d695d5430186e7beefa4e4db4712ceebb2a15844dee854625013bf7db94",
-      "bytes": 202764
+      "sha256": "c3689fb585f7481b4e02f8806dbd52f33968bac06018f0e5969a7dd05db5f3f7",
+      "bytes": 202674
     },
     "book/en/assets/06-01-data-manifest.en.svg": {
-      "sha256": "1e90d663c7beb9ee231292d58e4c08c804c592df9f3b5040d8ac4b329536bd26",
-      "bytes": 207819
+      "sha256": "0d75b37046b7880abd6b798b3dbb50e01702f18dd9752ef81970e264c6ab2925",
+      "bytes": 206606
     },
     "book/en/assets/06-01-manifest-schema.en.png": {
-      "sha256": "59793be1e732d9f3fbb82c49bb68263ad452fe65abef612df441b13ecd08852b",
-      "bytes": 177047
+      "sha256": "62bb08e86f5cad94eace3bd5db429b398e5b842a93ac0b54c1124f7c630280bc",
+      "bytes": 177115
     },
     "book/en/assets/06-01-manifest-schema.en.svg": {
-      "sha256": "e0a77efa36f6cf966e30256c4a76c13ca8ea57120b5040604ccf3a4e5877831d",
-      "bytes": 200317
+      "sha256": "820d1377f158893aa8ea2b43b6b40f0be999373dea45137b57356513f4564367",
+      "bytes": 199536
     },
     "book/en/assets/06-02-document-splits.en.png": {
       "sha256": "55fead8b00a171fa9662658a1a6c64b04ca03dc79b493083cfd88fad7e752d5b",
@@ -977,20 +977,20 @@
       "bytes": 199450
     },
     "book/en/assets/06-02-hash-framing.en.png": {
-      "sha256": "e1295356f44e67090c7a325916f0ddde00ebe3ce2e1ef9e5caf13ee8e8ba2b64",
-      "bytes": 171058
+      "sha256": "1e8448b482c3e9a03ff64780e3a3b7137f8ef3789193c1ebc9a3a0eeec0f906e",
+      "bytes": 170770
     },
     "book/en/assets/06-02-hash-framing.en.svg": {
-      "sha256": "4017355aaf6c34fc071904f82ad8597e5e7ef26c59e290d589ce633ad3aa813c",
-      "bytes": 204008
+      "sha256": "5e89f3e186ee18851e8352816c1231443bba37902ed8fe795bb9dea870e8175f",
+      "bytes": 201937
     },
     "book/en/assets/06-02-hash-normalization.en.png": {
-      "sha256": "9186e8c7d93b7deb167b16c6f7c7120b760cb593d2a7f562ccd1735a2d932b89",
-      "bytes": 192331
+      "sha256": "1dae368f524697955709aaa348296501da5ed36e4bb0843263f3f30deda04fa1",
+      "bytes": 192364
     },
     "book/en/assets/06-02-hash-normalization.en.svg": {
-      "sha256": "9a8dd91f3d2fa04707ae04db5df95dfd57d6688f07c38e5ab7a57402e4bcc4ec",
-      "bytes": 217890
+      "sha256": "e53bdb7ea8788fd42f70a3b3dd3ceba9140ec0874cecfcefa5f3741c0ae94060",
+      "bytes": 217098
     },
     "book/en/assets/06-02-split-before-tokenize.en.png": {
       "sha256": "87679cfbf4a32ed6821cb546c8484d001ed2bb0935b30292961a78510bd9a8e3",
@@ -1009,76 +1009,76 @@
       "bytes": 172750
     },
     "book/en/assets/06-03-clean-before-split.en.png": {
-      "sha256": "02ab0db3b2a366bc76b92cd580e432a2d646bd8ead782571fb7395cddcbc79b8",
-      "bytes": 213533
+      "sha256": "ad136a160ac9d5f10397e790d624ced825c4000d40032d55cbd92e29c484c84a",
+      "bytes": 213320
     },
     "book/en/assets/06-03-clean-before-split.en.svg": {
-      "sha256": "2ef203054fecd71a14d9b07035ac9ea055d15f198b2b742c6aa7dd1ec1217e3d",
-      "bytes": 206254
+      "sha256": "67a52f182a5903f7a73ffbcbb3b2b01bc46afa8ae2fa92c00c8fd7f6d058aa78",
+      "bytes": 204609
     },
     "book/en/assets/06-03-clean-deduplicate.en.png": {
-      "sha256": "85a34c5dcbac31ae7e337114af5bdf29200959662caaf5f2ee648bc59d2ff238",
-      "bytes": 166724
+      "sha256": "741d7f59085266308c6d11aaf82d6da987546a9181c15444bf1761b7c3d83206",
+      "bytes": 166650
     },
     "book/en/assets/06-03-clean-deduplicate.en.svg": {
-      "sha256": "9c84cd9f18e486ae26472c6d05226518a35c2d364153f68f1519b5d6fccbd0b6",
-      "bytes": 180913
+      "sha256": "38c0732e223724c97ff9c2f30deb5e0f898837d9aa50e93dbc0d9da9c362ef76",
+      "bytes": 180125
     },
     "book/en/assets/06-03-seen-state-trace.en.png": {
-      "sha256": "82ff9b457be725d5f82d052e1757bbec8256e18b20982ccf9d0a7b4a493e9f71",
-      "bytes": 163372
+      "sha256": "c6528c48df3d664a2470b78d871df2ae129c68620d85a4f34eb6513e6ba2ba21",
+      "bytes": 162499
     },
     "book/en/assets/06-03-seen-state-trace.en.svg": {
-      "sha256": "b4c10de2f654826874c7d5a653f690fb3b20a88068e4bc7e9510e3b21d6a5dff",
-      "bytes": 182975
+      "sha256": "9a18d99955439ad19d53d34bbb8d9df628d4121b1da24d083b912906693498dc",
+      "bytes": 180891
     },
     "book/en/assets/06-03-whitespace-flow.en.png": {
-      "sha256": "d3a32cf21b0ccd963e8dd92cccaf6e959fe36ed60e056b4f6ca7dfa3656529a4",
-      "bytes": 152534
+      "sha256": "75b468492508f283586ab141ef47764a66a6c7e67196c107b4313a4e8e1145bb",
+      "bytes": 152072
     },
     "book/en/assets/06-03-whitespace-flow.en.svg": {
-      "sha256": "1d38d8110236adffc442208e90eb2301466e681010bf9c4536890b7fc4c6f2a1",
-      "bytes": 167443
+      "sha256": "b0e6bd5a981360844a65ab512d063f9ee20f4f28b314603985e30d773111c680",
+      "bytes": 165364
     },
     "book/en/assets/06-04-eos-next-token-target.en.png": {
-      "sha256": "03e4c18d96407e7205664dd2ea77e0bc1e392dd2f239c3e8c318a84589b4bf7f",
-      "bytes": 157263
+      "sha256": "b96cecd8ed89bd9e40e0c2065aead30a48335ef3f8a43b26d4d2c7fef50500c8",
+      "bytes": 157054
     },
     "book/en/assets/06-04-eos-next-token-target.en.svg": {
-      "sha256": "10042399cfd29f72d644d71e8034006f8f0c465c511113a720847ade876ee0af",
-      "bytes": 199987
+      "sha256": "1a26dcc8347923a035e88a970417141d6793b02dddabeac9f50d3fde7994bf40",
+      "bytes": 199200
     },
     "book/en/assets/06-04-frozen-tokenizer.en.png": {
-      "sha256": "265e149078672d08f531b2a23f8240bc4e0b5ae4b2bf33977ad674c5acb7fae5",
-      "bytes": 140226
+      "sha256": "7cc143326dea296e76009ba68bca9b16029c66ec2ecc655e272d884264685592",
+      "bytes": 140158
     },
     "book/en/assets/06-04-frozen-tokenizer.en.svg": {
-      "sha256": "0a837dc1e63e47ebac16176e45f704600d2558d608e7a7e3751a83af37be55d5",
-      "bytes": 172957
+      "sha256": "91b51f7d3d4f46dd6671be64190c6aade66d0775aa79b23e75b3ebb71c9ad460",
+      "bytes": 172172
     },
     "book/en/assets/06-04-id-capacity-and-embedding.en.png": {
-      "sha256": "56fd9513d1abd540354576427ef6fdf3507081116b1002215d88365f3f609f69",
-      "bytes": 238213
+      "sha256": "b5612dd377d90a707b135e3643a6660151b55a64e56a27e343170062fc9305a8",
+      "bytes": 238174
     },
     "book/en/assets/06-04-id-capacity-and-embedding.en.svg": {
-      "sha256": "fc4a42a62b918c40453c021d70c91e0f5764cecf45d226c1a9f72f05e8eb528d",
-      "bytes": 240369
+      "sha256": "1668b1b02d1f59e5ca5aed9ea8737b56d9092c68d566b53c35418663902eb622",
+      "bytes": 239585
     },
     "book/en/assets/06-04-literal-and-structural-eos.en.png": {
-      "sha256": "ce80cf21250786aece49e02ca3960928aa3ee00c7d61760c202f91e5d267f1ac",
-      "bytes": 154272
+      "sha256": "ea859ad8f08c59f7a7570fa872310f45937c39c399749f7109d3cdd2c18afd4e",
+      "bytes": 154307
     },
     "book/en/assets/06-04-literal-and-structural-eos.en.svg": {
-      "sha256": "18e8505a75f5ddb75b4d04ee700c4668ff7dcef452cd94920b455dce8680c432",
-      "bytes": 172917
+      "sha256": "a61e9b19d1e465b5cd68a804b9e1f1e7442725ee5747a3bb04a47fbf9d915183",
+      "bytes": 172099
     },
     "book/en/assets/06-05-document-representations.en.png": {
-      "sha256": "121ea247c7fbec6c0fc7ac322dd44ee9c51acfaac27c3bdd396fdc5cc6f56755",
-      "bytes": 196236
+      "sha256": "a39e43d0816320222c78ec3518e65a3a91659ecfea83d3c74d7b8e51b4ecddf2",
+      "bytes": 196052
     },
     "book/en/assets/06-05-document-representations.en.svg": {
-      "sha256": "e89812e8a8ff0d141195563013b093eaaa05fd22455d540a02cfe92054cf36c8",
-      "bytes": 206560
+      "sha256": "555ff1ac6bedd354f10476478773c6d376c559d5c15b5fb0c35971b0b7a9a842",
+      "bytes": 205792
     },
     "book/en/assets/06-05-packed-tensor-layout.en.png": {
       "sha256": "282864e012a7a03969aa90bb6fb0a55325c8a056cee6dd2390cd16dc54659da2",
@@ -1161,28 +1161,28 @@
       "bytes": 207048
     },
     "book/en/assets/07-01-language-metrics.en.png": {
-      "sha256": "15891177e9732358183a42a5ef7e51191cfe33425384f14844100dceca3f94dd",
-      "bytes": 176589
+      "sha256": "8171d44c7a1c8e5d1b0aa0438cea00e46994dea63b665106b6340d629ba096e6",
+      "bytes": 176487
     },
     "book/en/assets/07-01-language-metrics.en.svg": {
-      "sha256": "902d34695dff64d96af631ee7974e50fc42fcccfb74a35c6acd18747f68d93fe",
-      "bytes": 197006
+      "sha256": "06ee8bd03f0ecfbf0d0b5e67bdd1eccf2584c67b25279efb31a1d0126b35f1d0",
+      "bytes": 196220
     },
     "book/en/assets/07-01-nats-bits-and-bytes.en.png": {
-      "sha256": "aabd55a7d2174e7be4e2c712a67967f034bc2a22323808df9c78dbc1f5d117f6",
-      "bytes": 189387
+      "sha256": "96e767c4d693536535bb64aeaa0be89c96d8eaabaaeec883ed86bc6fd603f438",
+      "bytes": 189257
     },
     "book/en/assets/07-01-nats-bits-and-bytes.en.svg": {
-      "sha256": "7c311aba42dfe2d25446721beed365bc33e92185653961c541057ca48abfca83",
-      "bytes": 212027
+      "sha256": "6b216e9424cf238167d2d6277ef66d102ac85f8dc1c61558c511d4e72086cf45",
+      "bytes": 211215
     },
     "book/en/assets/07-01-same-bytes-different-tokens.en.png": {
-      "sha256": "9befae1532315c0924609a09fb5647744817b07a2c0cac95f9135d2088a0751a",
-      "bytes": 169334
+      "sha256": "ebf22439692080c6315474b3f1e3dd9badc013d5ecba3fc59ca1485c5f4d82fe",
+      "bytes": 169182
     },
     "book/en/assets/07-01-same-bytes-different-tokens.en.svg": {
-      "sha256": "994f0650a7a924e91ec77f1a678765ce166f3cc8c0d90474d33fec9a3ac962b0",
-      "bytes": 176930
+      "sha256": "3443e52d9cfdfdf106d4f22f57325f00b1c060264c75ae37ab98c2d70630188c",
+      "bytes": 176152
     },
     "book/en/assets/07-02-aggregate-sums-and-counts.en.png": {
       "sha256": "dd87454a0acbd2e9aaea1ead30ed8a057d0dd39c5c7da4ba7d1d9766f65ac2a0",
@@ -1209,12 +1209,12 @@
       "bytes": 208131
     },
     "book/en/assets/07-02-guided-probability-trace.en.png": {
-      "sha256": "e17decb25559aa4965226ec8d6bbebd31bafc44326733776282d76134d1990c6",
-      "bytes": 238524
+      "sha256": "aaeec00452cdf5d8d2911fdd8aa4cde5f2b4ccf81f8fcd70314dc323611cea0d",
+      "bytes": 238390
     },
     "book/en/assets/07-02-guided-probability-trace.en.svg": {
-      "sha256": "83e73de320c084b05c9cd7b18730922bf0f2b508ca660a8512cfb4ae88f506f6",
-      "bytes": 261089
+      "sha256": "6307dc335e27599376a65f222364455d4375b70cee53fd69678919034f1da6bb",
+      "bytes": 260712
     },
     "book/en/assets/07-02-mode-and-grad-controls.en.png": {
       "sha256": "26ca533086cab31a018601aad0d09dd419613a220c564250a43febdc6b523750",
@@ -1297,20 +1297,20 @@
       "bytes": 111029
     },
     "book/en/assets/08-01-bpe-structure-boundaries.en.png": {
-      "sha256": "8437db666a34af42a6daf765a54c7e2aaf9bf89d80bdf93b68648fa1ce8b5c61",
-      "bytes": 160981
+      "sha256": "3374d76bb535e7f9b59a00ad7babaa2ecf2cdc0f71b23488e6a3b596156ccf76",
+      "bytes": 160951
     },
     "book/en/assets/08-01-bpe-structure-boundaries.en.svg": {
-      "sha256": "329dea366daddd07fe9344404da2a5c6d74d7b68a387917b7467076eab408d53",
-      "bytes": 186630
+      "sha256": "b9a28792d85377fe0a2d5bffb476620b2279e48489d35932cae73710b757b783",
+      "bytes": 186257
     },
     "book/en/assets/08-01-chat-format.en.png": {
-      "sha256": "144d94d1efbd1cefb6b3e1af18371352a90ba15b081acfda13d014270d748dc3",
-      "bytes": 184822
+      "sha256": "825426fca562817112eb2f6199df7b85e77edd0be5c42c286fca4a8c41f3f764",
+      "bytes": 184842
     },
     "book/en/assets/08-01-chat-format.en.svg": {
-      "sha256": "1116041a90c0680f3ad9521bd2ea146ca5d6264160238a6e411b0602259816b2",
-      "bytes": 202308
+      "sha256": "574ad126bd981263d61fa2502743becf6f5e6ab9ef6e5ae70d214e46bd1e551c",
+      "bytes": 201898
     },
     "book/en/assets/08-01-inference-prefix.en.png": {
       "sha256": "b078b222d1d4706726e95a0788543144aad34bd68fa0ede9360f62df784ecd57",
@@ -1393,12 +1393,12 @@
       "bytes": 101446
     },
     "book/en/assets/10-01-experiment-provenance.en.png": {
-      "sha256": "35f1c4a22db78761cfe9a3c5053233f438938ac991e89be3de7aaa9cc6f20513",
-      "bytes": 47485
+      "sha256": "cf273ffc4f4f08c107ad6c97428ab9ae65c0b8a7fe1c7f2e0eaa5c71c5a366ef",
+      "bytes": 47370
     },
     "book/en/assets/10-01-experiment-provenance.en.svg": {
-      "sha256": "f29bad97d2fa97c99aeea52605a8cba081863b5a719f50923315c19e9c6a3d68",
-      "bytes": 115358
+      "sha256": "9cc3bbebd13cbbc4ef88d06b2c4cf2ce9df986c3d65a22419fb76bfb53498dff",
+      "bytes": 114576
     },
     "book/en/assets/10-02-scaling-fit.en.png": {
       "sha256": "8639bb159c039a8ac3f5c7d9b90de40495abe49140bd7ce8a5d6113db1e3d8f2",
@@ -1453,28 +1453,28 @@
       "bytes": 124374
     },
     "book/zh-CN/assets/02-01-adjacent-pairs.zh-CN.png": {
-      "sha256": "4ef124cc6eea66f7f81317744a0cea0e49be412518c9d4181ec58eb667833616",
-      "bytes": 43829
+      "sha256": "1ecf730bbcae86326825c980ea3910dbd88093ebe271024c4fcf3da5ac3f521f",
+      "bytes": 43781
     },
     "book/zh-CN/assets/02-01-adjacent-pairs.zh-CN.svg": {
-      "sha256": "e0d86225affed54f760c709dded0620b19f5b6f92fdfbcaeeb5b2240c9336d15",
-      "bytes": 118417
+      "sha256": "6656d237f5913cac94371d38e8ecdf07ecfdb3d893cf3bcda092a10485689c9a",
+      "bytes": 117636
     },
     "book/zh-CN/assets/02-02-nonoverlapping-merge.zh-CN.png": {
-      "sha256": "9f0b1086c9fb7a724109cb903010e023c03ac57ea333a500d9a12044756f2918",
-      "bytes": 40361
+      "sha256": "7ca155af71832d8f119519f6fd0523f78f9d5143ba5c5185d2ed9f0d9af22fb4",
+      "bytes": 40352
     },
     "book/zh-CN/assets/02-02-nonoverlapping-merge.zh-CN.svg": {
-      "sha256": "355289c50232072c99b72939329651a4de0ed97191cee438393c061b321eb640",
-      "bytes": 142232
+      "sha256": "054026169ea9b036e1743c299cdaad23c22708b1a578934e8ddad8f5a8c9ed65",
+      "bytes": 141448
     },
     "book/zh-CN/assets/02-03-training-rounds.zh-CN.png": {
-      "sha256": "800d46a847c8471b5b8d97fac2ba702aeb95a1f308aaf85e5ac8f2e342e8c057",
-      "bytes": 47946
+      "sha256": "c7a6b83f9c90cc6013c0307021ff6b848f9fb2ba28e88121ebc7b4b37d3abf21",
+      "bytes": 47953
     },
     "book/zh-CN/assets/02-03-training-rounds.zh-CN.svg": {
-      "sha256": "4dcf0fba59853f8571addc6bb20bac1fbe614ee85107ec21b1313914e4d612cb",
-      "bytes": 133424
+      "sha256": "81fb2b92f570271d31246555da6c1feb9a0c8b82911538da4e0d1c55a806f600",
+      "bytes": 132647
     },
     "book/zh-CN/assets/02-04-learned-rule-priority.zh-CN.png": {
       "sha256": "adb7d798eae83ff6d9604f3b8523994fb2aa9096b69821e09c5cb8ca6f601eae",
@@ -1485,28 +1485,28 @@
       "bytes": 229775
     },
     "book/zh-CN/assets/02-05-frozen-encoding.zh-CN.png": {
-      "sha256": "64859f10299d4593329adfb646d644e5de2bbec671369f5d7567f87cf5cdba41",
-      "bytes": 49973
+      "sha256": "61cb03b55b2c05bcc43f1c2fa9cbe79ef122512827bd2709dcb58ca3fa6aa90e",
+      "bytes": 49979
     },
     "book/zh-CN/assets/02-05-frozen-encoding.zh-CN.svg": {
-      "sha256": "0f1d36d4a1192717a81de91b7b2e1d4696abd6d7440b4ba7a56a449950c9a688",
-      "bytes": 140024
+      "sha256": "b713740ed51fa13031ecb4f2cc07801d5db37e78f39afd834172150fa7c7057b",
+      "bytes": 139247
     },
     "book/zh-CN/assets/02-06-join-before-decode.zh-CN.png": {
-      "sha256": "f4af1b4fa57744d9f5e7e87b238d4d68c132a55542cea7b213d5c42506774838",
-      "bytes": 66670
+      "sha256": "a31ae8cc41f3dfbe0db03dadddc96ebdf457a9054ef9d026194ff3ddd82dca25",
+      "bytes": 66636
     },
     "book/zh-CN/assets/02-06-join-before-decode.zh-CN.svg": {
-      "sha256": "7cb44bc4fd0d3548b334bc325ab51c427c0bae9fe44c56d9a1414044469b9ef4",
-      "bytes": 236767
+      "sha256": "d921cf6a1f5cbeec2d2d64143ffa1b169579ff5e2a3889b52149967ef7c018cf",
+      "bytes": 235993
     },
     "book/zh-CN/assets/02-07-tokenizer-roundtrip.zh-CN.png": {
-      "sha256": "f10b7a87ba5bb041c627dba7d734eb1ee160b03579861e16f59fe1a2eb0813d6",
-      "bytes": 59422
+      "sha256": "01ae40d16aed52dbca54bb2a80f5371f523f3e7f5924a55b6a2763bce4eaec22",
+      "bytes": 59416
     },
     "book/zh-CN/assets/02-07-tokenizer-roundtrip.zh-CN.svg": {
-      "sha256": "19b97e7fec29c79a73bfaf236eae69d4cc68733ce2b4d1f343f5b26666e97030",
-      "bytes": 256161
+      "sha256": "dd2d3c1c785c5eff6e0947a8b657d567ec08966a0f1d79aa49934c64eef63c92",
+      "bytes": 255377
     },
     "book/zh-CN/assets/03-01-embedding-rows.zh-CN.png": {
       "sha256": "82ede5326c8a95c60d292cf7cc74625e8674e0e27224d1e0a09b9f1f0b9d227b",
@@ -1709,28 +1709,28 @@
       "bytes": 262916
     },
     "book/zh-CN/assets/03-17-stopping-budget.zh-CN.png": {
-      "sha256": "c9e18abebc9ebdf0b6ad8b99ac21fde9059323f223900346793188b979c75324",
-      "bytes": 148586
+      "sha256": "c5d3f657dc44532b98ca69d2f8ae8000b637c446ef994bf715144f11a97bb8b6",
+      "bytes": 148563
     },
     "book/zh-CN/assets/03-17-stopping-budget.zh-CN.svg": {
-      "sha256": "060b372ac7ee902d629ffa848beeb440483b51297dc0a54f4ef28ed52ddd0e67",
-      "bytes": 274315
+      "sha256": "34881858a91d0c63b2644d68af0ca0661630fa4488c894133ce4f9bcdf5fbc7d",
+      "bytes": 273944
     },
     "book/zh-CN/assets/03-17-stopping-flow.zh-CN.png": {
-      "sha256": "e0f3d419f2e44dbeccdf6e7b352dcb9187545ea11874252b63090d9824da051a",
-      "bytes": 136579
+      "sha256": "180bcf4dfa3e72aafad17a5c92d214af82ea53cd2ba798e722a169b8185d01a4",
+      "bytes": 136491
     },
     "book/zh-CN/assets/03-17-stopping-flow.zh-CN.svg": {
-      "sha256": "1314ad7d6256f10b19a018e2d832657184e92f74ca9a9e298650536c5804b522",
-      "bytes": 281600
+      "sha256": "b7f54eef4d97261f8329acdcc3b857dc6b8f868cfb6b7b3e7371f106b5d6bd18",
+      "bytes": 281216
     },
     "book/zh-CN/assets/03-18-decoding-flow.zh-CN.png": {
-      "sha256": "88dbad97463cfbbf4e5d56665c6e0155c0063f58bcc3575304c11ba9545bd764",
-      "bytes": 200544
+      "sha256": "9b375a2a2f6e68ff8c99a943dc7fbda5ec28d2f726f28e620a19c74d4652da00",
+      "bytes": 200192
     },
     "book/zh-CN/assets/03-18-decoding-flow.zh-CN.svg": {
-      "sha256": "d83eb8385629729193ded2d8e1a4003b1fc3a5c4cb4e09d3e1e9d1b3056fd568",
-      "bytes": 325795
+      "sha256": "bbc9490c06d4ba37c10f66a70775b37f635c4809c5a93bbae20e6b423432a05c",
+      "bytes": 325422
     },
     "book/zh-CN/assets/03-18-utf8-boundary.zh-CN.png": {
       "sha256": "0077b586e1316d9be8c1d03c1f41792602a4e6e63500e2c9a3ace7a628515a4b",
@@ -1821,12 +1821,12 @@
       "bytes": 243575
     },
     "book/zh-CN/assets/03-24-baseline-pipeline.zh-CN.png": {
-      "sha256": "db7477704c3fa764482ade6cea94e2a734fed5f505c99de2b6b7ed5b02522002",
-      "bytes": 148959
+      "sha256": "3f7e9ff94985a08753250c5abe48fdb544b4a6b48721ecd2940339947aa58a9f",
+      "bytes": 148716
     },
     "book/zh-CN/assets/03-24-baseline-pipeline.zh-CN.svg": {
-      "sha256": "fdce107ae94dbcd5b651d7de56790523166d5e61c2fe366014bf5096ed7cf800",
-      "bytes": 202092
+      "sha256": "2dd46e928e2e55ab25388f6be6798126a3454df61a339af11322efdd4e1477dc",
+      "bytes": 201311
     },
     "book/zh-CN/assets/03-24-training-trace.zh-CN.png": {
       "sha256": "c8ad522ad8a5d69425f5f4c426ca3e86ad6dfcd8c8b134435e4f7821ca6dc5f3",
@@ -2317,28 +2317,28 @@
       "bytes": 449960
     },
     "book/zh-CN/assets/06-01-byte-sensitivity.zh-CN.png": {
-      "sha256": "9bf71e940193550389f108cf29d3e768a0b7b9984fb2f800eb114d2dfdab6b52",
-      "bytes": 289039
+      "sha256": "f838877c268e1eb32edc792dd379d1ff18b975bf6c9378ecc027cb9d3e3648a1",
+      "bytes": 289017
     },
     "book/zh-CN/assets/06-01-byte-sensitivity.zh-CN.svg": {
-      "sha256": "08c54555d5761070ce461e36b1972d934ce08980f470e8801c6a9b78ea3598eb",
-      "bytes": 545430
+      "sha256": "1c502caf1ee0a86ffef1b5b1403eaf352a77994195db46e422c7346b345ea64c",
+      "bytes": 544647
     },
     "book/zh-CN/assets/06-01-data-manifest.zh-CN.png": {
-      "sha256": "5fe9d8e31cb47000ab91d10a740f7f3517205b1382a7949abe357dbc385bd149",
-      "bytes": 240873
+      "sha256": "7163d0952c6211f30ef707945e97386b84da344d911dd30ca4b070255db4fb6b",
+      "bytes": 240669
     },
     "book/zh-CN/assets/06-01-data-manifest.zh-CN.svg": {
-      "sha256": "177732dc0194c0b2317101aef9e16dc007e57cbf1c9f01a88d9d537439c13fb4",
-      "bytes": 353980
+      "sha256": "8cdf6a72bbf7c392ba061bc3045336fc8ca2bd9b48185712adf748664caae820",
+      "bytes": 352771
     },
     "book/zh-CN/assets/06-01-manifest-schema.zh-CN.png": {
-      "sha256": "7af8609df2d1ffb6de827bf1e77f1d80ce00c8bf26151b2e6c214027099a659b",
-      "bytes": 247125
+      "sha256": "f455045c2ab6e4c3288d5ba392bc67d2e67f2f53c0a804b1bdf7cd0b3c253afa",
+      "bytes": 247179
     },
     "book/zh-CN/assets/06-01-manifest-schema.zh-CN.svg": {
-      "sha256": "c5f909d808cf14faf3bb6d769dc0e3cfa5989bb99962b30e0f0eb2deb57d0748",
-      "bytes": 430331
+      "sha256": "e38bca9375f30338cad992eee8ba2a9f245123925d622c656c0288e7e672356a",
+      "bytes": 429550
     },
     "book/zh-CN/assets/06-02-document-splits.zh-CN.png": {
       "sha256": "a1af0d7c6ca148c21efdb405bd805beccdc27beaacbfe372af250adb68ec1ee5",
@@ -2349,20 +2349,20 @@
       "bytes": 378379
     },
     "book/zh-CN/assets/06-02-hash-framing.zh-CN.png": {
-      "sha256": "315a2c4c57ab7cd231c4bb07a14884185d229f34a56dcac2a8d1039a929ce5be",
-      "bytes": 206299
+      "sha256": "a6bd5bf565d1cd8af2b23ad0021402db64bfb363c0052688181c9950597ffbcf",
+      "bytes": 205918
     },
     "book/zh-CN/assets/06-02-hash-framing.zh-CN.svg": {
-      "sha256": "e6630d802ee7b256e1320f40b13f3ea4574ea91689910426c9b68648061b0310",
-      "bytes": 355934
+      "sha256": "21bf791a04e74fa9d877ab5e40531418d69c22fd5911d4b56e2f2f88ecf4395b",
+      "bytes": 353865
     },
     "book/zh-CN/assets/06-02-hash-normalization.zh-CN.png": {
-      "sha256": "1ce70264a353b865482b6724920d4e3d6dec008d9f166f471824b4125b80d886",
-      "bytes": 260626
+      "sha256": "ec3720ec4ee201425dab4fd81b0ee8dd695865a6f8834b89aacc2b13dffeb456",
+      "bytes": 260571
     },
     "book/zh-CN/assets/06-02-hash-normalization.zh-CN.svg": {
-      "sha256": "8351729a75b73f61abaa66bc7965f52a4774ede6137cbbd888ea204d1a17187b",
-      "bytes": 481901
+      "sha256": "c753689596facb55be9e7498435847e331ff51b4ea098f6ed6b15f76772166a3",
+      "bytes": 481112
     },
     "book/zh-CN/assets/06-02-split-before-tokenize.zh-CN.png": {
       "sha256": "a785329588e1991a6a841924693752190a5cae1d3040732ef7209c961da13e83",
@@ -2381,76 +2381,76 @@
       "bytes": 386182
     },
     "book/zh-CN/assets/06-03-clean-before-split.zh-CN.png": {
-      "sha256": "be32c178c48b475ba694ab04a954bd538d440e676f3d74dba6e5ace75f48b2ae",
-      "bytes": 319067
+      "sha256": "6c15bddc57c434be294098428192dd31d2110e6ee4104c1e73082e5a65bb5d2a",
+      "bytes": 319050
     },
     "book/zh-CN/assets/06-03-clean-before-split.zh-CN.svg": {
-      "sha256": "c76d5d59fc592fa30ee478d6c024b9924bd13c1ce729c3ddec40345c16a8071f",
-      "bytes": 569735
+      "sha256": "1ab5afe68811ce365e8d706bf172db4c6808ef44881410bdaf78cd8ef32404cf",
+      "bytes": 568089
     },
     "book/zh-CN/assets/06-03-clean-deduplicate.zh-CN.png": {
-      "sha256": "e8538dcd3ef888e18f82695b7908b11e7b7a1ba8429995cedd8eefe1d4fbf3b2",
-      "bytes": 214104
+      "sha256": "fc5e70c3876220aadf5cf4d20826e628cd342b7378fc357461e7f732c1cc69e4",
+      "bytes": 214010
     },
     "book/zh-CN/assets/06-03-clean-deduplicate.zh-CN.svg": {
-      "sha256": "024a1232d107d1365f087dbe38b309d7b0923b22929464db8e67d9c9fc88af38",
-      "bytes": 369991
+      "sha256": "320c8e8757bd3c09c61a4426741dcfad4b734eadf13acd45e3d90cadb4433efd",
+      "bytes": 369203
     },
     "book/zh-CN/assets/06-03-seen-state-trace.zh-CN.png": {
-      "sha256": "cda8876b0756930c32613990cbb689c3a119ff8b05523f69e5cf0b47adaf68ed",
-      "bytes": 215674
+      "sha256": "042744f87db5845f858e3c666072f63e55e1f4e911cbad3d163d2f8386caad12",
+      "bytes": 214830
     },
     "book/zh-CN/assets/06-03-seen-state-trace.zh-CN.svg": {
-      "sha256": "bf46734078bebbed1aa704d7e16dbcf0a8f408a94483b76f4dc89b1c3caaffad",
-      "bytes": 374901
+      "sha256": "6564e9643be6f191e0f1b82fe4a0a54df561eb8f49f0af103a2bccb535401887",
+      "bytes": 372817
     },
     "book/zh-CN/assets/06-03-whitespace-flow.zh-CN.png": {
-      "sha256": "2f71ec3908278383f755a70119a2d09fe345bfed93b7d2f3f8cd65ae0246f863",
-      "bytes": 204769
+      "sha256": "24e5930b2c5ec9f5a1bfea18dd63f7de3a71f159cb22fb1e76de8418a292e645",
+      "bytes": 204386
     },
     "book/zh-CN/assets/06-03-whitespace-flow.zh-CN.svg": {
-      "sha256": "8e6ced685bf0c875fef286092f7c10a3d5a71cd0eaef1790c5267801cc6ebaa6",
-      "bytes": 379020
+      "sha256": "b6d0dcf5cfc259319781d80d858e39f1a9ebf2a31f8de0b5b57d0d4dcd6db4f2",
+      "bytes": 376958
     },
     "book/zh-CN/assets/06-04-eos-next-token-target.zh-CN.png": {
-      "sha256": "d1f2cead9d30089da5d1656ae96820da4149a16fb6961a31b85e298b0d4ee10d",
-      "bytes": 220351
+      "sha256": "ae1178b4e8f69e7317adc8c86b80ad793840594dc8a12302d638c086d509e101",
+      "bytes": 220105
     },
     "book/zh-CN/assets/06-04-eos-next-token-target.zh-CN.svg": {
-      "sha256": "e5bd504b174c3dbe09829de004b9a915579bb0aba4619bb963f0e7bf4bbc2a16",
-      "bytes": 441190
+      "sha256": "fd4e591e30c5b23c90aa9937882bf239fcc91162b6bdc99ea5683a4b25ba5796",
+      "bytes": 440404
     },
     "book/zh-CN/assets/06-04-frozen-tokenizer.zh-CN.png": {
-      "sha256": "984702a80e7e72ff491adc33512c79fb84ec8f35ce43e7ec0291e8394ff09786",
-      "bytes": 173020
+      "sha256": "49a2707a32ded4b56b928c5b6af8169f28cdfa494ee07b961c66d13ba3f07004",
+      "bytes": 172972
     },
     "book/zh-CN/assets/06-04-frozen-tokenizer.zh-CN.svg": {
-      "sha256": "1d22c58a875282dc3c9263afb6b41b84a5ea64a37a7928fa74c979962500a0b4",
-      "bytes": 299002
+      "sha256": "8a480c9fd80caa913fa8def054261b5aa1aa6853dddf4ab892133e9e88c91b0b",
+      "bytes": 298217
     },
     "book/zh-CN/assets/06-04-id-capacity-and-embedding.zh-CN.png": {
-      "sha256": "2931406346c26f9ff8ee02db968dc07fd225cf45f4e025ed6c5329d6b58156f8",
-      "bytes": 309548
+      "sha256": "464a4472dfc6c303d4002eaddf5139f9919b2fae89386cd801fd8c109574b01a",
+      "bytes": 309486
     },
     "book/zh-CN/assets/06-04-id-capacity-and-embedding.zh-CN.svg": {
-      "sha256": "c59d76064ab9589f2b327874abaf5eaa229de7b6ef12bacdc6362237d93a1a18",
-      "bytes": 522656
+      "sha256": "e2767055859c7ab6a5ff2681a109a2253fdd8c032fb413cb30f55c7bbced79db",
+      "bytes": 521873
     },
     "book/zh-CN/assets/06-04-literal-and-structural-eos.zh-CN.png": {
-      "sha256": "0a4e47edb31d6e9a1bfe5c055b7ed54b09f6cce715c3b8317284d31ed55f50b7",
-      "bytes": 204675
+      "sha256": "280e119c3dc7ed4550b2fdc5753226a96a63dee06fddcbc5b86af00cf819bcaf",
+      "bytes": 204629
     },
     "book/zh-CN/assets/06-04-literal-and-structural-eos.zh-CN.svg": {
-      "sha256": "305d6768e2bfa91333d9d84e163b0cf21ba19e995e6920e6e4c9983f5cc1fc65",
-      "bytes": 384972
+      "sha256": "19a009d34b8614e8e55a2bef0a8530eafef62ed1d7fe8ed3fa8639df85b55e3c",
+      "bytes": 384159
     },
     "book/zh-CN/assets/06-05-document-representations.zh-CN.png": {
-      "sha256": "cb76cb43d1296ceb362f48cf504885a080d078d10e6b9655d327032088e12654",
-      "bytes": 259602
+      "sha256": "4a3d42523fea9fa2481cd3dad1daa0f707f86d957c65cb099e34a25ce44dc61b",
+      "bytes": 259402
     },
     "book/zh-CN/assets/06-05-document-representations.zh-CN.svg": {
-      "sha256": "5f2a423d06613e2d48711b3886f8c5a93a13129198c7e3aefe08bc2a661f6833",
-      "bytes": 431488
+      "sha256": "694868a44f63beab30483c2eb03033d16bbd9ef419f59d61bc5a1d5d4c1050b2",
+      "bytes": 430723
     },
     "book/zh-CN/assets/06-05-packed-tensor-layout.zh-CN.png": {
       "sha256": "c57ece1637f62c37ba3ee575810cd6235c19b481cab51ff51eebbc7952b3e236",
@@ -2533,28 +2533,28 @@
       "bytes": 392004
     },
     "book/zh-CN/assets/07-01-language-metrics.zh-CN.png": {
-      "sha256": "ccd88b46c65635a7ede6b5ddee59869998cffbbba5ee69a90ad0d9a8be75f6a0",
-      "bytes": 236750
+      "sha256": "077b4b852937a2f6410a1012dab7e8de501575530c1e3d006c0ed795ab95b25e",
+      "bytes": 236603
     },
     "book/zh-CN/assets/07-01-language-metrics.zh-CN.svg": {
-      "sha256": "7b80c2f63470100f129297c3a9cf8cca6747f79eff596872471b82f243b05800",
-      "bytes": 375910
+      "sha256": "e0fe610293e464f15bf37ca9dc7687127e196f9cd80f5f19cfa1a8f9c171eac3",
+      "bytes": 375124
     },
     "book/zh-CN/assets/07-01-nats-bits-and-bytes.zh-CN.png": {
-      "sha256": "f72f1da4f1fbdd54539adee365ebe861386a0118ce3a1271a68567466ee266ae",
-      "bytes": 244561
+      "sha256": "97eaa7af4bc77b025f74d6b1f36486837fef593702148fdef8b6ee0d40f248fa",
+      "bytes": 244405
     },
     "book/zh-CN/assets/07-01-nats-bits-and-bytes.zh-CN.svg": {
-      "sha256": "05abd64d8bd9b01805b23fe68514fa94b3cf7fee43005131c6d1349dafaddac2",
-      "bytes": 417249
+      "sha256": "5f4dccdf81dd378e5139f58183deb66fdc24387190cb2440b5baaff8d26f6288",
+      "bytes": 416437
     },
     "book/zh-CN/assets/07-01-same-bytes-different-tokens.zh-CN.png": {
-      "sha256": "e80e9cc6527f92daeece61b6654667c9fb62aea55a85cbd391f4a532a9f07142",
-      "bytes": 209203
+      "sha256": "30efcb11dace97f2c59d803672e9dd5472d523f125e0ea0cc76ad1302d385e60",
+      "bytes": 209073
     },
     "book/zh-CN/assets/07-01-same-bytes-different-tokens.zh-CN.svg": {
-      "sha256": "92d0d2f0704788d24e8e90e31ff9d4e772abe04c566b953bb026173a857cc784",
-      "bytes": 361637
+      "sha256": "6743f26a6d917daf8bbeea144f7de4413c0f0ab09e5d4ce948351b3288fc9244",
+      "bytes": 360859
     },
     "book/zh-CN/assets/07-02-aggregate-sums-and-counts.zh-CN.png": {
       "sha256": "ae1b3d2d34e7d4712d1b56e0e28f5025202fd2618efcfdbc80723db68134220a",
@@ -2581,12 +2581,12 @@
       "bytes": 457573
     },
     "book/zh-CN/assets/07-02-guided-probability-trace.zh-CN.png": {
-      "sha256": "987472e0b07010bf8d4b0b4d8df4651e468ab26561d2cc8b3ba807c7c31db5c2",
-      "bytes": 280236
+      "sha256": "085dab7eadb5c9b84ebe251144d25b996cd000bf43fe24d1b6bb4364d69249c3",
+      "bytes": 280120
     },
     "book/zh-CN/assets/07-02-guided-probability-trace.zh-CN.svg": {
-      "sha256": "c2b4a77bf1e6d536fa8cee1840a42bea3a7f3fde494b647fd2b23b804318794c",
-      "bytes": 474592
+      "sha256": "0756b2abeebc46df0275ad73d74f6f2c154fd2db9493691872d89ce78e5e39d6",
+      "bytes": 474215
     },
     "book/zh-CN/assets/07-02-mode-and-grad-controls.zh-CN.png": {
       "sha256": "587c14fe28ca68471b269d1e37535cf00c3ef825b48b7a5d1fca0a8893c2fb1b",
@@ -2669,20 +2669,20 @@
       "bytes": 157203
     },
     "book/zh-CN/assets/08-01-bpe-structure-boundaries.zh-CN.png": {
-      "sha256": "b43d0e578d06a47d0b3c44457df495af4849f94cca5e80d81dfbe821b0bfa98a",
-      "bytes": 224646
+      "sha256": "d95b86f46eae8a71a6f1ac1377720b9e0cb465079482f138007b65db0fa9d5fd",
+      "bytes": 224629
     },
     "book/zh-CN/assets/08-01-bpe-structure-boundaries.zh-CN.svg": {
-      "sha256": "3a0444ee88f16aa3f7c807685495292ef750a719a751a76f959ca50133c481fc",
-      "bytes": 421774
+      "sha256": "3516e349ca8a89d01af98a1c77b3c21ffa7186dff871fff6523cd7195ce9672b",
+      "bytes": 421401
     },
     "book/zh-CN/assets/08-01-chat-format.zh-CN.png": {
-      "sha256": "5309e1f0fee97e4aeb0469d0c7d6f6407213088d9198f04d32c31fa84ab89d43",
-      "bytes": 260833
+      "sha256": "f7516992dfe0ba004a5a4a568562206ea112fa06761a9431abd9f8bd7fc2c892",
+      "bytes": 260827
     },
     "book/zh-CN/assets/08-01-chat-format.zh-CN.svg": {
-      "sha256": "5650fa8cb2f226cbb1dd80feae41b2fdbd355692837ff13f888aa7fe61823d9d",
-      "bytes": 471157
+      "sha256": "3fc7c05587ac89dd210e8e71f301a010f8e90f7493e2d77aafd921bc8a16f70a",
+      "bytes": 470747
     },
     "book/zh-CN/assets/08-01-inference-prefix.zh-CN.png": {
       "sha256": "c97f044c7d7b33c5c4eeb1bc40d9ef79ec19b6e4387350dc7f93035f769ad871",
@@ -2765,12 +2765,12 @@
       "bytes": 155635
     },
     "book/zh-CN/assets/10-01-experiment-provenance.zh-CN.png": {
-      "sha256": "7ba504411d9ea12da9fabe6822038af606eec48df2a2afa435c5e7bbf2ae3df5",
-      "bytes": 56546
+      "sha256": "8193f4f42bdd51eee6682157173c5ee5b0edb7e37f09b1839e0ce711d97b885e",
+      "bytes": 56417
     },
     "book/zh-CN/assets/10-01-experiment-provenance.zh-CN.svg": {
-      "sha256": "c28ef69a976d7760331d69add4c102e6daec69d1b3d2de906da802fdc5f23e06",
-      "bytes": 221763
+      "sha256": "35775b592c156cbd4038f32b897bc48e22ff19d730f96dc9b8c4ae0294bb0e84",
+      "bytes": 220981
     },
     "book/zh-CN/assets/10-02-scaling-fit.zh-CN.png": {
       "sha256": "995f7891903fd6912d55df83ebba7fa453fed80fbf529d9dd3a1e99efbea233d",
@@ -3146,11 +3146,11 @@
     }
   },
   "reader_revision": {
-    "kind": "mathematical-notation",
+    "kind": "literal-code-quotes",
     "date": "2026-10-29",
     "source_manifests": {
-      "en": "79ab5889090783211ffd2a8e1b49ca0102fd21ee505704622cdcd67ebfda58bc",
-      "zh-CN": "7064e7a056ac2f424538cb587b541aaf9d0c128a90a2ac0f52aaebe4dddd6ac7"
+      "en": "28e5b3acc52839408f19c439a3906335b7e015ffd0d5a904dd22576bbaf96f05",
+      "zh-CN": "8a211df47f265ab902a2ecc5b03c7afcbae586f2bfa009b1ab510238451d802e"
     }
   }
 }
