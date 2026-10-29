@@ -320,8 +320,8 @@ b9a28792d85377fe0a2d5bffb476620b2279e48489d35932cae73710b757b783  book/en/assets
 574ad126bd981263d61fa2502743becf6f5e6ab9ef6e5ae70d214e46bd1e551c  book/en/assets/08-01-chat-format.en.svg
 b078b222d1d4706726e95a0788543144aad34bd68fa0ede9360f62df784ecd57  book/en/assets/08-01-inference-prefix.en.png
 f1ac5e581ba7b6adffa136b0b103f162fb770f40b372d33336fc14c802387352  book/en/assets/08-01-inference-prefix.en.svg
-ba217d11c4978c1624339e74d9b2b5bc7e0edf3c63125b77878fcab75f71fe57  book/en/assets/08-01-shifted-target-mask.en.png
-6298119d898d264dba077a000a65948578c3d117ba37c4b1ba40a5aeba118916  book/en/assets/08-01-shifted-target-mask.en.svg
+b2974490c4b3512ee87d114e7052f454b4cf38de7dbb8ceb163f144c4147c716  book/en/assets/08-01-shifted-target-mask.en.png
+464258a56ccf66c04f70294508d41156518ff78f75e0a154cb74dea83fcf524d  book/en/assets/08-01-shifted-target-mask.en.svg
 62ecf25a1d7e9ec6bc8d982e8a007792b775ccc610a59292cf1738e5b77816a0  book/en/assets/08-02-assistant-sft.en.png
 f5a1e85bc940ce2817b5aedb6f4d89683265d0391121c199a79d4601731ef2af  book/en/assets/08-02-assistant-sft.en.svg
 c6b6b54ec987c3b447e43b5bf1410f7104bf85e8ea455990b740a6e996e70991  book/en/assets/08-03-direct-preference.en.png
@@ -346,7 +346,7 @@ b28ef9c6a7b2906574464e08134d7ebbceec190a742b5dd828bd49d3a78aaf9f  book/en/assets
 9da4287366e7ea281b67bffece74c22c9d71e707fe0e65283075ccaff633da92  book/en/assets/10-03-ablations-uncertainty.en.svg
 c2fbb3320679b281fc8d19e63acb39b29e57796009780d1a2267ad21ad3c13db  book/en/assets/book-learning-route.en.png
 f94d6e90dd17b5ed9f73b68460c7c79dd9a3a336a5427f247171d4f072f6627b  book/en/assets/book-learning-route.en.svg
-e91c2e0763a92294ddbcd82d1e15265d975d511c6d51d212926264e81afd8a40  book/en/manuscript.md
+f6674931f1124f13b7de0e02de583338c0d68d64ebd6a7cd4b55c28f5ce577f3  book/en/manuscript.md
 a2bb380db955db194ff579f2fdba55c3028b7a604558046ed1f3340f72dada26  book/zh-CN/assets/01-01-eight-bit-range.zh-CN.png
 175521b841dd0b051894eee983e5067b035d554917c49e7abd6e7098ae42127e  book/zh-CN/assets/01-01-eight-bit-range.zh-CN.svg
 ac8e1a46d48bd558c8314c0bdc6edf842e3767bf35cb42e5cbb02572ee757eeb  book/zh-CN/assets/01-01-shifted-window.zh-CN.png
@@ -663,8 +663,8 @@ f7516992dfe0ba004a5a4a568562206ea112fa06761a9431abd9f8bd7fc2c892  book/zh-CN/ass
 3fc7c05587ac89dd210e8e71f301a010f8e90f7493e2d77aafd921bc8a16f70a  book/zh-CN/assets/08-01-chat-format.zh-CN.svg
 c97f044c7d7b33c5c4eeb1bc40d9ef79ec19b6e4387350dc7f93035f769ad871  book/zh-CN/assets/08-01-inference-prefix.zh-CN.png
 49c4f86798857e7f018bf14b2fb96bce5fd16870f96a0fee78c39b45648cd700  book/zh-CN/assets/08-01-inference-prefix.zh-CN.svg
-a500df3b10b9a4ea6f3863121e7a706e623bf630d398dfac87e719bca80164bc  book/zh-CN/assets/08-01-shifted-target-mask.zh-CN.png
-fef116323aa5febf3154eac3a565acd540cc9d58644ab9aa0fe9705e49b9c2a6  book/zh-CN/assets/08-01-shifted-target-mask.zh-CN.svg
+e789f44c011b220de51c315f48780ff3eb97a1a36a7162ebda4fac5596a75cdb  book/zh-CN/assets/08-01-shifted-target-mask.zh-CN.png
+d04ed01864aa13b4c82f89321e1e613660edc1faaf6c29f4dbe987fbfb5f5104  book/zh-CN/assets/08-01-shifted-target-mask.zh-CN.svg
 76fa969a17d7c607fdad6b4d56913858910745bbe2e821bf605a4abe9ae7f7df  book/zh-CN/assets/08-02-assistant-sft.zh-CN.png
 9de309c1a2ffc30fc800ea3462ff6c94f7cae111c532d3eb804bafd1c608f1a3  book/zh-CN/assets/08-02-assistant-sft.zh-CN.svg
 4bef84b66595ea7dbd4c62740f905d2ec48cd2cc80af55e3242e3517a816fe38  book/zh-CN/assets/08-03-direct-preference.zh-CN.png
@@ -689,7 +689,7 @@ b5b39a6a94a78c6aff7945daf2282180be1e5af73d33c74ce49f85653eca1359  book/zh-CN/ass
 fea9dbe8e9697774afa395ae1c7b75f7d97201c67be86b1c424607f431c6dacc  book/zh-CN/assets/10-03-ablations-uncertainty.zh-CN.svg
 7503a8cd7a2485e5b4b988745dd899e70f56836afcd75c4e3e688d2296534148  book/zh-CN/assets/book-learning-route.zh-CN.png
 d5513248515b360865d93f12423fcc7205ca042ebd7f06ce2e8429403c6ab1ee  book/zh-CN/assets/book-learning-route.zh-CN.svg
-2882affde041658611fe506d137181f179f18c39572cc4f6afd1de7f55290c91  book/zh-CN/manuscript.md
+eb71fc3b251be9283d09d46e478ba37373c4584167970eb5ecd2a13b5b3c95cb  book/zh-CN/manuscript.md
 734d5ca48237b3a71186aae25a13c29a327ac3bcef1343073a27cb661bf0ac60  examples/README.md
 58952be2c7b3fed17c5536f48679378c3ba678b5f5cda8896b45ebc6c18055bc  examples/README.zh-CN.md
 f009cdbb3d3c155b3b0b7538ac911c4f3533aa169c6579331cb1c9ed6445adcc  examples/data/DATA_LICENSE.md
@@ -776,4 +776,4 @@ eca6e818ca69b76aacadd15a9ea335a7291ef53b246d19b255eb3d55d1305aab  exercises/10_0
 c0ea4a896d2c8c394b29f9427589996db826cd501c512279ff0ed3ef48fabbe5  licenses/teaching-code-PolyForm-Noncommercial-1.0.0.md
 ad4012e6780ad2e8714e70b77533cd02743a3567c2c94b5a9c5425c6c081efc8  requirements.txt
 68680c4acce5084c2c05d635bf45c5d796a01a14d0bece5124027f9d4894388e  tools/check_package.py
-bdb6287c29fb18f0951b3c0c46befb5d2a276c2c3afe7500eb24ce52f7f49c3a  content-manifest.json
+772d7be9caa1e5f6015edabe00270a51879ba8ea1f1c814aa166148b6ea59475  content-manifest.json

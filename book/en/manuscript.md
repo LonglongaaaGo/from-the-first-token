@@ -14502,13 +14502,15 @@ Return these two lists as a tuple. There are six positions, but the highest ID i
 
 ### Connect the mask to next-token prediction
 
+`format_chat` prepares the complete conversation as two lists: `ids` and `learn_mask`. Each token has a corresponding flag, and both lists keep the original token order. The caller batches these lists and passes the complete `ids` tensor to the model. The model returns one row of prediction scores (logits) per position. The loss function `assistant_loss`, introduced in Section 08.02, uses these scores and the complete `ids` and `learn_mask` tensors as follows.
+
 The flag at position $i$ describes whether **that token** is a target we want to learn. A causal model's logit row at position $t$ predicts position $t+1$. Therefore later loss computation aligns:
 
 $$
-X=s[:-1],\quad Y=s[1:],\quad M=m[1:],\quad Z_{\mathrm{used}}=Z[:,:-1,:].
+Z_{\mathrm{used}}=Z[:,:-1,:],\quad Y=s[1:],\quad M=m[1:].
 $$
 
-For this lesson's later full-sequence-forward convention, $Z$ has shape `[1,6,259]`; we use five rows and five shifted targets. $X$ here describes the prefixes' input positions; it is not an additional model call after already computing full $Z$.
+Here $s$ is the full ID sequence and $m$ contains its learning flags. In the six-ID example, the model returns $Z$ with shape `[1,6,259]`. Its first five rows predict the tokens at positions 1–5. The final row has no next token within this example, so it is left out of the loss. Taking the first five logit rows and the last five IDs and flags gives these pairs:
 
 ```text
 logit position t       0      1      2      3      4
@@ -14517,9 +14519,9 @@ target ID            97    258    257     98    258
 shifted mask          F      F      F      T      T
 ```
 
-![The mask must shift with targets, not remain aligned to input rows](assets/08-01-shifted-target-mask.en.png){width=100%}
+At logit position 3, the prefix ends with the assistant role marker. This row predicts `b` at position 4, so it uses `b`'s True flag. The marker's own False flag describes a different target: the marker itself. The figure follows this same prediction-to-target pairing.
 
-At logit position 3, the prefix ends with the assistant role marker. That marker's own flag is False, but its logits predict `b` at position 4, whose flag is True. This distinction is why an unshifted mask would supervise the wrong positions.
+![Each prediction is paired with the next token and that token's learning flag](assets/08-01-shifted-target-mask.en.png){width=100%}
 
 If the model assigns probabilities $p(\texttt{b})=1/2$ and $p(\mathrm{EOS})=1/4$ at the two selected rows, the assistant-only mean loss is:
 
@@ -14534,8 +14536,6 @@ L=\frac{-\ln(1/2)-\ln(1/4)}{2}
 $$
 
 The denominator is two selected targets, not six tokens or five prediction slots. This equation describes mathematical selection; implementation should select valid losses rather than multiply excluded infinities by zero, as discussed in 07.02. Uniform logits across 259 candidates would instead give $\ln(259)\approx5.556828$ for every selected target. These are illustrative probability fixtures, not results from a trained model.
-
-**Do not implement shifting or loss inside `format_chat`.** Return aligned, unshifted lists. 08.02 will perform this next step; shifting in both places would be wrong. A training loader that already supplies aligned X/Y needs its own explicitly matched protocol, not another automatic shift.
 
 ### BPE, Unicode and structural IDs
 

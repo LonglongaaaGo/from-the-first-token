@@ -20,15 +20,15 @@
   "teaching_data_manifest": "examples/data/manifest.json",
   "teaching_data_license": "PolyForm-Noncommercial-1.0.0",
   "distribution": "github-source",
-  "release_package_manifest_sha256": "62954c04ae3924b671b0e9c27e286268e547c031ccc0918c72bc6ae0b38b468f",
+  "release_package_manifest_sha256": "505e7bb765e473d60ed5b9e1f4cc6e45f2d4016e949520f953b0cd0ba5c64a86",
   "pdf_release_assets": {
     "book/en/book.pdf": {
-      "sha256": "1e9dfde34009c5a6299a01e3af8515e4ae42c5b817f57d8edd497887cc102e8b",
-      "bytes": 17872780
+      "sha256": "87fed2abe5f89462ad03bb1ba30626e19233b61e3425a05a843aaa00e069e24d",
+      "bytes": 17859286
     },
     "book/zh-CN/book.pdf": {
-      "sha256": "98ec0e237f081cc649bcb3013fa18fd3d7f710a4411c89c5873096a9c33ac5ab",
-      "bytes": 36442792
+      "sha256": "6c2ef58c32d8f3d459e00faadc5b4d16d9787da072335972cef330d3ff44d1b8",
+      "bytes": 36288830
     }
   },
   "files": {
@@ -1321,12 +1321,12 @@
       "bytes": 170553
     },
     "book/en/assets/08-01-shifted-target-mask.en.png": {
-      "sha256": "ba217d11c4978c1624339e74d9b2b5bc7e0edf3c63125b77878fcab75f71fe57",
-      "bytes": 159848
+      "sha256": "b2974490c4b3512ee87d114e7052f454b4cf38de7dbb8ceb163f144c4147c716",
+      "bytes": 156760
     },
     "book/en/assets/08-01-shifted-target-mask.en.svg": {
-      "sha256": "6298119d898d264dba077a000a65948578c3d117ba37c4b1ba40a5aeba118916",
-      "bytes": 184762
+      "sha256": "464258a56ccf66c04f70294508d41156518ff78f75e0a154cb74dea83fcf524d",
+      "bytes": 184648
     },
     "book/en/assets/08-02-assistant-sft.en.png": {
       "sha256": "62ecf25a1d7e9ec6bc8d982e8a007792b775ccc610a59292cf1738e5b77816a0",
@@ -1425,8 +1425,8 @@
       "bytes": 136951
     },
     "book/en/manuscript.md": {
-      "sha256": "e91c2e0763a92294ddbcd82d1e15265d975d511c6d51d212926264e81afd8a40",
-      "bytes": 1121149
+      "sha256": "f6674931f1124f13b7de0e02de583338c0d68d64ebd6a7cd4b55c28f5ce577f3",
+      "bytes": 1121463
     },
     "book/zh-CN/assets/01-01-eight-bit-range.zh-CN.png": {
       "sha256": "a2bb380db955db194ff579f2fdba55c3028b7a604558046ed1f3340f72dada26",
@@ -2693,12 +2693,12 @@
       "bytes": 395722
     },
     "book/zh-CN/assets/08-01-shifted-target-mask.zh-CN.png": {
-      "sha256": "a500df3b10b9a4ea6f3863121e7a706e623bf630d398dfac87e719bca80164bc",
-      "bytes": 207015
+      "sha256": "e789f44c011b220de51c315f48780ff3eb97a1a36a7162ebda4fac5596a75cdb",
+      "bytes": 198792
     },
     "book/zh-CN/assets/08-01-shifted-target-mask.zh-CN.svg": {
-      "sha256": "fef116323aa5febf3154eac3a565acd540cc9d58644ab9aa0fe9705e49b9c2a6",
-      "bytes": 370862
+      "sha256": "d04ed01864aa13b4c82f89321e1e613660edc1faaf6c29f4dbe987fbfb5f5104",
+      "bytes": 345013
     },
     "book/zh-CN/assets/08-02-assistant-sft.zh-CN.png": {
       "sha256": "76fa969a17d7c607fdad6b4d56913858910745bbe2e821bf605a4abe9ae7f7df",
@@ -2797,8 +2797,8 @@
       "bytes": 313085
     },
     "book/zh-CN/manuscript.md": {
-      "sha256": "2882affde041658611fe506d137181f179f18c39572cc4f6afd1de7f55290c91",
-      "bytes": 994958
+      "sha256": "eb71fc3b251be9283d09d46e478ba37373c4584167970eb5ecd2a13b5b3c95cb",
+      "bytes": 995271
     },
     "examples/README.md": {
       "sha256": "734d5ca48237b3a71186aae25a13c29a327ac3bcef1343073a27cb661bf0ac60",
@@ -3146,11 +3146,11 @@
     }
   },
   "reader_revision": {
-    "kind": "literal-code-quotes",
+    "kind": "conversation-target-alignment",
     "date": "2026-10-29",
     "source_manifests": {
-      "en": "28e5b3acc52839408f19c439a3906335b7e015ffd0d5a904dd22576bbaf96f05",
-      "zh-CN": "8a211df47f265ab902a2ecc5b03c7afcbae586f2bfa009b1ab510238451d802e"
+      "en": "7a88895ab8dd47cf41ec65bf3418deef149068e4674ef79d85f29381219d3b06",
+      "zh-CN": "70ddf1ebc0fa2991c4d1c91edd33d204c96f2dc48d15d496e6fb16e372c0a90e"
     }
   }
 }
