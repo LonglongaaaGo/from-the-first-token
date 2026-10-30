@@ -179,8 +179,8 @@ Unicode 码点与 UTF-8 字节的标准来源是 [Unicode Consortium, 2024; R01]
 
 实现思路：
 
-1. 对 `text` 调用 `.encode("utf-8")`，得到 `bytes`。这里是在选择文字到字节的编码方式。
-2. 用 `list(...)` 把字节序列展开成整数列表。遍历 `bytes` 得到的是整数；`b"a"` 展开后是 `[97]`。
+1. 调用 `text.encode("utf-8")`，得到 `bytes`。这里是在选择文字到字节的编码方式。
+2. 用 `list(text.encode("utf-8"))` 把字节序列展开成整数列表。遍历 `bytes` 得到的是整数；`b"a"` 展开后是 `[97]`。
 3. 返回这个列表。空字符串得到空列表；大小写和空白都要保留。
 
 只检查这一部分：
@@ -200,7 +200,7 @@ python3 exercises/01_01_text_to_tokens.py --check encode
 ```
 
 1. 用 `bytes(token_ids)` 恢复字节对象。`[104, 101, 108, 108, 111]` 得到 `b"hello"`。
-2. 对完整字节对象调用 `.decode("utf-8", errors="strict")`，返回字符串。
+2. 用 `bytes(token_ids).decode("utf-8", errors="strict")` 解码完整的字节序列，返回字符串。
 3. 保留异常。单字节值越界应报 `ValueError`；不合法或不完整的 UTF-8 应报 `UnicodeDecodeError`。不能用 `errors="ignore"` 悄悄丢掉内容。
 
 能按 UTF-8 编码的完整文字需要满足 `decode(encode(text)) == text`。截取一段 ID 不一定能解码，因为可能截在多字节字符中间。
@@ -286,7 +286,7 @@ list(b"a") -> [97]
 bytes([97]) -> b"a"
 ```
 
-非 ASCII 文字通过 `.encode("utf-8")` 变成字节。在本课分词器里，字节值恰好就是 token ID；BPE 后面会通过词表让一个 ID 对应一串字节。
+对于名为 `text` 的非 ASCII 字符串，`text.encode("utf-8")` 得到它的字节表示。在本课分词器里，字节值恰好就是 token ID；BPE 后面会通过词表让一个 ID 对应一串字节。
 
 Embedding 是另一步：ID 用来选择一行浮点向量。把字节拼接起来不会自动得到 Embedding；向量维度表示有几个分量，不表示数值上限是 256。
 
@@ -410,7 +410,7 @@ count_pairs(token_ids: list[int]) -> dict[tuple[int, int], int]
 1. 创建空字典 `pair_counts`。`{}` 表示空字典。
 2. 遍历相邻 pair 的起点。长度为 $n$ 且 $n\ge1$ 时，有 $n-1$ 个起点。`range(len(token_ids) - 1)` 不包含结束值；六个 token 对应下标 0 至 4，空序列和单个 token 则不会进入循环。
 3. 在循环内部读取 `token_ids[i]` 与 `token_ids[i + 1]`，构造 `pair`。有逗号的括号表示元组；第一次得到 `(97, 98)`。
-4. 把这个键的计数加一。`.get(pair, 0)` 读取已有计数，没有这个键就用 0。处理前两个位置后，字典是 `{(97, 98): 1, (98, 97): 1}`。
+4. 把这个键的计数加一。`pair_counts.get(pair, 0)` 读取已有计数，没有这个键就用 0。处理前两个位置后，字典是 `{(97, 98): 1, (98, 97): 1}`。
 5. 循环结束后返回 `pair_counts`。返回语句放在循环外，才能统计完整序列。
 
 提示用于复习实现逻辑；配套文件中你写好的代码保留。
@@ -720,9 +720,9 @@ merges = {(97, 98): 257, (98, 99): 256}
 
 训练时筛的是“次数最高”，允许创建规则；这里筛的是“已有规则可用”。写循环前先确定当前函数在做哪件事。
 
-#### `.items()`、`item[0]`、`item[1]` 是什么？
+#### `pair_counts.items()`、`item[0]`、`item[1]` 是什么？
 
-对于 `.items()` 提供的 `((97, 98), 3)`，`item[0]` 是 pair `(97, 98)`，`item[1]` 是次数 3。写成 `pair, count` 是把同样两个对象拆成两个名字。
+对于 `pair_counts.items()` 提供的 `((97, 98), 3)`，`item[0]` 是 pair `(97, 98)`，`item[1]` 是次数 3。写成 `pair, count` 是把同样两个对象拆成两个名字。
 
 比较 `item[1]` 和最大次数属于训练。这一课即使读取了 `count`，选择时也看 `merges[pair]`。不要把上一课的最高频逻辑搬到这里。
 
@@ -986,8 +986,8 @@ pack_tokenizer(merges: dict[tuple[int, int], int], vocab: dict[int, bytes]) -> d
 1. $(97, 98) \to  256$ 保存成 `[97, 98, 256]`，`out_merges` 变为 `[[97, 98, 256]]`。
 2. $(256, 256) \to  257$ 保存成 `[256, 256, 257]`，列表现在有两条记录。
 3. 基本词表从 ID 0 的 `[0, [0]]` 开始，继续保存到 ID 255，每个条目都保留。
-4.ID 256 的 `b"ab"` 展开为 `[97, 98]`，记录是 `[256, [97, 98]]`。
-5.ID 257 的记录是 `[257, [97, 98, 97, 98]]`。
+4. ID 256 的 `b"ab"` 展开为 `[97, 98]`，记录是 `[256, [97, 98]]`。
+5. ID 257 的记录是 `[257, [97, 98, 97, 98]]`。
 6. 把两个收集列表放进 `payload` 的对应字段并返回。总共两条规则记录、258 条词表记录。
 
 `list(b"ab")` 读取字节值，不是解码文字，也不修改原字节。反向用 `bytes([97, 98])` 恢复 `b"ab"`。
@@ -1028,7 +1028,7 @@ python3 exercises/02_07_bpe_save_load.py --check pack
 ### 阶段 B 的完整例子与编号提示
 
 1. 建立空 `merges`、`vocab` 字典，`{}` 是空字典。
-2. 遍历 `payload["merges"]` 这个列表，不需要 `.items()`。把一条 `item` 拆为 `a`、`b`、`c`，用元组 `(a, b)` 作键、`c` 作值。记录 `[97, 98, 256]` 恢复第一条规则，再读取 `[256, 256, 257]` 恢复第二条。
+2. 直接遍历 `payload["merges"]` 中的记录；这个值是列表。把一条 `item` 拆为 `a`、`b`、`c`，用元组 `(a, b)` 作键、`c` 作值。记录 `[97, 98, 256]` 恢复第一条规则，再读取 `[256, 256, 257]` 恢复第二条。
 3. 遍历词表记录，把两元素 `item` 拆为 `token_id`、`byte_list`。用 `bytes(byte_list)` 还原内容，并放回原 ID。先还原所有基本条目；`[256, [97, 98]]` 恢复 `b"ab"`，`[257, [97, 98, 97, 98]]` 恢复 `b"abab"`。
 4. 两个循环结束后返回 `(merges, vocab)`。逗号让返回结果成为元组；还原过程不重新分配 ID、不解码字节、不重新训练。
 
@@ -1167,7 +1167,7 @@ lookup_embeddings(token_ids, embedding_table)
 
 1. 在循环前建立空列表 `vectors`。`[]` 创建空列表；此时输出有零行。
 2. 用 `for token_id in token_ids:` 按原顺序访问。循环体缩进；不要转成集合，因为集合会丢掉重复位置。
-3. 循环内部读取 `embedding_table[token_id]`，把整行作为一个元素 `append` 到 `vectors`。方括号索引选择一行，`.append(value)` 添加一个元素。第一次有一行，处理 97、98 后有两行，每行四个数。不要把一行展开成四个独立输出元素。
+3. 在循环内部，`embedding_table[token_id]` 用方括号索引选出一行；`vectors.append(embedding_table[token_id])` 把这一整行作为一个元素加到 `vectors` 末尾。第一次有一行，处理 97、98 后有两行，每行四个数。不要把一行展开成四个独立输出元素。
 4. 循环结束后返回 `vectors`。返回与循环头对齐，放在循环外；否则只处理第一个 token。空输入不进入循环，自然返回 `[]`。这里读取行值，可以复用或复制行列表，但都不能修改输入。
 
 在 `lookup_embeddings` 的实现区域填写核心，其他部分是给定检查驱动。编写时关闭 AI 自动补全，可以查阅语法参考。
@@ -1502,7 +1502,7 @@ Lesson 03.02 checks passed.
 
 tuple 解包按位置赋值。例如 `a, b, c = (10, 20, 30)` 会把 `10` 赋给 `a`、`20` 赋给 `b`、`30` 赋给 `c`。接收辅助函数结果时，按返回顺序使用 `loss`、`gradient`、`w_new`。
 
-`collection.append(item)` 给列表追加一项。这里追加的是一个损失浮点数。在循环之前初始化历史，让每次循环都追加到同一列表。
+`losses.append(loss)` 把名为 `loss` 的损失浮点数追加到历史列表 `losses` 的末尾。在循环之前初始化历史，让每次循环都追加到同一列表。
 
 `return` 会退出整个函数。放在循环之后，缩进四个空格，才能完成所有要求的更新，也能处理零次更新。
 
@@ -1896,7 +1896,7 @@ parameter = torch.tensor(0.6, dtype=torch.float64, requires_grad=True)
 
 请实现 `03_05_scalar_autograd.py` 中的 `autograd_loss_and_gradient`。按这些步骤实现函数，变量名与接口保持一致。保留提供的导入和检查程序。函数内每条实现语句都缩进四个空格。
 
-1. **从 `w_value` 创建 `w_tensor`。** 使用 `torch.tensor(value, dtype=..., requires_grad=...)`，传入函数参数、`torch.float64` 和 `True`。例子中数值为 `0.2`，最初 `w_tensor.grad` 为 `None`。在函数内创建，让每次调用都独立计算。
+1. **从 `w_value` 创建 `w_tensor`。** 使用 `torch.tensor(w_value, dtype=torch.float64, requires_grad=True)`。其中 `w_value` 提供数值，`torch.float64` 指定浮点类型，`requires_grad=True` 开启梯度记录。例子中数值为 `0.2`，最初 `w_tensor.grad` 为 `None`。在函数内创建，让每次调用都独立计算。
 2. **计算 `prediction_tensor`。** 用 `*` 把张量 `w_tensor` 乘以参数 `x`，普通赋值保存。例子结果是存着 `0.4` 的标量张量。
 3. **计算 `error`。** 从 `prediction_tensor` 中减去参数 `target`，例子结果存着 `-0.6`。
 4. **计算 `loss`。** 用 `** 2` 把 `error` 平方，例子结果存着 `0.36`。保持张量与 `w_tensor` 的连接。
@@ -6349,13 +6349,13 @@ continuation = "bbbb"
 
 打开实际 03_24_baseline_pipeline.py，只编辑 START/END LEARNER CODE 之间区域。以下步骤均在函数内部，**四个空格缩进**；已有 helper 包含自己的循环，你不需要再添加训练循环。
 
-1. **文字变 ID。** 依次使用 `.encode("utf-8")`、`list(...)`、`torch.tensor(..., dtype=torch.long)`，保存为 `token_ids`。本例期望 shape `[6]`、值 `[97,98,97,98,97,98]`。
+1. **文字变 ID。** 用 `text.encode("utf-8")` 得到字节，再用 `list(text.encode("utf-8"))` 得到整数列表，把该列表传给 `torch.tensor` 并指定 `dtype=torch.long`，保存为 `token_ids`。本例期望 shape `[6]`、值 `[97,98,97,98,97,98]`。
 2. **初始化一次。** 调用给定 `initial_parameters()`，元组拆包成 `embedding_table`、`output_weights`、`output_bias`。形状依次 `[256,1]`、`[1,256]`、`[256]`。之后同一次运行一直使用这三个对象。
 3. **重复调度。** `train_starts * updates` 保存为 `training_schedule`。本例 `[[0,2],[0,2]]`；`updates=0` 得 `[]`，不用另写分支。
 4. **调用训练。** `train_batches` 的实参依次为 `embedding_table, token_ids, output_weights, output_bias, training_schedule, context_length, learning_rate`，返回存 `history`。不要给整条流水线套 `no_grad()`，训练需要前向/反向计算图。
 5. **调用评估。** `evaluate_batches` 依次接收 `embedding_table, token_ids, output_weights, output_bias, eval_starts, context_length`，返回存 `eval_loss`。没有学习率参数，也不要重新初始化或清梯度。
 6. **构造提示并生成。** `context_ids` 取 `token_ids[:1]`，是一维张量 `[1]`；`token_ids[0]` 是标量、普通 `[97]` 是 Python 列表，都不是该 helper 要的形式。`generate_token_ids` 依次接收 `embedding_table, context_ids, output_weights, output_bias, 4`，返回存 `generated_ids`，shape `[5]`。
-7. **仅解码续写。** 从 `generated_ids` 中切掉前 `context_ids.numel()` 个 ID，得到 `continuation_ids`。先 `.tolist()`，再 `bytes(...)`，最后 `.decode("utf-8", errors="replace")`，得到 `continuation`。字节先拼起来再解码，不能逐字节单独解码。
+7. **仅解码续写。** 从 `generated_ids` 中切掉前 `context_ids.numel()` 个 ID，得到 `continuation_ids`。用 `continuation_ids.tolist()` 把张量变为 Python 列表，再用 `continuation_bytes = bytes(continuation_ids.tolist())` 把该列表构造成字节对象，最后调用 `continuation_bytes.decode("utf-8", errors="replace")`，得到 `continuation`。字节先拼起来再解码，不能逐字节单独解码。
 8. **返回字典。** 用 `{"name": value}` 这种字典语法，把 `history`、`eval_loss`、`continuation` 三个键映射到已保存结果。返回语句仍四空格缩进。
 
 删除占位 `raise NotImplementedError(...)` 后填核心，保留给定导入、初始化和检查程序。
@@ -9691,7 +9691,7 @@ x=0 时，$\epsilon$ 使分母为正，sqrt(1e-6)=0.001，有限 gain 下输出�
 
 ### 可选的梯度推导
 
-对单行，令 r=(a+$\epsilon$)^(-1/2)，链式法则给出：
+对单行，令 $r=(a+\epsilon)^{-1/2}$，链式法则给出：
 
 $$
 \frac{\partial r}{\partial x_j}=-\frac{x_j}{D}r^3,\qquad
@@ -10632,7 +10632,7 @@ R[0]  full shape=(1,2,4)
 [ 0.04449106, 1.51520054, 1.27272793, 0.28696366 ]
 ```
 
-例如位置1的U为`[0,1,1,0] + 0.5*[0.09739227,1.31681987,0.78604000,0.62817215]`。$R$是对这个新U重新归一化得到的，不能复用$Z$。保留U，后面还要把它加回去。
+例如位置1的U为$[0,1,1,0] + 0.5[0.09739227,1.31681987,0.78604000,0.62817215]$。$R$是对这个新U重新归一化得到的，不能复用$Z$。保留U，后面还要把它加回去。
 
 #### 并行投影、门控与最后一次残差
 
@@ -10820,7 +10820,7 @@ step不是token数量$T$，也不是epoch编号。梯度累积（gradient accumu
 | $\eta$、$\lambda$、$\epsilon$ | learning_rate、decay、eps |
 | $\widehat m_t$、$\widehat v_t$ | 临时的偏差校正结果，不是替代保存的缓冲 |
 
-$\beta_1^t$里，下标1表示选beta1，上标t表示乘方。$t=2$时，beta1=0.9给出$0.9^{2}=0.81$，beta2=0.99给出$0.99^{2}=0.9801$。Python写`beta1 ** step`，不是`beta1 * step`，也不是`beta1 ^ step`；Python的^不是乘方。$\beta$本身固定，随着次数变化的是它的幂。
+$\beta_1^t$里，下标1表示选beta1，上标t表示乘方。$t=2$时，beta1=0.9给出$0.9^{2}=0.81$，beta2=0.99给出$0.99^{2}=0.9801$。Python写`beta1 ** step`，不是`beta1 * step`，也不是`beta1 ^ step`；Python的`^`不是乘方。$\beta$本身固定，随着次数变化的是它的幂。
 
 ### 两份梯度记忆：方向与平方尺度
 
@@ -11395,7 +11395,7 @@ $$
 v_2=.999(.01699581)+.001(-4.04257202)^2\approx.03332120.
 $$
 
-偏差修正用beta1^2和beta2^2。结合保存的学习率和衰减，更新2就得到表格第三行。驱动每次在backward前先清梯度，所以没有把上一步梯度意外累加进来。
+偏差修正用$\beta_1^2$和$\beta_2^2$。结合保存的学习率和衰减，更新2就得到表格第三行。驱动每次在backward前先清梯度，所以没有把上一步梯度意外累加进来。
 
 ![一直训练与恢复后继续训练的数值对比](assets/05-07-resume-trace.zh-CN.png){width=100%}
 
@@ -11592,7 +11592,7 @@ $$
 
 一个十六进制字符表示4bit，两个表示一个字节。hashlib.sha256(raw)创建哈希对象；它的digest()返回32字节，hexdigest()返回64个小写十六进制字符，本课记录后者。[Python hashlib官方文档](https://docs.python.org/3/library/hashlib.html)
 
-这里的256是摘要的**bit长度**。第一章“一个字节有256种取值”来自2^8，是另一种数量；两者都不决定BPE词表大小。文档的$n_d$可以是0、1、3或更大，$h_d$始终是64个十六进制字符。
+这里的256是摘要的**bit长度**。第一章“一个字节有256种取值”来自$2^8$，是另一种数量；两者都不决定BPE词表大小。文档的$n_d$可以是0、1、3或更大，$h_d$始终是64个十六进制字符。
 
 ### 函数约定与数据归属
 
@@ -11701,7 +11701,7 @@ hashlib.sha256(raw)       → 一个哈希对象
 
 完整表达式hashlib.sha256(raw).hexdigest()就是相应接口调用，不是整份作业答案；hashlib已经导入。[字符串编码接口](https://docs.python.org/3/library/stdtypes.html#str.encode)
 
-for循环每次访问一个文档字典，循环体多缩进一级。list.append(entry)把一个条目加进列表，返回值是None，不要把这个返回值再赋给结果列表。最后return放在循环外，空输入也能返回正确的外层字典。
+for循环每次访问一个文档字典，循环体多缩进一级。若输出列表命名为`entries`，`entries.append(entry)`把一个条目加进这个列表，返回值是`None`，不要把这个返回值再赋给结果列表。最后return放在循环外，空输入也能返回正确的外层字典。
 
 ### 八步引导实现
 
@@ -11789,7 +11789,7 @@ H_d=\operatorname{SHA256}(p_d).\operatorname{hexdigest}(),\quad
 n_d=\operatorname{int}(H_d,16),\quad u_d=\frac{n_d}{2^{256}}.
 $$
 
-符号||表示字节拼接（byte concatenation），不是乘法或逻辑运算；[0]是一字节、数值为零。$H$是64字符十六进制字符串，n是把同一摘要读成非负整数。因为0<=n<=2^256-1，数学上0<=u<1。Python的**表示乘方，^不表示乘方。
+符号||表示字节拼接（byte concatenation），不是乘法或逻辑运算；[0]是一字节、数值为零。$H$是64字符十六进制字符串，n是把同一摘要读成非负整数。因为$0\le n\le 2^{256}-1$，数学上$0\le u<1$。Python的`**`表示乘方，`^`不表示乘方。
 
 数学分组规则是：
 
@@ -11804,13 +11804,13 @@ $$
 
 种子字节、分隔符、正文字节是同一份payload的三部分。seed='v1'、text='a'拼成[118,49,0,97]；图里先给完整摘要和整数，再归一化成分数。它含种子，与06.01不含种子的内容指纹不同，不能直接拿后者替换。
 
-### 课堂问答：为什么哈希整数要除以2^256？
+### 为什么哈希整数要除以$2^{256}$？
 
 一个常见问题是\(u=\operatorname{int}(h,16)/2^{256}\)背后的原理。这个除法把确定性的哈希数字换到一个统一尺度，不是在学习模型参数，也不是评估文档质量。
 
 先分清表示方式。SHA-256产生256 bit摘要（digest），也就是32 bytes。hexdigest用64个十六进制数字（hexadecimal digit）表示这些位：每个十六进制数字对应4 bit，所以64×4=256。`int(h,16)`把同一个位模式解释成非负整数；16表示输入数字使用十六进制。这不是再哈希一次，也不是重新编码原文本。[Python哈希表示说明](https://docs.python.org/3/library/hashlib.html#hash-objects)
 
-一个bit有两种值，k bit共有2^k种模式。无符号整数（unsigned integer）从0到2^k−1，因为0也占一种。先看**独立的四bit例子**：范围0…15，共16种。假设十六进制表示为'c'：
+一个bit有两种值，$k$ bit共有$2^k$种模式。无符号整数（unsigned integer）从0到$2^k-1$，因为0也占一种。先看**独立的四bit例子**：范围0…15，共16种。假设十六进制表示为'c'：
 
 ```text
 十六进制 'c' = 二进制 1100 = 整数 12
@@ -11843,9 +11843,7 @@ $$
 
 真实seed='v1'、text='a'的完整哈希整数在上文已给出，得到u≈.6780945009，大于等于.5，因此训练。相同seed／正文重复得到同一分数。对不同内容组，把哈希分数视为近似散布在整个区间，是划分设计假设，不保证每个数据集或小样本都有相同数量。单文档u是确定性数字，不是正确概率、文本质量、模型置信度或一次新随机抽样。
 
-为什么不用2^256−1？那会把最大整数映射到恰好1，属于另一种归一化。本协议用2^256，让数学范围为半开区间[0,1)，因此$f=1$概念上能包含全部分数。Python有限精度浮点（floating point）又带来独立的实现问题：不同精确比值可能舍入（rounding）到同一float，最大比值会变成1.0。[Python浮点说明](https://docs.python.org/3/tutorial/floatingpoint.html)
-
-int(hexdigits,16)/(2**256)计算正确。目前路由只有`if u < validation_fraction:`。
+为什么不用$2^{256}-1$？那会把最大整数映射到恰好1，属于另一种归一化。本协议用$2^{256}$，让数学范围为半开区间[0,1)，因此$f=1$概念上能包含全部分数。Python有限精度浮点（floating point）又带来独立的实现问题：不同精确比值可能舍入（rounding）到同一float，最大比值会变成1.0。[Python浮点说明](https://docs.python.org/3/tutorial/floatingpoint.html)
 
 受控检查提供全1的256-bit摘要，即64个'f'。这直接检查可能的摘要取值，不需要搜索能哈希成该值的原文。现有环境中：
 
@@ -11854,8 +11852,6 @@ int(hexdigits,16)/(2**256)计算正确。目前路由只有`if u < validation_fr
 ```
 
 若路由只使用`u < validation_fraction`，validation_fraction=1.0时比较就变成1.0<1.0，结果为False，该测试文档进入train，但比例1约定要求validation。应明确处理端点：分支条件使用`validation_fraction == 1.0 or u < validation_fraction`。or在任一条件为真时成立。保留现有append分支和循环外return，不修改归一化，也不修改内部比例的严格<。
-
-临时只改分支的参考通过受控端点回归，磁盘实现不变。这不额外认证已说明的浮点分数约定之外的每一个数学内部边界。
 
 ### 内容、种子与分隔符各负责什么？
 
@@ -11911,7 +11907,7 @@ ad9799e8f62da609cdf1fe8e7dfaead172cf5825aefbbc1fabb4343ab6cd2db7
 78517978959510909447554025451496255252185340594206639161624781576130937040311
 ```
 
-除以2**256得到u≈0.6780945008996954。0.6780945<0.5为False，因此d1进入train；此时train的ID为[d1]，validation为[]。
+除以`2**256`得到u≈0.6780945008996954。0.6780945<0.5为False，因此d1进入train；此时train的ID为[d1]，validation为[]。
 
 第二份b'v1\x00b'的摘要是：
 
@@ -11985,8 +11981,8 @@ $$
 3. **拼接payload字节。** document['text']编码UTF-8，用+依次拼接编码种子、b'\x00'、编码正文；三者都必须是bytes。d1的list(payload)为[118,49,0,97]。
 4. **计算十六进制摘要。** 使用hashlib.sha256(payload).hexdigest()，保留全部64位。不加入随机抽样、文档ID或列表位置。
 5. **把摘要读成整数。** 使用int(hex_digest,16)，表示按十六进制解析，不写int(hex_digest)，也不只取短前缀。
-6. **计算归一化分数。** 除以2**256，'a'的u约0.6780945009。不除以256、64或文档数，也不写2^256。
-7. **路由整份文档。** `validation_fraction == 1.0` 或 `u < validation_fraction` 时进入validation，否则train。`if`／`else` 在八格处，各 `append(document)` 在十二格处。原例三份都训练；扩展的 `'e'` 进入验证。`append` 修改列表、返回 `None`，不把返回值重新赋给列表。
+6. **计算归一化分数。** 除以`2**256`，'a'的u约0.6780945009。不除以256、64或文档数，也不写`2^256`。
+7. **路由整份文档。** `validation_fraction == 1.0` 或 `u < validation_fraction` 时进入validation，否则train。`if`／`else` 在八格处；十二格处，验证分支使用`validation.append(document)`，另一分支使用`train.append(document)`。原例三份都训练；扩展的 `'e'` 进入验证。`append` 修改列表、返回 `None`，不把返回值重新赋给列表。
 8. **循环后返回两份列表。** 退回四格，按train,validation的顺序返回；空输入也能执行。删除占位raise，保留给定驱动。
 
 提示说明实现方法，但不把完整函数填进学生区域。本函数不新增BPE训练、清洗、打乱或张量批次。
@@ -12309,7 +12305,7 @@ eos_id = 257
 
 第0份文档是'abab'。
 
-1.UTF-8生成字节值[97,98,97,98]。
+1. UTF-8生成字节值[97,98,97,98]。
 2. 对两个互不重叠的位置应用已学习的(97,98)规则，得到[256,256]。没有(256,256)规则，所以编码停止，不能发明新token。
 3. 追加预留整数257，得到[256,256,257]。外层结果变成[[256,256,257]]。
 
@@ -14011,8 +14007,6 @@ Lesson 07.03 checks passed.
 
 增量复用 K/V 的普通注意力算法见 [Shazeer, 2019; R19](https://arxiv.org/abs/1911.02150v1) 第 2.4 节。缓存中的 RoPE 位置须符合 [Su et al., 2021; R07](https://arxiv.org/abs/2104.09864) 的构造；状态字典接口与相等性探针由本书单独规定。
 
-
-
 ### 从一次注意力调用，接到完整回答
 
 07.03实现的是**单层的缓存注意力（cached attention）**：接收新的Q／K／V，复用旧K／V，返回输出及新缓存。它还没有选择token、循环到EOS或把ID解码成文字。
@@ -14187,7 +14181,7 @@ def generate_cached(
 
 只编辑07_04_inference_interface.py的学生区域；保留给定包装器及检查驱动。相同提示也写在TODO旁。
 
-1. **四空格：复制并保存状态。** 用`list(prompt)`建立本地`sequence`，把`model.training`保存为`old_mode`。复制后`.append()`才不会修改调用者的提示词。
+1. **四空格：复制并保存状态。** 用`list(prompt)`建立本地`sequence`，把`model.training`保存为`old_mode`。之后向`sequence`追加元素只会改变这份本地副本，调用者的`prompt`保持不变。
 2. **四空格：初始化缓存并找设备。** 设`cache=None`；`next(model.parameters())`取第一个已注册参数，`.device`告诉你ID张量放哪里。不新建模型或优化器。
 3. **四空格：打开`try:`。** 八空格调用`model.eval()`，控制评估行为；求导记录还要用单独的no_grad控制。
 4. **八空格：进入`with torch.no_grad():`。** 其内部十二空格；在这里写`for _ in range(budget):`，重复体十六空格。`_`是不用的循环下标，`range(0)`一次也不执行。
@@ -14196,7 +14190,7 @@ def generate_cached(
 7. **调用并解包两个返回值。** 把新张量和旧缓存传给`model(...)`，保留返回的`logits`及新`cache`。丢掉新缓存就丢掉优化；不要手工拼接层，或把ID拼入缓存向量。
 8. **选一行词表logits。** `logits[0,-1,:]`为`[V]`：先取唯一批次行，再取最后新位置，最后保留全部词表候选。
 9. **按温度分支。** 温度零时对词表行`.argmax()`；正数分支先除以`temperature`，再在`dim=-1`做softmax。不要除以零。
-10. **得到一个Python整数。** argmax返回标量张量；`torch.multinomial(probabilities, num_samples=1, generator=generator)`返回单元素张量。`.item()`取出数值，保存为普通整数ID，不重设随机生成器。
+10. **得到一个Python整数。** argmax返回标量张量；`torch.multinomial`接收`probabilities`，指定`num_samples=1`及`generator=generator`，返回单元素张量。`.item()`取出数值，保存为普通整数ID，不重设随机生成器。
 11. **先追加，再判断EOS。** `sequence.append(token)`放在循环内；判断`eos_id is not None`且与选中整数相等。只写`if eos_id:`会漏掉EOS ID0。
 12. **在EOS分支中用`break`。** 它立刻退出最近的循环；刚追加的EOS留在结果里。没有EOS时由预算限制长度。不要选出第一个普通token就return。
 13. **四空格：写`finally:`。** 八空格恢复`model.train(old_mode)`，成功或异常都清理。不要在finally里return，否则可能吞掉异常。
@@ -14239,8 +14233,6 @@ Lesson 07.04 checks passed.
 ### 方法来源
 
 遵循指令训练的背景见 [Ouyang et al., 2022; R32](https://arxiv.org/abs/2203.02155)。下文角色分隔符、序列化及助手目标掩码属于本书的格式约定，不是该论文定义的官方聊天标准。
-
-**实际练习实现已复查并验收。
 
 ### 从生成 ID 到回答用户
 
@@ -14451,9 +14443,9 @@ format_chat([user message], ...)[0] → [256,97,258]
 1. **四空格缩进**：分别初始化 `ids`、`learn_mask` 两个空列表。每次调用都要新建。
 2. **四空格**：写 `for message in messages:`。本条消息的处理放在八空格处。若输入为空，循环不执行。
 3. **八空格**：读取 `role = message['role']`、`content = message['content']`。方括号读取字典值，不是在遍历字符或字典键。
-4. 向 `ids` 追加 `role_ids[role]`，向 `learn_mask` 追加 `False`。`.append(value)` 添加一个元素，两种角色都要这样处理。
+4. 用 `ids.append(role_ids[role])` 把一个角色 ID 加到 `ids` 末尾，用 `learn_mask.append(False)` 把对应标记加到 `learn_mask` 末尾。点号前是要修改的列表名，`append` 表示把括号内的值作为一个元素追加到该列表末尾。用户消息和助手消息都执行这一步。
 5. 调用已有 `encode_bpe(content, merges)`，把返回列表命名为 `content_ids`。不要训练或修改 merges。`a` 的结果是 `[97]`，空正文结果是 `[]`。
-6. 用 `ids.extend(content_ids)` 展开正文，再追加 `eos_id`。`.extend(list)` 加入其中每个元素；`.append(content_ids)` 会错误地形成嵌套列表。
+6. 用 `ids.extend(content_ids)` 逐个加入正文 ID，再用 `ids.append(eos_id)` 加入结尾的 EOS ID。例如，用 `extend` 加入 `[97, 98]` 会增加两个整数元素；如果写成 `ids.append(content_ids)`，则会把整个列表作为一个嵌套元素加入。
 7. 令 `is_assistant = (role == 'assistant')`。相等比较返回真正的布尔值 True 或 False，不能直接把角色字符串当 flag。
 8. 用 `[is_assistant] * (len(content_ids)+1)` 扩展 `learn_mask`。`+1` 覆盖 EOS。Python 列表重复会重复元素；这里布尔值不可变。空助手正文也要给 EOS 一个 True。手算时确认每条消息处理后 ID／mask 长度仍相等。
 9. **退出循环，回到四空格**：按顺序返回 `ids, learn_mask`。逗号构造二元组。若 return 放在循环内，就会丢掉后续消息；放在循环后，也能让 `messages=[]` 返回 `([],[])`。替换占位 raise，保留给定检查驱动。
@@ -15654,87 +15646,87 @@ Lesson 10.03 checks passed.
 
 正文“方法来源”中的作者、年份与编号对应以下条目，链接指向原论文、标准或固定版本的官方文档。论文标题保留原文以便检索。会议发表年份与首次预印本年份不同时分别注明；软件文档以版本标识，不虚构发表年份。引用说明方法来源，不代表本书的小型算例复现了论文实验。
 
-**R01.** The Unicode Consortium (2024). [The Unicode Standard, Version 16.0.0](https://www.unicode.org/versions/Unicode16.0.0/).Unicode Standard.
+**R01.** The Unicode Consortium (2024). [The Unicode Standard, Version 16.0.0](https://www.unicode.org/versions/Unicode16.0.0/). Unicode Standard.
 
-**R02.** Yergeau, F. (2003). [UTF-8, a transformation format of ISO 10646](https://www.rfc-editor.org/rfc/rfc3629).RFC 3629.
+**R02.** Yergeau, F. (2003). [UTF-8, a transformation format of ISO 10646](https://www.rfc-editor.org/rfc/rfc3629). RFC 3629.
 
-**R03.** Sennrich, R., Haddow, B., and Birch, A. (2016). [Neural Machine Translation of Rare Words with Subword Units](https://aclanthology.org/P16-1162/).ACL 2016; arXiv:1508.07909.First preprint: 2015.
+**R03.** Sennrich, R., Haddow, B., and Birch, A. (2016). [Neural Machine Translation of Rare Words with Subword Units](https://aclanthology.org/P16-1162/). ACL 2016; arXiv:1508.07909. First preprint: 2015.
 
-**R04.** Vaswani, A., et al. (2017). [Attention Is All You Need](https://arxiv.org/abs/1706.03762).NeurIPS 2017; arXiv:1706.03762.
+**R04.** Vaswani, A., et al. (2017). [Attention Is All You Need](https://arxiv.org/abs/1706.03762). NeurIPS 2017; arXiv:1706.03762.
 
-**R05.** Ba, J.L., Kiros, J.R., and Hinton, G.E. (2016). [Layer Normalization](https://arxiv.org/abs/1607.06450). arXiv:1607.06450.
+**R05.** Ba, J. L., Kiros, J. R., and Hinton, G. E. (2016). [Layer Normalization](https://arxiv.org/abs/1607.06450). arXiv:1607.06450.
 
-**R06.** Zhang, B., and Sennrich, R. (2019). [Root Mean Square Layer Normalization](https://arxiv.org/abs/1910.07467).NeurIPS 2019; arXiv:1910.07467.
+**R06.** Zhang, B., and Sennrich, R. (2019). [Root Mean Square Layer Normalization](https://arxiv.org/abs/1910.07467). NeurIPS 2019; arXiv:1910.07467.
 
-**R07.** Su, J., et al. (2021). [RoFormer: Enhanced Transformer with Rotary Position Embedding](https://arxiv.org/abs/2104.09864). arXiv:2104.09864.First preprint: 2021; revised v5 (2023) consulted, Sections 3.2 and 3.4.2.
+**R07.** Su, J., et al. (2021). [RoFormer: Enhanced Transformer with Rotary Position Embedding](https://arxiv.org/abs/2104.09864). arXiv:2104.09864. First preprint: 2021; revised v5 (2023) consulted, Sections 3.2 and 3.4.2.
 
 **R08.** Shazeer, N. (2020). [GLU Variants Improve Transformer](https://arxiv.org/abs/2002.05202). arXiv:2002.05202.
 
-**R09.** Kingma, D.P., and Ba, J. (2015). [Adam: A Method for Stochastic Optimization](https://arxiv.org/abs/1412.6980).ICLR 2015; arXiv:1412.6980.First preprint: 2014.
+**R09.** Kingma, D. P., and Ba, J. (2015). [Adam: A Method for Stochastic Optimization](https://arxiv.org/abs/1412.6980). ICLR 2015; arXiv:1412.6980. First preprint: 2014.
 
-**R10.** Loshchilov, I., and Hutter, F. (2019). [Decoupled Weight Decay Regularization](https://arxiv.org/abs/1711.05101).ICLR 2019; arXiv:1711.05101.First preprint: 2017.
+**R10.** Loshchilov, I., and Hutter, F. (2019). [Decoupled Weight Decay Regularization](https://arxiv.org/abs/1711.05101). ICLR 2019; arXiv:1711.05101. First preprint: 2017.
 
-**R11.** Hoffmann, J., et al. (2022). [Training Compute-Optimal Large Language Models](https://arxiv.org/abs/2203.15556).NeurIPS 2022; arXiv:2203.15556.
+**R11.** Hoffmann, J., et al. (2022). [Training Compute-Optimal Large Language Models](https://arxiv.org/abs/2203.15556). NeurIPS 2022; arXiv:2203.15556.
 
-**R12.** Rafailov, R., et al. (2023). [Direct Preference Optimization: Your Language Model is Secretly a Reward Model](https://arxiv.org/abs/2305.18290).NeurIPS 2023; arXiv:2305.18290.
+**R12.** Rafailov, R., et al. (2023). [Direct Preference Optimization: Your Language Model is Secretly a Reward Model](https://arxiv.org/abs/2305.18290). NeurIPS 2023; arXiv:2305.18290.
 
 **R13.** Schulman, J., et al. (2017). [Proximal Policy Optimization Algorithms](https://arxiv.org/abs/1707.06347). arXiv:1707.06347.
 
-**R14.** Micikevicius, P., et al. (2018). [Mixed Precision Training](https://arxiv.org/abs/1710.03740).ICLR 2018; arXiv:1710.03740.First preprint: 2017.
+**R14.** Micikevicius, P., et al. (2018). [Mixed Precision Training](https://arxiv.org/abs/1710.03740). ICLR 2018; arXiv:1710.03740. First preprint: 2017.
 
-**R15.** Dao, T., et al. (2022). [FlashAttention: Fast and Memory-Efficient Exact Attention with IO-Awareness](https://arxiv.org/abs/2205.14135).NeurIPS 2022; arXiv:2205.14135.
+**R15.** Dao, T., et al. (2022). [FlashAttention: Fast and Memory-Efficient Exact Attention with IO-Awareness](https://arxiv.org/abs/2205.14135). NeurIPS 2022; arXiv:2205.14135.
 
-**R16.** PyTorch contributors (version 2.0). [Autograd mechanics](https://docs.pytorch.org/docs/2.0/notes/autograd.html).Official software documentation.
+**R16.** PyTorch contributors (version 2.0). [Autograd mechanics](https://docs.pytorch.org/docs/2.0/notes/autograd.html). Official software documentation.
 
-**R17.** PyTorch contributors (version 2.0). [Automatic mixed precision examples](https://docs.pytorch.org/docs/2.0/notes/amp_examples.html).Official software documentation.
+**R17.** PyTorch contributors (version 2.0). [Automatic mixed precision examples](https://docs.pytorch.org/docs/2.0/notes/amp_examples.html). Official software documentation.
 
-**R18.** PyTorch contributors (version 2.0). [Distributed Data Parallel](https://docs.pytorch.org/docs/2.0/notes/ddp.html).Official design note.The note describes the v1.4 design; it is not a guarantee about later backends.
+**R18.** PyTorch contributors (version 2.0). [Distributed Data Parallel](https://docs.pytorch.org/docs/2.0/notes/ddp.html). Official design note. The note describes the v1.4 design; it is not a guarantee about later backends.
 
-**R19.** Shazeer, N. (2019). [Fast Transformer Decoding: One Write-Head is All You Need](https://arxiv.org/abs/1911.02150v1). arXiv:1911.02150v1.Section 2.4 describes ordinary incremental multi-head attention with retained K/V.Section 3 proposes the distinct multi-query variant.
+**R19.** Shazeer, N. (2019). [Fast Transformer Decoding: One Write-Head is All You Need](https://arxiv.org/abs/1911.02150v1). arXiv:1911.02150v1. Section 2.4 describes ordinary incremental multi-head attention with retained K/V. Section 3 proposes the distinct multi-query variant.
 
-**R20.** Kwon, W., et al. (2023). [Efficient Memory Management for Large Language Model Serving with PagedAttention](https://arxiv.org/abs/2309.06180).SOSP 2023; arXiv:2309.06180.
+**R20.** Kwon, W., et al. (2023). [Efficient Memory Management for Large Language Model Serving with PagedAttention](https://arxiv.org/abs/2309.06180). SOSP 2023; arXiv:2309.06180.
 
-**R21.** Xiong, R., et al. (2020). [On Layer Normalization in the Transformer Architecture](https://proceedings.mlr.press/v119/xiong20b.html).ICML 2020; PMLR 119:10524–10533.
+**R21.** Xiong, R., et al. (2020). [On Layer Normalization in the Transformer Architecture](https://proceedings.mlr.press/v119/xiong20b.html). ICML 2020; PMLR 119:10524–10533.
 
 **R22.** Hendrycks, D., and Gimpel, K. (2016). [Gaussian Error Linear Units (GELUs)](https://arxiv.org/abs/1606.08415). arXiv:1606.08415.
 
-**R23.** He, K., Zhang, X., Ren, S., and Sun, J. (2016). [Deep Residual Learning for Image Recognition](https://arxiv.org/abs/1512.03385).CVPR 2016; arXiv:1512.03385.First preprint: 2015.
+**R23.** He, K., Zhang, X., Ren, S., and Sun, J. (2016). [Deep Residual Learning for Image Recognition](https://arxiv.org/abs/1512.03385). CVPR 2016; arXiv:1512.03385. First preprint: 2015.
 
-**R24.** Bengio, Y., Ducharme, R., Vincent, P., and Jauvin, C. (2003). [A Neural Probabilistic Language Model](https://www.jmlr.org/papers/v3/bengio03a.html).JMLR 3:1137–1155.
+**R24.** Bengio, Y., Ducharme, R., Vincent, P., and Jauvin, C. (2003). [A Neural Probabilistic Language Model](https://www.jmlr.org/papers/v3/bengio03a.html). JMLR 3:1137–1155.
 
-**R25.** Radford, A., et al. (2019). [Language Models are Unsupervised Multitask Learners](https://cdn.openai.com/better-language-models/language_models_are_unsupervised_multitask_learners.pdf).OpenAI technical report.
+**R25.** Radford, A., et al. (2019). [Language Models are Unsupervised Multitask Learners](https://cdn.openai.com/better-language-models/language_models_are_unsupervised_multitask_learners.pdf). OpenAI technical report.
 
-**R26.** Press, O., and Wolf, L. (2017). [Using the Output Embedding to Improve Language Models](https://aclanthology.org/E17-2025/).EACL 2017, short papers:157–163.
+**R26.** Press, O., and Wolf, L. (2017). [Using the Output Embedding to Improve Language Models](https://aclanthology.org/E17-2025/). EACL 2017, short papers:157–163.
 
-**R27.** Loshchilov, I., and Hutter, F. (2017). [SGDR: Stochastic Gradient Descent with Warm Restarts](https://arxiv.org/abs/1608.03983).ICLR 2017; arXiv:1608.03983.First preprint: 2016.
+**R27.** Loshchilov, I., and Hutter, F. (2017). [SGDR: Stochastic Gradient Descent with Warm Restarts](https://arxiv.org/abs/1608.03983). ICLR 2017; arXiv:1608.03983. First preprint: 2016.
 
-**R28.** Pascanu, R., Mikolov, T., and Bengio, Y. (2013). [On the difficulty of training recurrent neural networks](https://proceedings.mlr.press/v28/pascanu13.html).ICML 2013; PMLR 28(3):1310–1318.
+**R28.** Pascanu, R., Mikolov, T., and Bengio, Y. (2013). [On the difficulty of training recurrent neural networks](https://proceedings.mlr.press/v28/pascanu13.html). ICML 2013; PMLR 28(3):1310–1318.
 
-**R29.** Kazemnejad, A., et al. (2023). [The Impact of Positional Encoding on Length Generalization in Transformers](https://arxiv.org/abs/2305.19466).NeurIPS 2023; arXiv:2305.19466.
+**R29.** Kazemnejad, A., et al. (2023). [The Impact of Positional Encoding on Length Generalization in Transformers](https://arxiv.org/abs/2305.19466). NeurIPS 2023; arXiv:2305.19466.
 
-**R30.** Magnusson, I., et al. (2024). [Paloma: A Benchmark for Evaluating Language Model Fit](https://arxiv.org/abs/2312.10523).NeurIPS 2024; arXiv:2312.10523.First preprint: 2023.
+**R30.** Magnusson, I., et al. (2024). [Paloma: A Benchmark for Evaluating Language Model Fit](https://arxiv.org/abs/2312.10523). NeurIPS 2024; arXiv:2312.10523. First preprint: 2023.
 
-**R31.** Phan, B., et al. (2024). [Exact Byte-Level Probabilities from Tokenized Language Models for FIM-Tasks and Model Ensembles](https://arxiv.org/abs/2410.09303). arXiv:2410.09303.First preprint: 2024; revised v2 (2025) consulted.
+**R31.** Phan, B., et al. (2024). [Exact Byte-Level Probabilities from Tokenized Language Models for FIM-Tasks and Model Ensembles](https://arxiv.org/abs/2410.09303). arXiv:2410.09303. First preprint: 2024; revised v2 (2025) consulted.
 
-**R32.** Ouyang, L., et al. (2022). [Training language models to follow instructions with human feedback](https://arxiv.org/abs/2203.02155).NeurIPS 2022; arXiv:2203.02155.
+**R32.** Ouyang, L., et al. (2022). [Training language models to follow instructions with human feedback](https://arxiv.org/abs/2203.02155). NeurIPS 2022; arXiv:2203.02155.
 
-**R33.** Li, S., et al. (2020). [PyTorch Distributed: Experiences on Accelerating Data Parallel Training](https://arxiv.org/abs/2006.15704).VLDB 2020; arXiv:2006.15704.
+**R33.** Li, S., et al. (2020). [PyTorch Distributed: Experiences on Accelerating Data Parallel Training](https://arxiv.org/abs/2006.15704). VLDB 2020; arXiv:2006.15704.
 
-**R34.** Rajbhandari, S., Rasley, J., Ruwase, O., and He, Y. (2020). [ZeRO: Memory Optimizations Toward Training Trillion Parameter Models](https://arxiv.org/abs/1910.02054v3).SC 2020; arXiv:1910.02054v3.First preprint: 2019.The revised v3 is cited, not the withdrawn v1.
+**R34.** Rajbhandari, S., Rasley, J., Ruwase, O., and He, Y. (2020). [ZeRO: Memory Optimizations Toward Training Trillion Parameter Models](https://arxiv.org/abs/1910.02054v3). SC 2020; arXiv:1910.02054v3. First preprint: 2019. The revised v3 is cited, not the withdrawn v1.
 
 **R35.** Kaplan, J., et al. (2020). [Scaling Laws for Neural Language Models](https://arxiv.org/abs/2001.08361). arXiv:2001.08361.
 
-**R36.** Efron, B. (1979). [Bootstrap Methods: Another Look at the Jackknife](https://doi.org/10.1214/aos/1176344552).The Annals of Statistics 7(1):1–26; DOI:10.1214/aos/1176344552.
+**R36.** Efron, B. (1979). [Bootstrap Methods: Another Look at the Jackknife](https://doi.org/10.1214/aos/1176344552). The Annals of Statistics 7(1):1–26; DOI:10.1214/aos/1176344552.
 
-**R37.** Hugging Face (version 4.57.1). [Caching](https://huggingface.co/docs/transformers/v4.57.1/cache_explanation).Transformers official documentation.
+**R37.** Hugging Face (version 4.57.1). [Caching](https://huggingface.co/docs/transformers/v4.57.1/cache_explanation). Transformers official documentation.
 
-**R38.** Glorot, X., and Bengio, Y. (2010). [Understanding the difficulty of training deep feedforward neural networks](https://proceedings.mlr.press/v9/glorot10a.html).AISTATS 2010; PMLR 9:249–256.
+**R38.** Glorot, X., and Bengio, Y. (2010). [Understanding the difficulty of training deep feedforward neural networks](https://proceedings.mlr.press/v9/glorot10a.html). AISTATS 2010; PMLR 9:249–256.
 
-**R39.** Rumelhart, D.E., Hinton, G.E., and Williams, R.J. (1986). [Learning representations by back-propagating errors](https://doi.org/10.1038/323533a0).Nature 323:533–536; DOI:10.1038/323533a0.
+**R39.** Rumelhart, D. E., Hinton, G. E., and Williams, R. J. (1986). [Learning representations by back-propagating errors](https://doi.org/10.1038/323533a0). Nature 323:533–536; DOI:10.1038/323533a0.
 
-**R40.** Mitchell, M., et al. (2019). [Model Cards for Model Reporting](https://arxiv.org/abs/1810.03993).FAT* 2019; arXiv:1810.03993.First preprint: 2018.
+**R40.** Mitchell, M., et al. (2019). [Model Cards for Model Reporting](https://arxiv.org/abs/1810.03993). FAT* 2019; arXiv:1810.03993. First preprint: 2018.
 
-**R41.** National Institute of Standards and Technology (2015). [Secure Hash Standard (SHS)](https://csrc.nist.gov/pubs/fips/180-4/upd1/final).FIPS PUB 180-4, August 2015; DOI:10.6028/NIST.FIPS.180-4.
+**R41.** National Institute of Standards and Technology (2015). [Secure Hash Standard (SHS)](https://csrc.nist.gov/pubs/fips/180-4/upd1/final). FIPS PUB 180-4, August 2015; DOI:10.6028/NIST.FIPS.180-4.
 
 # 版本与制作
 
