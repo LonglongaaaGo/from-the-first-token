@@ -20,15 +20,15 @@
   "teaching_data_manifest": "examples/data/manifest.json",
   "teaching_data_license": "PolyForm-Noncommercial-1.0.0",
   "distribution": "github-source",
-  "release_package_manifest_sha256": "da20f3e0a60a736c05c6244db04795894da7bbf968c846b545977de859b1388d",
+  "release_package_manifest_sha256": "9d1bb061842007a1dc89d0a1cb4ff350ce87f57f66acb2798bc060176c283fdd",
   "pdf_release_assets": {
     "book/en/book.pdf": {
-      "sha256": "26320b4ab5036035e62e0d16566161b03b66fb323d34f72f81f8db1c58ae1ed4",
-      "bytes": 17707326
+      "sha256": "5fb2bb5ed8e76810d31f4901a33b5bd0efee3f5fa33eeaca3d6ab93f9f970742",
+      "bytes": 17708068
     },
     "book/zh-CN/book.pdf": {
-      "sha256": "e52502a7a114a03b9633fb6ee580150aa83694ef214c291361bfa8dec4344a07",
-      "bytes": 35910159
+      "sha256": "27a09776307c77d9d6a3066bb5298bd0ec9c8cd577843c342a7a80b28ca6212e",
+      "bytes": 35910832
     }
   },
   "files": {
@@ -1425,8 +1425,8 @@
       "bytes": 136951
     },
     "book/en/manuscript.md": {
-      "sha256": "1be0e4ac83bba0a34a16877b1c54545436db17a71af410a26223beab87b75c21",
-      "bytes": 1154203
+      "sha256": "194db93a5094a65810b04f0cd4786d7e9425f623846b315da97e52f4a625fd23",
+      "bytes": 1154934
     },
     "book/zh-CN/assets/01-01-eight-bit-range.zh-CN.png": {
       "sha256": "a2bb380db955db194ff579f2fdba55c3028b7a604558046ed1f3340f72dada26",
@@ -2797,8 +2797,8 @@
       "bytes": 313085
     },
     "book/zh-CN/manuscript.md": {
-      "sha256": "41de64a29286b38ae9648c36b0a899fb530387c5674b9d02e30e7ac71b8c0d8d",
-      "bytes": 1029087
+      "sha256": "b0e0e4f46ce78f2998cf20da3ff1f4a3d2fb3b012d310e412f0e6e0ca0a1b97e",
+      "bytes": 1029815
     },
     "examples/README.md": {
       "sha256": "734d5ca48237b3a71186aae25a13c29a327ac3bcef1343073a27cb661bf0ac60",
@@ -3146,11 +3146,11 @@
     }
   },
   "reader_revision": {
-    "kind": "plain-language-review",
+    "kind": "new-logp-context-review",
     "date": "2026-10-31",
     "source_manifests": {
-      "en": "e6f6883e5212808a776e262e13c13aff4198e380ee52dcb59180108f412df494",
-      "zh-CN": "d0464a8da6be3e47e8199c50cd3e6f1038c55542bdf5ccdbca43b113ec31ac70"
+      "en": "db2d811fe9900f46ed0d2f0d18a75df1d189b4392b558d32bb6d56907ae423d0",
+      "zh-CN": "e235dbb75948f455976931f29f62362e5aea456be7eed980d758930e9688cbe8"
     }
   }
 }

@@ -15018,7 +15018,11 @@ These rows are alternative possible results of one draw. Our actual draw produce
 
 For this sampled “狗”, retain its token ID, the old action log probability $\log0.4\approx-0.916291$, and its advantage $-0.6$. These remain fixed while this collected sample is used for policy updates.
 
-Run the current model on the same input and select the log probability of that **same recorded token**. This produces `new_logp`, which depends on $u$ and keeps its gradient connection to the model. Initially it is also $\log0.4$. The fixed old value supplies `old_logp`; the fixed advantage supplies `advantage`.
+In this example, the current model has one trainable parameter, $u$: the score (logit) for “猫”. The score for “狗” is fixed at $0$. Our recorded answer is “狗”. Run the current model on the same input and select the log probability of this recorded answer. Call the result `new_logp`.
+
+The name `new_logp` means the log probability computed from the current trainable weights, before the next parameter update. For “狗”, it is $\log p_{\mathrm{current}}(\text{狗})=-\log(e^u+1)$. Changing $u$ changes this value. PyTorch tracks these operations, so backward can calculate how the loss changes with $u$. `new_logp` is a model output, not a separate trainable parameter.
+
+Before the first update, `new_logp` and `old_logp` both have the value $\log0.4$. They play different roles: recompute `new_logp` from the current model; keep the recorded `old_logp` fixed. Do not replace the current model output with the constant $\log0.4$, because that would remove the gradient path to $u$. The fixed advantage supplies `advantage`.
 
 Thus the answer and its score have already been observed, but the probability assigned to that answer is still a differentiable model output. In PyTorch, detaching `old_logp` and `advantage` preserves that distinction; do not detach `new_logp`.
 
