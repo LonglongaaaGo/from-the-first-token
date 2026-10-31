@@ -14895,6 +14895,24 @@ This is single-parameter toy arithmetic, not a measured language-model training 
 
 Offline DPO repeatedly trains on saved comparisons. The caller could also generate new answers, judge them and save another batch. That is a separate data-collection step. The DPO loss function does not generate answers or show that a model can judge its own answers reliably.
 
+### Building preference pairs with a program test
+
+Preference labels can come from executable checks, not only human judgments. Suppose the prompt asks for the body of a function that adds integer parameters `a` and `b`. Candidate A is `return a+b`; candidate B is `return a-b`. For input `(2,3)`, the expected result is `5`: A returns `5` and B returns `-1`. Both bodies are valid Python syntax, so compilation alone does not distinguish them; the test does.
+
+Record the prompt, A as the preferred answer and B as the rejected answer. The DPO update then scores those two recorded answers with the current policy and the chosen reference, and applies the loss already derived above. A separate learned reward model is not required for this test-generated pair. Passing these particular tests is evidence about the tests, not a proof of correctness on every possible input.
+
+A fixed-pair training loop can be read as: generate candidates, run tests, save the preference pairs, then make DPO updates on those saved pairs. During an update on a saved pair, running the test again is not part of the DPO loss calculation.
+
+#### What about another correct solution that was not saved?
+
+Candidate C might be `return sum([a,b])`. If C is absent from the pair, the DPO loss does not explicitly label it as wrong or reject it merely for being different from A. Its probability may still change indirectly because outputs share model parameters and normalization. Learning from saved pairs can generalize; it is not limited to reproducing their exact strings. It also gives no direct test feedback about an answer that has never been generated and judged.
+
+#### Refreshing the pairs gives an iterative training loop
+
+After some updates, generate new candidates from the current model, run the same declared tests, construct new pairs and continue DPO training. This outer data-collection loop can discover and include C. If both candidates pass or both fail, do not invent an ordering: omit ties or apply a stated comparison rule. Keep a separate evaluation set to measure generalization.
+
+Online and iterative preference methods use this pattern of refreshing generated responses and preference feedback. They still use a preference objective for the update; collecting fresh data does not turn that objective into PPO's clipped policy loss. For an example of online preference collection, see the [Online DPO workflow](https://huggingface.co/docs/trl/online_dpo_trainer). The grader and reference-policy conventions must be stated for the actual experiment.
+
 ### Required inputs and returned loss
 
 ```python
@@ -15112,6 +15130,61 @@ The loss decreased, the observed wrong answer became less probable, and the corr
 
 Had the original draw selected “猫”, its $A=0.4$ and initially unit ratio would instead give $L=-0.4$. At that same starting parameter, the PPO derivative would be $dL/du=-0.16$, also increasing the cat logit under gradient descent. These are two alternative sample paths, not two answers from our one draw. Their agreement in direction follows from this toy task's deterministic rewards and exact baseline; arbitrary observations in a larger model need not all favor the same parameter direction.
 
+### From raw scores to the log-probability inputs
+
+#### Select the probability of the recorded token
+
+`new_logp` starts with the current model's raw vocabulary scores, called logits. For one prompt, let $V$ be the number of possible next tokens, $z_j$ the score of token ID $j$, and $a$ the token ID already sampled. All probabilities below use that same prompt as context. Normalize across the vocabulary, then select token $a$:
+
+$$
+\begin{aligned}
+p(a)&=\frac{\exp(z_a)}{\sum_{j=0}^{V-1}\exp(z_j)},\\
+\mathrm{new\_logp}&=\log p(a)=z_a-\log\sum_{j=0}^{V-1}\exp(z_j).
+\end{aligned}
+$$
+
+The normalization term includes every candidate, not only the selected one. In our cat/dog model, the scores are $[u,0]$, with token IDs $0$ for “猫” and $1$ for “狗”. Initially $u=\log1.5\approx0.405465$, so the sum of exponentiated scores is $1.5+1=2.5$:
+
+| Token | Raw score | Probability | Log probability |
+| --- | --- | --- | --- |
+| 猫 | $\log1.5$ | $1.5/2.5=0.6$ | $\log1.5-\log2.5\approx-0.510826$ |
+| 狗 | $0$ | $1/2.5=0.4$ | $0-\log2.5\approx-0.916291$ |
+
+Our recorded token is “狗”, so select the second row. Here `new_logp` is $-0.916291$, not $\log(\exp(u))$. The latter expression simply returns the raw score $u$ and omits normalization. Even the dog's score $0$ is not its log probability: the other candidate also takes probability mass.
+
+For a batch, the surrounding code can construct the exercise input as follows. $B$ is the number of recorded observations; `logits` is the current model's floating-point score matrix and `action_ids` contains the recorded integer token IDs.
+
+| Operation | Result and meaning |
+| --- | --- |
+| `torch.log_softmax(logits, dim=-1)` | A `[B,V]` matrix named `logps`, one log probability per candidate |
+| `action_ids.unsqueeze(-1)` | A `[B,1]` index tensor named `index` |
+| `logps.gather(-1, index).squeeze(-1)` | A `[B]` vector: `new_logp` for the recorded tokens |
+
+For our one-row batch, `logps` is approximately `[[-0.510826,-0.916291]]` and `action_ids=[1]`. Selection returns `[-0.916291]`. The IDs stay fixed; the selected values keep their connection to the current logits. In a language-model rollout, perform this selection at each recorded response position and apply the declared loss mask. Token-wise PPO ratios and a ratio for an entire response are different choices; do not silently replace one with the other.
+
+#### Why subtract log probabilities before exponentiating?
+
+`old_logp` stores the sampling-time log probability of the same token. The identity behind the ratio calculation is
+
+$$
+\exp(\mathrm{new\_logp}-\mathrm{old\_logp})
+=\frac{p_{\mathrm{current}}(a)}{p_{\mathrm{old}}(a)}.
+$$
+
+After the worked update in step 8, the current dog probability is approximately $0.391392$, so `new_logp` is approximately $-0.938046$. The stored `old_logp` remains $-0.916291$. Their difference is approximately $-0.021755$, and exponentiating gives ratio $0.978480$, the same as $0.391392/0.4$.
+
+The practical reason for log probabilities is numerical range. Compute `log_softmax` directly from logits; taking `log` after a probability has rounded to zero cannot recover the lost value. For example, logits `[-1000,0]` give the rare token a log probability close to $-1000$, although directly exponentiating $-1000$ can round to zero. Two rare-token log probabilities $-999.9$ and $-1000$ still give the finite ratio $e^{0.1}\approx1.105171$. An extremely large log-probability difference can still overflow when exponentiated, so log space does not guarantee every subsequent operation is safe. See the [PyTorch log-softmax documentation](https://docs.pytorch.org/docs/2.9/generated/torch.nn.functional.log_softmax.html).
+
+#### What detach and the final minus sign mean
+
+Keep the sampling-time log probability and the recorded advantage fixed while calculating the policy gradient. If both numerator and denominator were recalculated from the same trainable model, their ratio would remain $1$. For our sample, the loss would then be the constant $0.6$, with no gradient to update $u$. With the old denominator fixed at $0.4$, step 7 instead gives the intended loss derivative $-0.36$.
+
+`old_logp.detach()` expresses the fixed denominator; `advantage.detach()` keeps the weight of this policy signal fixed. A value model can be trained with its own loss. The current `new_logp` must remain connected to the policy so its loss can update the policy weights.
+
+In the supplied loss calculation, exponentiation forms the ratio; multiplication by the detached advantage forms a score; `clamp` forms the clipped ratio; `minimum` selects the smaller score; and a negative `mean` gives the loss to minimize. Name the selected score something such as `surrogate`, rather than overwriting `advantage`: after that operation it is no longer the original advantage.
+
+The minus sign converts maximizing this sampled policy score into minimizing a loss. A lower surrogate loss does not by itself prove higher real reward: the reward rule, collected data and evaluation still determine whether the model improved.
+
 ### Reading the policy-gradient formula
 
 The training question is simple: **which way should we change the model's weights to get a higher average reward?** In our translation task, we want future draws to produce “猫” more often. The policy-gradient expression describes a way to calculate an update direction from sampled answers:
@@ -15120,7 +15193,7 @@ $$
 \nabla_\theta J=\mathbb E\!\left[A\,\nabla_\theta\log\pi_\theta(a\mid s)\right].
 $$
 
-Read it from the inside out. First calculate how the model weights affect the probability of the answer we drew. Multiply that signal by how much better or worse the answer was than expected. Average the signals over the possible draws, or estimate that average with collected samples.
+The left side, $\nabla_\theta J$, is the gradient of expected reward with respect to the weights; it is an update direction, not the updated weights themselves. Read it from the inside out. First calculate how the model weights affect the probability of the answer we drew. Multiply that signal by how much better or worse the answer was than expected. Average the signals over the possible draws, or estimate that average with collected samples.
 
 | Symbol | Plain meaning | In our one-choice task |
 | --- | --- | --- |
@@ -15207,6 +15280,27 @@ The practical cycle is: collect answers and their old probabilities; keep that b
 In an autoregressive language model, the state is the prompt plus the generated prefix, and an action is the next token. At each recorded position, select the current model's log probability for the token actually sampled there. Do not substitute the most probable token's probability or resample the token while evaluating the recorded observation. Loss masks identify which positions participate; a larger trainer must define how token contributions are reduced.
 
 We could calculate the baseline exactly because there are only two outcomes and both rewards are known. In a longer generated sequence, a choice can also change later rewards. Return is the total future reward, with any chosen discounting. In general, advantage compares expected return after a choice with expected return from the same state before choosing. We can estimate it using a sampled return minus a value prediction. Generalized advantage estimation (GAE) instead combines reward and value predictions across steps. A value model predicts expected return when listing every possible outcome is impractical. So current reward minus a baseline is only the simple one-step case. Reward rules, advantage estimates, value training, KL penalties and sample collection are separate parts of a larger trainer.
+
+### DPO and PPO can use the same program tests
+
+The task name does not select the algorithm. The same test can give a scalar reward to a sampled program or compare two programs to form a preference pair.
+
+| Design choice | Standard fixed-pair DPO | PPO-style policy training |
+| --- | --- | --- |
+| Recorded training input | Prompt plus preferred and rejected answers | Sampled actions, sampling-time log probabilities and estimated advantages |
+| Update signal | Relative response log-probability margin against the reference | Advantage-weighted probability ratio against the sampling policy, with clipping |
+| Feedback for code | Tests can rank candidate answers before pair training | Tests can give rewards to newly sampled programs |
+| Fresh generation | Separate from an update on a saved pair; online variants refresh pairs | Part of the repeating rollout-and-update loop |
+
+For PPO, generate a program, run the tests, record the resulting reward and construct the required returns and advantages. Keep that batch's sampling probabilities fixed during its policy updates, then collect fresh programs. Tests usually evaluate a completed program, not every character as it is generated. A rule-based test can supply the reward; PPO does not inherently require a learned reward model.
+
+For DPO, use the pair-construction loop in Lesson 08.03. A current-model generation loop followed by tests and a DPO update is also possible. Thus “code or mathematics requires PPO” and “DPO can only use a permanently fixed dataset” are both too restrictive. Data collection and the update objective are separate design choices.
+
+#### Choosing a practical starting point
+
+If you already have useful answer rankings and want to train on those comparisons, standard DPO is a simple starting point. If you want to optimize sampled returns through interaction, PPO or another suitable policy-gradient method is a candidate. If feedback is available on newly generated answers but you want pairwise updates, consider refreshing pairs for an online or iterative preference method. Compare the options using held-out tasks, feedback quality and the available training budget; neither method is guaranteed to win for a task category.
+
+Model counts are implementation choices. A common language-model RL system may include policy, value, reference and reward components, but some can share weights and a rule-based reward needs no reward-model network. DPO commonly uses a trainable policy and a fixed reference; fixed-reference scores may be cached for saved pairs. These roles do not imply exactly four or exactly two separate models must remain in memory. DPO can also fail because of poor labels, distribution shift or unsuitable optimization settings.
 
 ### Required inputs and returned loss
 
