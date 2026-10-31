@@ -14754,29 +14754,185 @@ Direct Preference Optimization (DPO) was introduced by [Rafailov et al., 2023; R
 
 ### Purpose and prerequisites
 
-Supervised fine-tuning tells the model which answer to imitate. A preference pair gives a different kind of observation: for the same prompt, a judge prefers one response to another. Direct preference optimization, or DPO, turns that comparison into a differentiable objective without training a separate reward model inside this exercise.
+Direct preference optimization (DPO) trains the **generating language model itself** from comparisons between responses. It uses the model's ordinary vocabulary output, then turns the probabilities of two recorded responses into a loss. The optimizer changes the parameters that produced those probabilities; no separate scalar reward head is required.
 
-The comparison is relative to a frozen reference policy. The reference records how strongly the starting model already preferred one response. The trainable policy is asked to improve that relative preference. Keep the prompt, response boundaries and tokenization matched: subtracting probabilities from unrelated prompts does not describe the comparison the objective assumes.
+The complete path is: recorded preference pair → causal forward pass → selected response-token log probabilities → response sums → comparison with a frozen reference → loss → backward → parameter update. Lessons 08.01 and 08.02 supply the response boundaries, shifted next-token targets and response mask used along that path. This lesson follows one pair through the whole calculation before isolating the small loss function assigned in the exercise.
 
-### Formulas and principles
+### 1. Define the prompt and preference data
 
-Let $x$ be one prompt, $y_w$ its chosen response and $y_l$ its rejected response. A policy $\pi$ is the model's conditional probability distribution over responses; $\pi_\theta$ is trainable and $\pi_{\mathrm{ref}}$ is the frozen reference. Here $\sigma(z)=1/(1+e^{-z})$ is the logistic sigmoid, $\beta>0$ is the `beta` scale, and $\mathbb E$ means averaging the pair losses over the batch.
+Let $x$ denote a prompt, $y_w$ its preferred response and $y_l$ its rejected response. Use the concrete prompt “请友好地向我问好”, meaning “Please greet me politely”. The subscripts identify the preference label: a judge prefers $y_w$ to $y_l$ for this same prompt. They do not mean that the current model necessarily gives $y_w$ a higher probability.
+
+For the running example, model response choices with the four-token vocabulary `[你, 好, 坏, EOS]` and keep the prompt as the fixed condition $x$. We will obtain the candidates `[你, 好, EOS]` and `[你, 坏, EOS]`, then assign their preference label. These are artificial token IDs for a small calculation, not a claim about how a real tokenizer splits the prompt or responses. Both responses include EOS, so their probabilities include the choice to end the answer.
+
+To create a preference pair, first obtain candidates, then have a human, a judge model or a task-specific check compare them. Candidates can be sampled from a language model, written by people or obtained from another source. We will use sampling to make their acquisition concrete before beginning the offline training update.
+
+### 2. Use full vocabulary outputs to collect candidates
+
+For a concrete acquisition example, collect candidates from the same initial generator that we will later train. Write $\theta$ for its parameters and $\pi_\theta$ for its conditional probability distribution. The generator produces raw vocabulary scores called logits. Softmax turns a row of logits into next-token probabilities. Suppose its probabilities at the relevant prefixes are:
+
+| Conditioning prefix | 你 | 好 | 坏 | EOS |
+| --- | --- | --- | --- | --- |
+| Prompt $x$ | **$0.6$** | $0.15$ | $0.15$ | $0.1$ |
+| $x$ followed by 你 | $0.1$ | **$0.5$** | **$0.3$** | $0.1$ |
+| $x$ followed by 你好 | $1/15$ | $1/15$ | $1/15$ | **$0.8$** |
+| $x$ followed by 你坏 | $1/15$ | $1/15$ | $1/15$ | **$0.8$** |
+
+Each row still has four entries: the model has not become a scalar scoring model. During candidate generation, sampling chooses one entry from the current prefix's distribution and appends its token to the prefix. One way to see the selection is to draw a number uniformly from $[0,1)$ and choose the first cumulative probability that exceeds it. In vocabulary order, the cumulative probabilities are $[0.6,0.75,0.9,1]$ at the prompt, $[0.1,0.6,0.9,1]$ after 你, and $[1/15,2/15,3/15,1]$ at either ending prefix.
+
+For example, the following illustrative draws produce two complete candidates. Each position uses its own draw and the distribution for the prefix reached so far:
+
+| Candidate | Uniform draws in order | Sampled tokens in order |
+| --- | --- | --- |
+| First | $[0.2,0.4,0.5]$ | 你, 好, EOS |
+| Second | $[0.2,0.8,0.5]$ | 你, 坏, EOS |
+
+For the first candidate, $0.2<0.6$ selects 你; the next draw $0.4$ lies between $0.1$ and $0.6$, selecting 好; the final draw $0.5$ lies in the EOS interval, so generation stops. For the second candidate, the middle draw $0.8$ instead selects 坏. These numbers illustrate possible draws, not a measured sampling run.
+
+A judge now labels the first candidate preferred: 你好 is a greeting, whereas 你坏 says the addressee is bad and does not satisfy the request for a polite greeting. The label follows that task criterion, not which candidate has a higher model probability. Save the prompt, the two token sequences and that label as one preference pair. Other data sources can supply the same three fields; DPO does not require these particular candidate-generation choices.
+
+**Now the offline training update begins.** The saved target IDs are fixed. In teacher forcing, the recorded input supplies each prefix; the causal mask prevents a position from seeing future response tokens. All positions in a branch can therefore be evaluated in one causal forward pass, without sampling new tokens between positions. The same initial table provides the first update's probabilities: for the preferred response, select 你 from the first row, 好 from the second and EOS from the third; for the rejected response, select 你, 坏 and EOS, using the fourth row for its ending.
+
+### 3. Select targets, apply the response mask and sum
+
+The preferred sequence probability is $0.6\times0.5\times0.8=0.24$. The rejected sequence probability is $0.6\times0.3\times0.8=0.144$. In practice, add natural log probabilities instead of multiplying small probabilities. Call the resulting response sums $s_w$ and $s_l$:
 
 $$
-L_{\mathrm{DPO}}=-\mathbb E\log\sigma\left(\beta\left[(\log\pi_\theta(y_w|x)-\log\pi_\theta(y_l|x))-(\log\pi_{\mathrm{ref}}(y_w|x)-\log\pi_{\mathrm{ref}}(y_l|x))\right]\right)
+s_w=\log 0.6+\log 0.5+\log 0.8\approx-1.427116,
 $$
 
-A response is a sequence, so its log probability is the sum of the next-token log probabilities of its selected answer tokens. The prompt is conditioning context. Both responses must use the same prompt, tokenizer and boundary convention, including a consistent EOS policy.
+$$
+s_l=\log 0.6+\log 0.3+\log 0.8\approx-1.937942.
+$$
 
-Let $a=\log\pi_\theta(y_w|x)-\log\pi_\theta(y_l|x)$ be the trainable policy's preference margin, and $a_0$ the corresponding frozen reference margin. The scaled improvement is $z=\beta(a-a_0)$. One pair contributes $-\log\sigma(z)=\log(1+e^{-z})$. A stable `logsigmoid` or softplus formulation avoids explicitly taking the logarithm of a sigmoid that may round to zero.
+Thus $s_w=\log\pi_\theta(y_w\mid x)$ and $s_l=\log\pi_\theta(y_l\mid x)$. The prompt is conditioning context; its own token probabilities are not included in these response sums. Padding positions are also excluded, while response EOS is included under our stated convention.
 
-At $z=0$ the loss is $\ln2$: the policy has not improved its margin over the reference. Increasing $z$ lowers the loss. For one pair, $\partial L/\partial a=-\beta\sigma(-z)$, so gradient descent pushes the chosen-minus-rejected margin upward. It does not assert that every absolute chosen probability must increase after a shared-parameter model update.
+To locate the same calculation in a batch, let $B$ be the number of preference pairs, $T$ the padded input length and $V$ the vocabulary size. One implementation batches the two branches as $2B$ sequences:
 
-The four inputs already contain sequence log probabilities and have shape $[B]$. They are not logits $[B,T,V]$, and this function does not compute their token sums. The reference inputs must be detached. In a real implementation, freeze the reference parameters and exclude them from the optimizer as well. Sequence sums are sensitive to length; replacing them with token means would define a different objective.
+1. A policy forward pass produces logits of shape $[2B,T,V]$.
+2. Align logits with their next-token target IDs using the shift from 08.02. The aligned logits have shape $[2B,T-1,V]$. Apply log-softmax over the vocabulary dimension.
+3. At each aligned position, `gather` selects the entry for the recorded target ID. Keep one selected scalar per position, giving shape $[2B,T-1]$. This is target lookup, not a random draw or an argmax.
+4. Apply the response mask to exclude prompt and padding positions. Sum the remaining token log probabilities, including response EOS, to obtain shape $[2B]$.
+5. Split the $2B$ sequence sums into preferred and rejected vectors, each of shape $[B]$.
 
-![Direct preference optimization：08.03](assets/08-03-direct-preference.en.png){width=100%}
+The scalar for one response is therefore a sum **computed from** the generator's vocabulary outputs. Selection and summation retain the computation graph that connects it to $\theta$.
 
-Compare the policy margin and reference margin in the first panel, then follow their difference into the logistic loss curve. The marked zero-margin point is $\ln 2$. A higher relative margin moves right and lowers the loss; the plotted values are analytic examples, not measured preference accuracy.
+### 4. Evaluate the same responses with a frozen reference
+
+Let $\pi_{\mathrm{ref}}$ denote a reference generator whose parameters stay fixed during this training. It commonly starts from the same supervised-fine-tuned model as the trainable policy. The reference evaluates the same prompt and response tokens, with the same tokenizer, boundaries, mask and EOS convention.
+
+Call its preferred and rejected response log probabilities $s_{\mathrm{ref},w}$ and $s_{\mathrm{ref},l}$. For the running example, let the reference retain the initial table. It therefore assigns the same starting sequence probabilities $0.24$ and $0.144$ as the policy. We now have four values: two responses evaluated by the policy, and the same two evaluated by the reference.
+
+The policy margin $m$ and reference margin $m_{\mathrm{ref}}$ compare the preferred response with the rejected response:
+
+$$
+m=s_w-s_l,\qquad
+m_{\mathrm{ref}}=s_{\mathrm{ref},w}-s_{\mathrm{ref},l}.
+$$
+
+Initially, both margins equal $\log(0.24/0.144)\approx0.510826$. Their difference is zero: the policy has not yet improved this relative preference over the reference. The reference is a fixed comparison baseline; it is not an independently trained reward model, and freezing it is not a hard bound on how far the policy may move.
+
+### 5. Convert relative preference improvement into a loss
+
+Let $\beta>0$ be the scale supplied as `beta`. Define the scaled improvement $z=\beta(m-m_{\mathrm{ref}})$ and the logistic sigmoid $\sigma(z)=1/(1+e^{-z})$. One preference pair contributes the loss $\ell$:
+
+$$
+z=\beta(m-m_{\mathrm{ref}}),
+$$
+
+$$
+\ell=-\log\sigma(z)=\log(1+e^{-z}).
+$$
+
+For $B$ pairs, the training loss is their mean:
+
+$$
+L_{\mathrm{DPO}}=\frac{1}{B}\sum_{i=1}^{B}\ell_i,
+$$
+
+where $i$ identifies a matched prompt/preferred/rejected triple. Compute each pair's loss before averaging; applying the nonlinear function to a batch-averaged margin would define a different objective.
+
+In the running example, choose $\beta=0.2$. At the starting table, $m=m_{\mathrm{ref}}$, so $z=0$ and $\ell=\ln 2\approx0.693147$. A larger preferred-minus-rejected margin relative to the unchanged reference gives larger $z$ and lower loss. Stable negative `logsigmoid` or softplus avoids taking the logarithm of a sigmoid that has rounded to zero.
+
+The quantity being optimized is a **relative preference**. A large sequence probability is not by itself a label of correctness. Nor does the objective promise that every preferred response's absolute probability increases after a shared-parameter update.
+
+### 6. Backward carries the loss to the generator's parameters
+
+For one pair, define $g=\beta\sigma(-z)>0$. The derivatives with respect to the policy's two response sums are
+
+$$
+\frac{\partial\ell}{\partial s_w}=-g,\qquad
+\frac{\partial\ell}{\partial s_l}=+g.
+$$
+
+At our starting point, $z=0$ and $\beta=0.2$, so these derivatives are $-0.1$ and $+0.1$. They express a learning signal favoring a larger preferred-minus-rejected margin. The response sums are intermediate results, not two independent weights that the optimizer edits directly.
+
+Backpropagation follows the retained graph: response sum → selected token log probabilities → log-softmax → vocabulary logits → language-model output layer → preceding network. Selecting one token for a forward value does not limit the gradient to one vocabulary logit: log-softmax normalizes using every vocabulary entry, so the derivative of a selected log probability depends on the other entries too.
+
+In PyTorch, `loss.backward()` computes gradients for the trainable parameters; `optimizer.step()` then applies the update. A simple gradient-descent step, with positive learning rate $\eta$, is
+
+$$
+\theta_{\mathrm{next}}=\theta-\eta\nabla_\theta L_{\mathrm{DPO}}.
+$$
+
+In full fine-tuning, trainable parameters can include embeddings, Transformer layers, normalization and the output layer. With adapter training, only the parameters configured as trainable are updated. The reference outputs are detached, its parameters are frozen and it is excluded from the optimizer. Merely calculating a loss changes no model weights.
+
+No derivative through an earlier discrete sampling choice is needed: the recorded target IDs stay fixed while we differentiate their current log probabilities with respect to the generator's parameters. Likewise, the advantage $A$ introduced in 08.04 is not an input to this DPO objective; the supervision here is the recorded preference label.
+
+### 7. Calculate one parameter update and the new probabilities
+
+Return to the same vocabulary table. To make an entire update calculable, let only one scalar output parameter $u$ be trainable. At the prefix ending in 你, set the four logits, in vocabulary order, to
+
+$$
+[\log 0.1,\ \log 0.5+u,\ \log 0.3-u,\ \log 0.1].
+$$
+
+Keep the other rows fixed and keep the reference at the initial table. At $u=0$, softmax gives $[0.1,0.5,0.3,0.1]$. When the rejected log probability is subtracted from the preferred log probability, the shared softmax denominator cancels. The policy's margin improvement over the reference is exactly $2u$. With $\beta=0.2$:
+
+$$
+z=0.4u,\qquad \ell(u)=\log(1+e^{-0.4u}),
+$$
+
+$$
+\ell'(u)=-\frac{0.4}{1+e^{0.4u}},\qquad
+\ell'(0)=-\frac{0.4}{2}=-0.2.
+$$
+
+A single gradient-descent update with learning rate $0.1$ changes the **parameter**:
+
+$$
+u_{\mathrm{next}}=0-0.1(-0.2)=0.02.
+$$
+
+Recompute softmax from that updated parameter. Let $D$ be the sum of exponentiated logits at the prefix ending in 你:
+
+$$
+D=0.1+0.5e^{0.02}+0.3e^{-0.02}+0.1\approx1.004160272.
+$$
+
+The two changed token probabilities are
+
+$$
+p(\text{好})=\frac{0.5e^{0.02}}{D}\approx0.507987,\qquad
+p(\text{坏})=\frac{0.3e^{-0.02}}{D}\approx0.292841.
+$$
+
+Multiplying each by the unchanged first-token probability $0.6$ and EOS probability $0.8$ gives the new response probabilities. The new scaled improvement is $z=0.4\times0.02=0.008$, so the loss is $\log(1+e^{-0.008})\approx0.689155$:
+
+| Quantity | Before the update | After the update |
+| --- | --- | --- |
+| Parameter $u$ | $0$ | $0.02$ |
+| Probability of 好 after 你 | $0.5$ | $0.507987$ |
+| Probability of 坏 after 你 | $0.3$ | $0.292841$ |
+| Preferred sequence probability, including EOS | $0.24$ | $0.243834$ |
+| Rejected sequence probability, including EOS | $0.144$ | $0.140564$ |
+| Scaled improvement $z$ | $0$ | $0.008$ |
+| Loss against the unchanged reference | $0.693147$ | $0.689155$ |
+
+This time the next draw after 你 uses the new probabilities: 好 is slightly more likely and 坏 slightly less likely in this deliberately constructed model. We changed a parameter, which changed the output distribution used for future generation. We neither edited a probability by hand nor trained a separate reward head.
+
+This is single-parameter toy arithmetic, not a measured language-model training run. In a real model, shared parameters and many pairs contribute to the update. These particular absolute probability movements are not guaranteed for each pair.
+
+Standard offline DPO repeats updates on recorded comparisons. An optional outer loop can generate new candidates, judge them and create another training batch, but that is additional data collection. The DPO loss alone does not create new responses or establish that a model can reliably judge its own answers.
 
 ### Function contract
 
@@ -14784,34 +14940,42 @@ Compare the policy margin and reference margin in the first panel, then follow t
 def dpo_loss(chosen: torch.Tensor, rejected: torch.Tensor, ref_chosen: torch.Tensor, ref_rejected: torch.Tensor, beta: float) -> torch.Tensor:
 ```
 
-four tensors: float[B] summed assistant-response log probabilities for matched prompts; chosen/rejected: trainable policy, reference tensors frozen; beta>0. Return scalar mean DPO loss; detach reference inputs. Sequence log probabilities are sums, not token means.
+The exercise starts **after** response scoring. It does not run a generator, select token probabilities or perform an optimizer step.
 
-### A worked example
+| Input | Type and shape | Meaning |
+| --- | --- | --- |
+| `chosen` | floating tensor, $[B]$ | Policy response log-probability sums $s_w$ |
+| `rejected` | floating tensor, $[B]$ | Policy response log-probability sums $s_l$ |
+| `ref_chosen` | floating tensor, $[B]$ | Frozen reference sums $s_{\mathrm{ref},w}$ |
+| `ref_rejected` | floating tensor, $[B]$ | Frozen reference sums $s_{\mathrm{ref},l}$ |
+| `beta` | positive Python `float` | Scale $\beta$ |
 
-For one prompt, policy and reference both assign chosen log probability $-2$ and rejected log probability $-3$. Both margins are $1$, so their difference is zero. With $\beta=0.2$, the scaled margin is still zero and the loss is $0.693147$.
+All four tensors describe the same nonempty batch of matched pairs in the same order. Return one scalar tensor: the mean DPO loss. Preserve the policy inputs' computation graph, but detach the reference inputs. Sequence log probabilities are token sums; replacing them with token means changes the objective and its length behavior.
 
-The derivatives with respect to the two policy log-probability inputs are $-0.1$ for chosen and $+0.1$ for rejected. Subtracting a small learning-rate multiple of these derivatives increases the chosen input and decreases the rejected input. The reference inputs receive no gradient.
+### Guided implementation of the loss calculation
 
-Now change only the policy's chosen log probability to $-1$. Its margin becomes $2$, the reference margin stays $1$, and $z=0.2$. The loss is $\log(1+e^{-0.2})\approx0.598139$. This decrease expresses an improved relative preference on this pair. It does not establish correctness on an unseen question.
+Implement or review `dpo_loss` in `exercises/08_03_direct_preference.py` using the following steps. Keep the supplied check driver separate from the learner's calculation.
 
-For two pairs, calculate one margin difference per pair and then average the two losses. Subtracting batch averages before the nonlinearity would mix examples and produce a different result.
+1. Read each tensor as one response sum per matched pair. All four inputs have shape `[B]`; do not treat them as vocabulary logits.
+2. Subtract `rejected` from `chosen`. This policy-margin vector has shape `[B]` and keeps its graph.
+3. Apply `.detach()` to both reference inputs before computing their difference. Detachment prevents reference gradients even if an input was accidentally supplied with `requires_grad=True`.
+4. Subtract the reference-margin vector from the policy-margin vector and multiply by `beta`. The scaled-improvement vector still has shape `[B]`; equal policy and reference margins give zeros.
+5. Apply stable negative log-sigmoid elementwise. At zero scaled improvement each pair contributes approximately 0.693147. Transform each pair before reducing across the batch.
+6. Call `.mean()` and return the connected scalar tensor. Do not detach the policy results or convert the returned loss into an ordinary Python number.
 
-### Guided implementation
+### The supplied driver checks the smaller input-level calculation
 
-Implement the exact `dpo_loss` interface; the caller has already scored the responses.
+The supplied driver uses simpler response-sum inputs than the vocabulary example: both policy and reference receive preferred log probability $-2$ and rejected log probability $-3$. These are independent input tensors used to check the loss function, not the results of a generator forward pass.
 
-1. Read all four tensors as one value per matched preference pair, shape `[B]`. Keep pair order aligned.
-2. Subtract rejected from chosen for the trainable policy. The result remains `[B]` and retains its graph.
-3. Detach the two reference tensors before forming the same difference. This blocks gradients even if an input was accidentally supplied with `requires_grad=True`.
-4. Subtract the reference margin from the policy margin, then multiply by the positive `beta`.
-5. Apply the stable negative log-sigmoid elementwise. At zero scaled margin every pair should contribute approximately 0.693147.
-6. Average across pairs and return the connected scalar tensor. Use the check driver to confirm signs and the absence of reference gradients.
+Both margins are $1$, so their difference is zero. With $\beta=0.2$, the loss is $0.693147$; the preferred policy input receives derivative $-0.1$, the rejected input receives $+0.1$, and the reference inputs receive no gradients. In a real generator those derivatives continue into model parameters, as in the parameter-update example above.
 
-### Common pitfalls
+The driver then changes the policy's preferred input to $-1$, leaving the rejected input and reference inputs fixed. Its policy margin becomes $2$, so $z=0.2$ and the loss is $\log(1+e^{-0.2})\approx0.598139$. It also checks a very unfavorable margin for numerical stability. These checks establish arithmetic and gradient behavior of the supplied loss calculation, not successful model training or correctness on unseen questions.
 
-A frozen reference must not be updated by the optimizer. Comparing responses from different prompts breaks the intended ratio.
+![Direct preference optimization：08.03](assets/08-03-direct-preference.en.png){width=100%}
 
-### Run and check
+The first panel uses these simplified input-level margins, not the earlier vocabulary table. Compare the policy margin with the reference margin, then follow their difference into the loss curve. At zero improvement the loss is $\ln 2$; increasing the relative margin moves right and lowers the loss. The plotted values are analytic examples, not measured preference accuracy.
+
+Run the supplied check from the repository root:
 
 ```bash
 python exercises/08_03_direct_preference.py
@@ -14823,13 +14987,11 @@ An unfinished prerequisite reports learner TODO, not an installation failure. On
 Lesson 08.03 checks passed.
 ```
 
-The supplied checks begin with equal policy and reference margins, verify the two policy-gradient signs and confirm that the reference inputs receive no gradient. They then test an improved policy margin and a very unfavorable margin, connecting the comparison rule to numerical stability.
-
 ### Further practice
 
-Why is the reference difference subtracted instead of directly maximizing chosen probability?
+Trace the running example without looking at the computed response sums. Identify which row and target token supply each selected probability, then explain why the prompt probabilities are excluded and EOS is included.
 
-Repeat the worked pair with a different positive beta, then change only the reference margin. Predict the scaled margin and loss before running. Explain which change alters the comparison baseline and why the reference still receives no gradient.
+Next predict what changes if only the frozen reference margin is different, or if `beta` changes. Distinguish a lower DPO loss from guaranteed correctness, and explain where `loss.backward()` and `optimizer.step()` would sit around a real model call. For a sampling explanation, describe the old distribution, one realized draw and the updated distribution used on the next draw; do not treat the random outcome itself as a differentiable parameter.
 
 ## 08.04 Rewards, advantages and clipped policy objectives {#section-08-04}
 
@@ -14839,29 +15001,166 @@ The clipped probability-ratio objective comes from proximal policy optimization 
 
 ### Purpose and prerequisites
 
-Preference training uses recorded comparisons. Reinforcement learning can instead sample an action, observe a reward and update the policy toward actions that performed better than a baseline. In a language model, an action may be a generated token, and a rollout is a sequence of such choices. A reward can judge a final answer, but its quality determines what behavior the optimizer is encouraged to learn.
+This lesson follows one sampled answer all the way from model output to a parameter update. The model first produces probabilities; a random draw chooses an answer; a scoring rule evaluates that observed answer; and the PPO policy loss changes the probabilities used for future draws. Sampling remains random after learning.
 
-We isolate the clipped policy term used in Proximal Policy Optimization (PPO). The exercise accepts already computed log probabilities and advantages. It does not collect rollouts, fit a value model, compute penalties based on Kullback–Leibler (KL) divergence from a reference policy, or define a reward. KL divergence measures a difference between probability distributions; that separate term can discourage movement away from the reference. Separating those responsibilities lets us inspect the signs and clipping rule before building a larger system.
+The exercise isolates PPO's clipped policy term. It accepts already computed action log probabilities and advantages. It does not generate answers, define a reward, train a value model or implement a complete PPO trainer. We calculate those inputs explicitly in the small example below so that their origins are clear before writing the loss.
 
-### Formulas and principles
+### One complete PPO step
 
-Let $s$ denote the state, which for token generation is the prompt and tokens already observed, and $a$ the sampled action. The policy $\pi_\theta(a\mid s)$ assigns that action a probability. $J$ denotes the expected-reward objective and $\nabla$ differentiates with respect to policy parameters $\theta$. Here $\mathbb E$ is an expectation over sampled state/action observations, estimated by their batch mean, and $\epsilon$ is the positive clipping width supplied as `clip`.
+#### 1. Model outputs: logits become answer probabilities
+
+Use a deliberately tiny task: translate “cat” into Chinese, with just two possible output tokens, “猫” and “狗”. The episode ends after this one choice. A correct answer receives reward $1$; an incorrect answer receives reward $0$. This scoring rule is supplied by the task, not learned by the policy in this example.
+
+Our model has one trainable scalar $u$, the logit for “猫”. The logit for “狗” is fixed at $0$. Softmax converts these logits to probabilities:
 
 $$
-\nabla J=\mathbb E[A\nabla\log\pi_\theta(a|s)];\quad r=e^{\log\pi_{\mathrm{new}}-\log\pi_{\mathrm{old}}};\quad L=-\mathbb E\min(rA,\operatorname{clip}(r,1-\epsilon,1+\epsilon)A)
+p(\text{猫})=\frac{e^u}{e^u+1},\qquad
+p(\text{狗})=\frac{1}{e^u+1}=1-p(\text{猫}).
 $$
 
-A reward $R$ evaluates an outcome. An advantage $A$ expresses how much better that outcome was than a baseline under the chosen estimator. Positive advantage favors the sampled action; negative advantage discourages it. In this policy term, the advantage is treated as fixed data rather than differentiated through.
+Start with $u_0=\log(1.5)\approx0.405465$, where $\log$ means the natural logarithm. Then $e^{u_0}=1.5$, so the probabilities are $1.5/2.5=0.6$ for “猫” and $1/2.5=0.4$ for “狗”. These are differentiable functions of the model parameter $u$.
 
-The probability ratio is $r=\pi_{\mathrm{new}}(a|s)/\pi_{\mathrm{old}}(a|s)$ for the **same sampled action and state**. Subtracting the corresponding log probabilities and exponentiating computes this ratio. The old policy describes how the sample was collected; it is not the frozen DPO reference from 08.03. Both may appear in a real system for different purposes.
+Save this policy as the **old policy**, the distribution used to collect the sample. The trainable current policy starts with the same parameter value. “Old” and “new” describe their roles; they need not have different probabilities before the first update.
 
-The surrogate compares $rA$ with a version whose ratio is clipped to $[1-\epsilon,1+\epsilon]$, then selects the smaller value. When $A>0$, the upper cap prevents the objective from continuing to reward an excessive probability increase. When $A<0$, the lower cap prevents continued reward for an excessive decrease. The minimum handles both cases because multiplying by a negative number reverses order.
+#### 2. Sampling: one draw produces one observed answer
 
-The loss is the **negative** mean because the optimizer minimizes, whereas the surrogate is an objective to maximize. Clipping is not a hard constraint that every updated probability ratio remains inside the interval. Shared parameters and other losses can still move ratios outside it.
+To make the random choice concrete, draw a uniform random number $U$ between $0$ and $1$. Choose “猫” when $U<0.6$ and “狗” otherwise. Suppose this draw is $U=0.8$: the observed answer is “狗”. A different random draw could have produced “猫”.
+
+The sampled answer is a discrete result. Once observed, its token ID is recorded as fixed data. We will differentiate the probability assigned to that recorded token, not the random draw itself.
+
+#### 3. Reward and baseline: calculate this sample's advantage
+
+The observed answer “狗” is wrong, so its reward is $R=0$. To judge whether that is better or worse than expected, calculate the old policy's expected score on this same task:
+
+$$
+b=0.6\times1+0.4\times0=0.6.
+$$
+
+This is the **baseline** $b$. It averages rewards over the possible answers before sampling; it is not the reward of the answer just observed. It equals the probability of “猫” numerically only because this example uses rewards $1$ and $0$.
+
+In this one-step task the advantage is the observed reward minus that expected score:
+
+$$
+A=R-b=0-0.6=-0.6.
+$$
+
+An advantage is a signed comparison with expected performance. Here $A=-0.6$ means this sampled choice did worse than expected, so it supplies a signal to reduce its probability. Its magnitude weights that signal; it does not instruct the optimizer to subtract $0.6$ from a probability.
+
+| Possible observed answer | Reward $R$ | Baseline $b$ | Advantage $A=R-b$ |
+| --- | --- | --- | --- |
+| 猫 | $1$ | $0.6$ | $0.4$ |
+| 狗 | $0$ | $0.6$ | $-0.6$ |
+
+These rows are alternative possible results of one draw. Our actual draw produced only the second row. If we had drawn “猫”, we would instead use its positive advantage $0.4$ to favor that answer.
+
+#### 4. Record fixed data, then evaluate the current probability
+
+For this sampled “狗”, retain its token ID, the old action log probability $\log0.4\approx-0.916291$, and its advantage $-0.6$. These remain fixed while this collected sample is used for policy updates.
+
+Run the current model on the same input and select the log probability of that **same recorded token**. This produces `new_logp`, which depends on $u$ and keeps its gradient connection to the model. Initially it is also $\log0.4$. The fixed old value supplies `old_logp`; the fixed advantage supplies `advantage`.
+
+Thus the answer and its score have already been observed, but the probability assigned to that answer is still a differentiable model output. In PyTorch, detaching `old_logp` and `advantage` preserves that distinction; do not detach `new_logp`.
+
+#### 5. Probability ratio: compare with the sampling policy
+
+For the same input and sampled answer, define
+
+$$
+r=\frac{p_{\mathrm{new}}(\text{狗})}{p_{\mathrm{old}}(\text{狗})}
+  =e^{\mathrm{new\_logp}-\mathrm{old\_logp}}.
+$$
+
+Exponentiating a difference of log probabilities computes the probability ratio. Initially $r=0.4/0.4=1$. A ratio below $1$ means the current policy assigns this answer less probability than the policy that sampled it; a ratio above $1$ means more probability. The denominator remains $0.4$ when the current model changes.
+
+The old sampling policy is distinct from the frozen DPO reference introduced in Lesson 08.03. A larger reinforcement-learning system may also use a separate reference policy for a Kullback–Leibler (KL) penalty, but this exercise computes only the clipped policy term.
+
+#### 6. Clipped score and the loss to minimize
+
+Set the clipping width $\epsilon=0.2$, passed to the function as `clip`. Clamping a ratio to $[0.8,1.2]$ returns $0.8$ below the interval, the ratio itself inside it, and $1.2$ above it. PPO compares two scores for each sampled observation:
+
+$$
+g=\min\!\left(rA,\operatorname{clip}(r,1-\epsilon,1+\epsilon)A\right).
+$$
+
+For our observed “狗”, $r=1$ and $A=-0.6$. Both scores equal $-0.6$, so their minimum is $g=-0.6$. The score is an objective to maximize. Since the optimizer minimizes a loss, take its negative:
+
+$$
+L=-\frac{1}{B}\sum_{i=1}^{B}g_i.
+$$
+
+Here $B$ is the number of sampled observations in the batch. We have one observation, so $L=-(-0.6)=0.6$. The expectation notation $-\mathbb E[g]$ describes this same averaging idea. It does not require observing both possible answers on every draw.
+
+#### 7. Backward: the actual PPO loss reaches a model parameter
+
+We now differentiate this PPO loss with respect to the actual trainable logit $u$. Near the initial value, the ratio is inside the clipping interval, so the selected score is $rA$. Holding the recorded answer, old probability and advantage fixed gives
+
+$$
+L(u)=0.6\,\frac{p_{\mathrm{new}}(\text{狗})}{0.4}
+    =1.5\left(1-\frac{e^u}{e^u+1}\right).
+$$
+
+Writing $p=p_{\mathrm{new}}(\text{猫})$, the softmax derivative is $dp/du=p(1-p)$. Therefore at $p=0.6$,
+
+$$
+\frac{dL}{du}=-1.5p(1-p)
+             =-1.5\times0.6\times0.4=-0.36.
+$$
+
+This gradient came through the selected token's probability and the probability ratio. It did not require a derivative through the discrete sampling operation, reward or baseline calculation.
+
+#### 8. Update: change the distribution for future draws
+
+Take one stochastic gradient descent (SGD) step with learning rate $\eta=0.1$:
+
+$$
+u_1=u_0-\eta\frac{dL}{du}
+   \approx0.405465-0.1(-0.36)=0.441465.
+$$
+
+The updated model gives the following values. The retained old log probability is still $\log0.4$, and the retained advantage is still $-0.6$.
+
+| Quantity for the recorded sample | Before the update | After the update |
+| --- | --- | --- |
+| Current probability of 猫 | $0.6$ | $0.608608$ |
+| Current probability of 狗 | $0.4$ | $0.391392$ |
+| Ratio for the sampled 狗 | $1$ | $0.391392/0.4\approx0.978480$ |
+| PPO policy loss | $0.6$ | $0.6\times0.978480\approx0.587088$ |
+
+The loss decreased, the observed wrong answer became less probable, and the correct answer became more probable in this two-answer model. A future draw can still produce “狗”; learning changes the chances rather than prescribing the next answer. If collecting a new batch with this updated policy, record that batch's sampling probabilities afresh. Do not overwrite the old probabilities of an existing batch during its updates.
+
+Had the original draw selected “猫”, its $A=0.4$ and initially unit ratio would instead give $L=-0.4$. At that same starting parameter, the PPO derivative would be $dL/du=-0.16$, also increasing the cat logit under gradient descent. These are two alternative sample paths, not two answers from our one draw. Their agreement in direction follows from this toy task's deterministic rewards and exact baseline; arbitrary observations in a larger model need not all favor the same parameter direction.
+
+### What clipping changes
+
+The update above stays inside the clipping interval. To see why clipping is present, keep the **same recorded wrong answer**, old probability $0.4$ and advantage $-0.6$, but consider a later current policy assigning “狗” probability $0.30$:
+
+$$
+r=0.30/0.4=0.75,\qquad \operatorname{clip}(r,0.8,1.2)=0.8.
+$$
+
+The ordinary score is $0.75(-0.6)=-0.45$; the clipped score is $0.8(-0.6)=-0.48$. The minimum is $-0.48$, so the loss is $0.48$. Reducing this wrong answer's probability still further does not lower this sample's policy loss: below ratio $0.8$, its favorable-direction branch is flat. The boundary corresponds to probability $0.4\times0.8=0.32$, a relative reduction of $20\%$, not a reduction of $20$ percentage points.
+
+For the alternative correct-answer branch, keep its old probability $0.6$ and advantage $0.4$. A current probability of $0.8$ gives ratio $0.8/0.6\approx1.333333$. The ordinary score is approximately $0.533333$, the clipped score is $1.2\times0.4=0.48$, and the minimum selects $0.48$. Its loss is $-0.48$, with no additional incentive from this sample for further probability increases.
+
+Selecting the smaller score handles both advantage signs. For a positive advantage, excessive probability increases stop earning additional score; for a negative advantage, excessive probability decreases stop earning additional score. Changes in the unfavorable direction are still penalized. Clipping is not a hard constraint on the updated probabilities: shared parameters, other observations and other losses can move a ratio outside the interval.
 
 ![Rewards, advantages and clipped policy objectives：08.04](assets/08-04-policy-objective.en.png){width=100%}
 
-Read the positive-advantage and negative-advantage curves separately. The horizontal part shows where further movement in the favorable direction no longer increases the clipped objective. The function returns the negative average of these objective values.
+Read the positive-advantage and negative-advantage curves separately. Their horizontal sections show the favorable directions in which further movement no longer improves the clipped score. Compare the right-hand positive-advantage plateau with the correct-answer branch, and the left-hand negative-advantage plateau with our sampled wrong-answer branch. The figure uses unit advantages to show the shape; the advantages $0.4$ and $-0.6$ scale the corresponding scores in our example. The function returns the negative average of these scores.
+
+### Relating this step to policy gradients and language models
+
+A common schematic policy-gradient expression is
+
+$$
+\nabla_\theta J=\mathbb E\!\left[A\,\nabla_\theta\log\pi_\theta(a\mid s)\right].
+$$
+
+Here $J$ is expected reward, $\theta$ denotes model parameters, $s$ is the state, and $a$ is the sampled action. The advantage weights the sampled action's log-probability gradient. Its sign supplies the direction of that sample's signal; it does not by itself guarantee a particular finite probability change when many samples share parameters. The expectation and any time weighting depend on the task's trajectory and discounting convention. Our one-step example has no later rewards or discounting. PPO uses the old-policy probability ratio and clipping to build the specific loss we traced above.
+
+In an autoregressive language model, the state is the prompt plus the generated prefix, and an action is the next token. At each recorded position, select the current model's log probability for the token actually sampled there. Do not substitute the most probable token's probability or resample the token while evaluating the recorded observation. Loss masks identify which positions participate; a larger trainer must define how token contributions are reduced.
+
+Our example calculated the baseline exactly because it has only two outcomes with known rewards. For a longer rollout, an action can affect later rewards. The general advantage compares expected future return after an action with expected return from the same state; an estimator may use a sampled return minus a value estimate, or generalized advantage estimation (GAE) built from reward and value predictions across time. A value model estimates expected future return when enumeration is impossible. Thus subtracting a baseline from only the current immediate reward is not a universal advantage formula. Reward design, advantage estimation, value training, KL penalties and rollout collection are separate responsibilities from this exercise's policy loss.
 
 ### Function contract
 
@@ -14869,35 +15168,42 @@ Read the positive-advantage and negative-advantage curves separately. The horizo
 def clipped_policy_loss(new_logp: torch.Tensor, old_logp: torch.Tensor, advantage: torch.Tensor, clip: float) -> torch.Tensor:
 ```
 
-new_logp, old_logp, advantage: float[B] action log probabilities and precomputed advantages; clip in (0,1). Return scalar negative clipped surrogate mean. Detach old_logp and advantage; no reward-model gradient. This is the policy term only, not a complete PPO trainer.
+The three tensors have matching shape `[B]` and floating-point values:
 
-### A worked example
+- `new_logp`: the current policy's log probabilities for the recorded actions; keep its gradient connection to the policy.
+- `old_logp`: the log probabilities assigned to those same actions when they were sampled; detach this tensor.
+- `advantage`: one already computed advantage per recorded action; detach this tensor.
+- `clip`: a Python float in `(0,1)`, giving the ratio interval `1-clip` to `1+clip`.
 
-Take $\epsilon=0.2$, ratios `[1.5,0.5]`, and advantages `[1,-1]`.
+Return a scalar tensor: the negative mean of the elementwise minimum of ordinary and clipped scores. Keep it as a tensor so the caller can backpropagate. For our observed dog branch, the one-element inputs are `new_logp=[log(0.4)]`, `old_logp=[log(0.4)]`, `advantage=[-0.6]` and `clip=0.2`; the returned loss is `0.6` before the update. This function does not receive the logits, sampled token IDs or rewards because the surrounding training loop has already used them to construct these inputs.
+
+### Secondary example: the supplied check driver
+
+The driver uses synthetic ratios `[1.5,0.5]`, advantages `[1,-1]` and $\epsilon=0.2$ to test both clipping plateaus directly. This is a separate calculation check, not another draw from the translation example.
 
 | Sample | Ratio | Advantage | Unclipped $rA$ | Clipped ratio | Clipped product | Selected minimum |
 | --- | --- | --- | --- | --- | --- | --- |
 |0 |1.5 |1 |1.5 |1.2 |1.2 |1.2 |
 |1 |0.5 |-1 |-0.5 |0.8 |-0.8 |-0.8 |
 
-The mean surrogate is $(1.2-0.8)/2=0.2$, so the returned loss is $-0.2$. A negative policy loss is valid: unlike a negative log likelihood, this surrogate is not required to be nonnegative.
-
-The two examples above are beyond favorable clipping boundaries. For an unclipped example at $r=1$ and $A=1$, the loss derivative with respect to `new_logp` is $-1$ for a one-item batch. Gradient descent raises the sampled action's log probability. With $A=-1$, the sign reverses. Keep `old_logp` and `advantage` detached in both cases.
+The mean score is $(1.2-0.8)/2=0.2$, so the returned loss is $-0.2$. A negative policy loss is valid: unlike negative log likelihood, this surrogate need not be nonnegative. Both rows are beyond favorable clipping boundaries, so their policy gradients are zero on these flat regions. A second driver check places both ratios at $1$; its two-item mean gives `new_logp` gradients `[-0.5,0.5]` for advantages `[1,-1]`. Old log probabilities and advantages remain detached in both checks.
 
 ### Guided implementation
 
-Implement `clipped_policy_loss` as a calculation on matched shape `[B]` tensors.
+Implement the learner region of `clipped_policy_loss` in `exercises/08_04_policy_objective.py`; preserve the supplied check driver. The exercise still contains the learner TODO.
 
-1. Subtract detached `old_logp` from `new_logp`. Do not subtract a probability from a log probability.
-2. Exponentiate to obtain positive ratios; equal new and old log probabilities must give ratio 1.
-3. Detach `advantage` and form the ordinary ratio-times-advantage vector.
-4. Clamp the ratios, not the advantages, to `1-clip` and `1+clip`; multiply by the same detached advantages.
-5. Use `torch.minimum` elementwise. Check both rows of the worked table before taking any mean.
-6. Negate the mean and return the tensor. The supplied checks concern this policy term; an actual rollout system needs independent reward and stability evaluation.
+1. Use `old_logp.detach()` to obtain fixed old log probabilities, then subtract them from `new_logp`. The result is a `[B]` vector of log-probability differences; equal new and old values give `0`.
+2. Apply `torch.exp` to that vector. This gives positive ratios with shape `[B]`; a difference of `0` becomes ratio `1`.
+3. Use `advantage.detach()` to obtain fixed weights. Multiply the ratios by those weights to form the ordinary score vector. Our one-element example gives `-0.6` initially.
+4. Use `clamp` on the ratios, with lower bound `1-clip` and upper bound `1+clip`. Multiply those clamped ratios by the same detached advantages. Clamp the ratios, not the advantages.
+5. Use `torch.minimum` elementwise on the two score vectors. Check the negative-advantage arithmetic above before averaging: the smaller of `-0.45` and `-0.48` is `-0.48`.
+6. Call `mean`, negate the result and return the scalar tensor. Do not turn it into a Python number or detach it: the current policy needs its gradient.
 
 ### Common pitfalls
 
-If a reward recognizes a superficial pattern rather than answer correctness, optimization can favor that pattern even when an answer is wrong; this is reward hacking. The clipped term only compares probabilities for supplied samples. A complete training loop must also define the reward and value estimate used for advantages, combine any KL penalty, and account for the difference between the policy that collected samples and the policy being updated.
+A reward that recognizes a superficial pattern rather than correctness can encourage that pattern even when an answer is wrong; this is reward hacking. Clipping does not establish that a reward is reliable or that the complete training system is stable. It changes the contribution of supplied observations to this policy term.
+
+The sampled answer, old probability and advantage are fixed data for this calculation. The current probability is recomputed from trainable parameters. Treating these as the same kind of quantity would either disconnect the policy gradient or accidentally differentiate through a target that was meant to stay fixed.
 
 ### Run and check
 
@@ -14911,13 +15217,13 @@ An unfinished prerequisite reports learner TODO, not an installation failure. On
 Lesson 08.04 checks passed.
 ```
 
-The supplied example places both ratios beyond their favorable clipping boundaries. The checks verify the negative mean and zero policy gradients on those flat regions, while the old log probabilities and advantages remain detached.
+The supplied checks cover clipped and unclipped policy-loss gradients and verify that old log probabilities and advantages do not receive gradients. They do not certify rollout quality, reward correctness, value estimation or a complete PPO training run.
 
 ### Further practice
 
-Why does min, rather than max, work for both positive and negative advantages?
+Recalculate the main example when the uniform draw selects “猫”. Identify the one observed answer, its reward, fixed baseline, advantage and old probability before calculating the ratio, clipped score, loss and logit derivative. Explain why the next draw remains random after the update.
 
-First implement a two-action bandit with known reward 1 for one action and 0 for the other. Sample from an old policy, compute detached reward-minus-mean advantages and optimize this term; measure probability and reward on independent samples. Only then design a language reward with held-out correctness checks.
+Then design a two-action bandit with known rewards. Collect actions from an old policy, construct advantages, and measure reward on independent samples after updates. Keep the sampling policy fixed for each collected batch while its recorded observations are reused. Only then extend the exercise to multi-token language rollouts with an explicit return estimator and loss mask.
 
 ## Looking back
 

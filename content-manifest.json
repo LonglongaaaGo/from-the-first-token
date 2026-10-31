@@ -20,15 +20,15 @@
   "teaching_data_manifest": "examples/data/manifest.json",
   "teaching_data_license": "PolyForm-Noncommercial-1.0.0",
   "distribution": "github-source",
-  "release_package_manifest_sha256": "2bd11b22ca0a956f33506375c6054cc9bd3c3d8e08203a5dd895a7b524b34ae8",
+  "release_package_manifest_sha256": "1a1f9fd0acc391c7ff55ef8148579a205d652cca0fde8d4c0d3d3681340e5aaf",
   "pdf_release_assets": {
     "book/en/book.pdf": {
-      "sha256": "8186cc6458bfb6a2747f1508fbe97d550a0c6c9179e7e2e3fcdf5a3478edf7f0",
-      "bytes": 17672843
+      "sha256": "39c2e5ee4affa3535daed55f293c19e31d938d7fa911544a590ad3c9a5723da9",
+      "bytes": 17705267
     },
     "book/zh-CN/book.pdf": {
-      "sha256": "dcbb6be30dc99ad58bbb88f9223c28c6c4a4b6dc22f21125ed30ec85cffb01c8",
-      "bytes": 35890421
+      "sha256": "f13d99d43b08bbd35e348af8030823b79ea6fd6192db6ebb62eb25ac663dfcb1",
+      "bytes": 35916823
     }
   },
   "files": {
@@ -1425,8 +1425,8 @@
       "bytes": 136951
     },
     "book/en/manuscript.md": {
-      "sha256": "5e8e9639d414752ac36c020d0c5118bda5a7b7e6cbd7701e9e6421ebc649365a",
-      "bytes": 1126675
+      "sha256": "abfdfe29f343a4fe8066855b7dcfcf9ecd174c2af8803dc8b6d8250b97d78816",
+      "bytes": 1150435
     },
     "book/zh-CN/assets/01-01-eight-bit-range.zh-CN.png": {
       "sha256": "a2bb380db955db194ff579f2fdba55c3028b7a604558046ed1f3340f72dada26",
@@ -2797,8 +2797,8 @@
       "bytes": 313085
     },
     "book/zh-CN/manuscript.md": {
-      "sha256": "5a9ece04f38c8b502055b3fc3305fa729a65f5d6eb921b7ebb15ae01a4362056",
-      "bytes": 1001133
+      "sha256": "1090a820c9cbaf35a8c040bda21ff30f581ebfe7d163422b372e854e4a6c2580",
+      "bytes": 1023002
     },
     "examples/README.md": {
       "sha256": "734d5ca48237b3a71186aae25a13c29a327ac3bcef1343073a27cb661bf0ac60",
@@ -3146,11 +3146,11 @@
     }
   },
   "reader_revision": {
-    "kind": "prose-spacing-review",
-    "date": "2026-10-30",
+    "kind": "policy-walkthrough-review",
+    "date": "2026-10-31",
     "source_manifests": {
-      "en": "485ead9d9295cacc29adc4fbb174d7cf52d6837f99c0d2a8c61a946ce22d9e30",
-      "zh-CN": "233e7326d86e1e1ced5650a8232fdc518c9dc57551ae45d90861e7d15ef42938"
+      "en": "3c3754710f949cec3a6d84775cdafada6c25e944b454c6e02b3309527016cef4",
+      "zh-CN": "43c44f0ba79534e035926fa3ec7427738a4a35937a7eeaa297eb5975efc4494a"
     }
   }
 }
