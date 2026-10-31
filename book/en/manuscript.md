@@ -15014,17 +15014,34 @@ An advantage is a signed comparison with expected performance. Here $A=-0.6$ mea
 
 These rows are alternative possible results of one draw. Our actual draw produced only the second row. If we had drawn “猫”, we would instead use its positive advantage $0.4$ to favor that answer.
 
-#### 4. Record fixed data, then evaluate the current probability
+#### 4. Keep the answer, then recalculate its probability
 
-For this sampled “狗”, retain its token ID, the old action log probability $\log0.4\approx-0.916291$, and its advantage $-0.6$. These remain fixed while this collected sample is used for policy updates.
+The answer has already been drawn. Training now changes how likely the model is to choose that answer in future draws. Follow these three steps before introducing the code variables.
 
-In this example, the current model has one trainable parameter, $u$: the score (logit) for “猫”. The score for “狗” is fixed at $0$. Our recorded answer is “狗”. Run the current model on the same input and select the log probability of this recorded answer. Call the result `new_logp`.
+**Keep a record of this draw.** Our prompt is “translate cat into Chinese”. The sampling model gave “猫” probability $0.6$ and “狗” probability $0.4$, and this draw produced “狗”. Record the answer “狗”, its probability $0.4$ at sampling time, and its advantage $-0.6$ from step 3. Keep these records fixed while training on this collected sample.
 
-The name `new_logp` means the log probability computed from the current trainable weights, before the next parameter update. For “狗”, it is $\log p_{\mathrm{current}}(\text{狗})=-\log(e^u+1)$. Changing $u$ changes this value. PyTorch tracks these operations, so backward can calculate how the loss changes with $u$. `new_logp` is a model output, not a separate trainable parameter.
+**Calculate the current probability again.** Send the same prompt through the current model. It calculates probabilities for both possible answers. Select the probability of the recorded answer, “狗”. This calculation does not draw another answer. Before the first update, the model still has its sampling-time weights, so the selected probability is again $0.4$.
 
-Before the first update, `new_logp` and `old_logp` both have the value $\log0.4$. They play different roles: recompute `new_logp` from the current model; keep the recorded `old_logp` fixed. Do not replace the current model output with the constant $\log0.4$, because that would remove the gradient path to $u$. The fixed advantage supplies `advantage`.
+The right column below previews the parameter update calculated in step 8:
 
-Thus the answer and its score have already been observed, but the probability assigned to that answer is still a differentiable model output. In PyTorch, detaching `old_logp` and `advantage` preserves that distinction; do not detach `new_logp`.
+| What we read | Before the first update | After the step 8 update |
+| --- | --- | --- |
+| Recorded sampling probability of 狗 | $0.4$ | $0.4$ |
+| Current model's probability of 狗 | $0.4$ | approximately $0.391392$ |
+
+The record tells us what happened when we collected the sample. The current calculation tells us how the model would score that same answer now. Recalculate the second row from the current weights before each update that reuses this sample.
+
+**Use the loss to decide how to change the model.** “狗” was wrong and has advantage $-0.6$. Near the starting weights, where clipping has not taken effect, this sample's loss is the current dog probability multiplied by $0.6$ and divided by the recorded $0.4$. A current probability of $0.4$ gives loss $0.6$; a probability of approximately $0.391392$ gives loss approximately $0.587088$. Lowering this loss favors a lower probability for the recorded wrong answer. Steps 5–8 derive the loss and the parameter update.
+
+Now give the recorded and recalculated values their names in the function:
+
+- `old_logp`: take the natural logarithm of the recorded sampling probability, $\log0.4\approx-0.916291$.
+- `new_logp`: take the natural logarithm of the current model's probability for the same recorded “狗”. Here “new” means the current model used for training; it need not have completed an update yet.
+- `advantage`: use the recorded comparison $-0.6$ from step 3.
+
+Before the first update, the two log probabilities have the same numerical value. To calculate an update, keep the old value fixed and compute the current value through the model's operations.
+
+In our tiny model, the trainable parameter $u$ is the score (logit) for “猫”; the score for “狗” stays at $0$. The current dog probability is $1/(e^u+1)$, so `new_logp` is $-\log(e^u+1)$. PyTorch follows these operations from $u$ to `new_logp` and the loss to calculate how changing $u$ affects the loss. This is what “keeping the gradient connection” means here. The optimizer changes $u$; `new_logp` is a calculated model output. Use `detach()` on `old_logp` and `advantage` to treat those records as fixed during this calculation. Keep `new_logp` connected to the model.
 
 #### 5. Probability ratio: compare with the sampling policy
 
