@@ -346,7 +346,7 @@ b28ef9c6a7b2906574464e08134d7ebbceec190a742b5dd828bd49d3a78aaf9f  book/en/assets
 9da4287366e7ea281b67bffece74c22c9d71e707fe0e65283075ccaff633da92  book/en/assets/10-03-ablations-uncertainty.en.svg
 c2fbb3320679b281fc8d19e63acb39b29e57796009780d1a2267ad21ad3c13db  book/en/assets/book-learning-route.en.png
 f94d6e90dd17b5ed9f73b68460c7c79dd9a3a336a5427f247171d4f072f6627b  book/en/assets/book-learning-route.en.svg
-abfdfe29f343a4fe8066855b7dcfcf9ecd174c2af8803dc8b6d8250b97d78816  book/en/manuscript.md
+1be0e4ac83bba0a34a16877b1c54545436db17a71af410a26223beab87b75c21  book/en/manuscript.md
 a2bb380db955db194ff579f2fdba55c3028b7a604558046ed1f3340f72dada26  book/zh-CN/assets/01-01-eight-bit-range.zh-CN.png
 175521b841dd0b051894eee983e5067b035d554917c49e7abd6e7098ae42127e  book/zh-CN/assets/01-01-eight-bit-range.zh-CN.svg
 ac8e1a46d48bd558c8314c0bdc6edf842e3767bf35cb42e5cbb02572ee757eeb  book/zh-CN/assets/01-01-shifted-window.zh-CN.png
@@ -689,7 +689,7 @@ b5b39a6a94a78c6aff7945daf2282180be1e5af73d33c74ce49f85653eca1359  book/zh-CN/ass
 fea9dbe8e9697774afa395ae1c7b75f7d97201c67be86b1c424607f431c6dacc  book/zh-CN/assets/10-03-ablations-uncertainty.zh-CN.svg
 7503a8cd7a2485e5b4b988745dd899e70f56836afcd75c4e3e688d2296534148  book/zh-CN/assets/book-learning-route.zh-CN.png
 d5513248515b360865d93f12423fcc7205ca042ebd7f06ce2e8429403c6ab1ee  book/zh-CN/assets/book-learning-route.zh-CN.svg
-1090a820c9cbaf35a8c040bda21ff30f581ebfe7d163422b372e854e4a6c2580  book/zh-CN/manuscript.md
+41de64a29286b38ae9648c36b0a899fb530387c5674b9d02e30e7ac71b8c0d8d  book/zh-CN/manuscript.md
 734d5ca48237b3a71186aae25a13c29a327ac3bcef1343073a27cb661bf0ac60  examples/README.md
 58952be2c7b3fed17c5536f48679378c3ba678b5f5cda8896b45ebc6c18055bc  examples/README.zh-CN.md
 f009cdbb3d3c155b3b0b7538ac911c4f3533aa169c6579331cb1c9ed6445adcc  examples/data/DATA_LICENSE.md
@@ -776,4 +776,4 @@ eca6e818ca69b76aacadd15a9ea335a7291ef53b246d19b255eb3d55d1305aab  exercises/10_0
 c0ea4a896d2c8c394b29f9427589996db826cd501c512279ff0ed3ef48fabbe5  licenses/teaching-code-PolyForm-Noncommercial-1.0.0.md
 ad4012e6780ad2e8714e70b77533cd02743a3567c2c94b5a9c5425c6c081efc8  requirements.txt
 68680c4acce5084c2c05d635bf45c5d796a01a14d0bece5124027f9d4894388e  tools/check_package.py
-968ef0d1b052541b70a992b20bcb21b064b44952156403115def8600c744c496  content-manifest.json
+3f36c111ce598e6ec7ae4275f2ac5d666f4e7fb49b6b2911741b6380648f6d09  content-manifest.json
