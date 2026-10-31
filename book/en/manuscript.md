@@ -15112,33 +15112,97 @@ The loss decreased, the observed wrong answer became less probable, and the corr
 
 Had the original draw selected “猫”, its $A=0.4$ and initially unit ratio would instead give $L=-0.4$. At that same starting parameter, the PPO derivative would be $dL/du=-0.16$, also increasing the cat logit under gradient descent. These are two alternative sample paths, not two answers from our one draw. Their agreement in direction follows from this toy task's deterministic rewards and exact baseline; arbitrary observations in a larger model need not all favor the same parameter direction.
 
-### What clipping changes
+### Reading the policy-gradient formula
 
-The update above stays inside the clipping interval. To see why clipping is present, keep the **same recorded wrong answer**, old probability $0.4$ and advantage $-0.6$, but consider a later current policy assigning “狗” probability $0.30$:
-
-$$
-r=0.30/0.4=0.75,\qquad \operatorname{clip}(r,0.8,1.2)=0.8.
-$$
-
-The ordinary score is $0.75(-0.6)=-0.45$; the clipped score is $0.8(-0.6)=-0.48$. The minimum is $-0.48$, so the loss is $0.48$. Reducing this wrong answer's probability still further does not lower this sample's policy loss: below ratio $0.8$, its favorable-direction branch is flat. The boundary corresponds to probability $0.4\times0.8=0.32$, a relative reduction of $20\%$, not a reduction of $20$ percentage points.
-
-For the alternative correct-answer branch, keep its old probability $0.6$ and advantage $0.4$. A current probability of $0.8$ gives ratio $0.8/0.6\approx1.333333$. The ordinary score is approximately $0.533333$, the clipped score is $1.2\times0.4=0.48$, and the minimum selects $0.48$. Its loss is $-0.48$, with no additional incentive from this sample for further probability increases.
-
-Taking the smaller score works for both advantage signs. With positive advantage, increasing the probability ratio stops improving this score after the upper boundary. With negative advantage, decreasing the probability ratio stops improving it after the lower boundary. Moving in the wrong direction still makes the score worse. Clipping does not force updated probability ratios to stay in the interval. Shared weights, other samples and other losses can still push the ratio outside it.
-
-![Rewards, advantages and clipped policy objectives：08.04](assets/08-04-policy-objective.en.png){width=100%}
-
-Read the positive-advantage and negative-advantage curves separately. Their horizontal sections show the favorable directions in which further movement no longer improves the clipped score. Compare the right-hand positive-advantage plateau with the correct-answer branch, and the left-hand negative-advantage plateau with our sampled wrong-answer branch. The figure uses unit advantages to show the shape; the advantages $0.4$ and $-0.6$ scale the corresponding scores in our example. The function returns the negative average of these scores.
-
-### Relating this step to policy gradients and language models
-
-A common schematic policy-gradient expression is
+The training question is simple: **which way should we change the model's weights to get a higher average reward?** In our translation task, we want future draws to produce “猫” more often. The policy-gradient expression describes a way to calculate an update direction from sampled answers:
 
 $$
 \nabla_\theta J=\mathbb E\!\left[A\,\nabla_\theta\log\pi_\theta(a\mid s)\right].
 $$
 
-Here $J$ is expected reward, $\theta$ denotes model parameters, $s$ is the state, and $a$ is the sampled action. The advantage weights the sampled action's log-probability gradient. Its sign supplies the direction of that sample's signal; it does not by itself guarantee a particular finite probability change when many samples share parameters. The expectation and any time weighting depend on the task's trajectory and discounting convention. Our one-step example has no later rewards or discounting. PPO uses the old-policy probability ratio and clipping to build the specific loss we traced above.
+Read it from the inside out. First calculate how the model weights affect the probability of the answer we drew. Multiply that signal by how much better or worse the answer was than expected. Average the signals over the possible draws, or estimate that average with collected samples.
+
+| Symbol | Plain meaning | In our one-choice task |
+| --- | --- | --- |
+| $s$ | What the model sees before choosing | The prompt “translate cat into Chinese” |
+| $a$ | The choice actually drawn | “狗” in our recorded sample |
+| $\theta$ | The model's adjustable weights | Our single cat logit $u$ |
+| $\pi_\theta(a\mid s)$ | The model's probability of that choice | Initially $0.4$ for “狗” |
+| $J$ | Expected total reward | Here, the chance of drawing the correct answer |
+| $A$ | Performance relative to the baseline | $-0.6$ for the recorded wrong answer |
+
+**The gradient supplies a direction; the advantage supplies its sign and weight.** The gradient $\nabla_\theta\log\pi_\theta(a\mid s)$ describes how the selected answer's log probability changes with the model weights. For an isolated sample and a sufficiently small gradient-ascent step, positive advantage favors increasing that answer's log probability; negative advantage favors decreasing it. A negative reward is not required: our wrong answer has reward $0$ but negative advantage because the baseline is $0.6$.
+
+Here is the calculation using the same parameter $u$, the cat logit. At the starting probabilities $0.6$ and $0.4$, the derivative of the cat log probability with respect to $u$ is $0.4$; the derivative of the dog log probability is $-0.6$.
+
+| Possible draw | Advantage | Log-probability derivative | Their product: update signal |
+| --- | --- | --- | --- |
+| 猫 | $0.4$ | $0.4$ | $0.16$ |
+| 狗 | $-0.6$ | $-0.6$ | $0.36$ |
+
+Our actual draw was “狗”, so it supplies the signal $0.36$. Gradient ascent adds a learning rate times that signal to $u$. With learning rate $0.1$, the change is $0.036$. This is exactly the update in step 8: minimizing its loss uses gradient $-0.36$, giving the same parameter change.
+
+**The expectation means an average over draws, with their probabilities.** For this tiny task, we can calculate it exactly:
+
+$$
+\frac{dJ}{du}=0.6(0.16)+0.4(0.36)=0.24.
+$$
+
+The two rows are possible outcomes, not two answers observed in our one draw. In practice, average the signals from the samples actually collected. That sample average estimates the expectation; one sample need not equal it. In this example, $J$ is the cat probability, whose derivative is also $0.6(1-0.6)=0.24$.
+
+The logarithm applies to the model probability, not to the reward. For positive probability $p$, $d\log p/du=(1/p)(dp/du)$. We differentiate the probability assigned to the recorded answer, while keeping that recorded answer fixed.
+
+This is a policy-gradient expression, not the complete PPO loss. For our one-step task the expectation is over the two answers. Longer tasks also require the state, time and discounting conventions. PPO-Clip uses an old-policy ratio and clipping to reuse a collected batch for several updates. At the sampling policy, before clipping takes effect, its gradient matches the sampled signal above. A noisy sample estimate, a large step or conflicting signals from shared weights can still reduce reward; the formula does not promise improvement after every update.
+
+### Why PPO clips the score
+
+**A useful sample should guide an update without driving repeated, unchecked changes.** We collected the answers with the old policy. During several updates on that batch, the current policy can move away from the policy that produced those answers. The recorded rewards and advantages still describe that old collection. A few sampled results can give an incomplete picture of which changes will help future draws.
+
+PPO-Clip changes the training score so that moving farther in a sample's favored direction eventually stops improving that sample's score. It leaves an incentive to correct movement in the wrong direction. This is the purpose of taking the smaller of the ordinary and clipped scores in step 6:
+
+$$
+g=\min\!\left(rA,\operatorname{clip}(r,1-\epsilon,1+\epsilon)A\right).
+$$
+
+Here $r$ is the current probability divided by the recorded sampling probability for the same answer. With $\epsilon=0.2$, the clipped copy of $r$ lies in $[0.8,1.2]$. These bounds apply to that copy inside the score. They do not constrain the actual model probabilities or each model weight.
+
+#### Negative advantage: stop giving extra credit for further decreases
+
+Keep the **same recorded wrong answer**, old probability $0.4$ and advantage $-0.6$. Suppose the current model gives “狗” probability $0.30$:
+
+$$
+r=0.30/0.4=0.75,\qquad \operatorname{clip}(r,0.8,1.2)=0.8.
+$$
+
+The ordinary score is $0.75(-0.6)=-0.45$; the clipped score is $0.8(-0.6)=-0.48$. Choose the smaller score, $-0.48$. Since we minimize the negative score, the loss is $0.48$.
+
+Compare a further decrease with movement in the wrong direction:
+
+| Current dog probability | Ratio $r$ | Ordinary score | Clipped score | Chosen score $g$ | Loss $-g$ |
+| --- | --- | --- | --- | --- | --- |
+| $0.30$ | $0.75$ | $-0.45$ | $-0.48$ | $-0.48$ | $0.48$ |
+| $0.20$ | $0.50$ | $-0.30$ | $-0.48$ | $-0.48$ | $0.48$ |
+| $0.60$ | $1.50$ | $-0.90$ | $-0.72$ | $-0.90$ | $0.90$ |
+
+Reducing the dog probability from $0.30$ to $0.20$ gives no further loss reduction from this sample. The score is flat below ratio $0.8$, so this sample's clipped policy term has zero gradient there. Increasing the wrong answer's probability to $0.60$ instead raises the loss to $0.90$. Taking the minimum keeps this worsening signal; using only the clipped product would flatten it too.
+
+The lower boundary corresponds to probability $0.4\times0.8=0.32$: a relative decrease of $20\%$, not a decrease of $20$ percentage points.
+
+#### Positive advantage: stop giving extra credit for further increases
+
+For the alternative correct-answer draw, keep old probability $0.6$ and advantage $0.4$. A current probability of $0.8$ gives ratio $0.8/0.6\approx1.333333$. The ordinary score is approximately $0.533333$, while the clipped score is $1.2\times0.4=0.48$. The minimum selects $0.48$, giving loss $-0.48$. Increasing the probability to $0.9$ still gives chosen score $0.48$. Above ratio $1.2$, this sample supplies no further incentive to increase the probability.
+
+![Rewards, advantages and clipped policy objectives：08.04](assets/08-04-policy-objective.en.png){width=100%}
+
+Read the curves as **scores to maximize**; our loss is their negative average. The positive-advantage curve is flat on the right, where further probability increases receive no extra credit. The negative-advantage curve is flat on the left, where further decreases receive no extra credit. The figure uses advantages $1$ and $-1$ to show the shapes; our values $0.4$ and $-0.6$ scale those shapes.
+
+#### What clipping does and does not control
+
+Clipping removes extra credit from a sample after enough movement in its favored direction. It does not lock actual ratios inside $[0.8,1.2]$, cap every parameter change at $20\%$, or guarantee stable training. A finite optimizer step, other samples and other losses can still move the shared weights beyond a clipping boundary. Some implementations also measure the change between policy distributions and stop updates early; that is an additional control, not a result of clipping alone. See [Schulman et al., 2017; R13](https://arxiv.org/abs/1707.06347) and the [Spinning Up PPO explanation](https://spinningup.openai.com/en/latest/algorithms/ppo.html).
+
+The practical cycle is: collect answers and their old probabilities; keep that batch's records fixed; make several updates using recalculated current probabilities; then collect a fresh batch. Reusing a batch for several updates does not make its observations useful without limit.
+
+### From one choice to language-model rollouts
 
 In an autoregressive language model, the state is the prompt plus the generated prefix, and an action is the next token. At each recorded position, select the current model's log probability for the token actually sampled there. Do not substitute the most probable token's probability or resample the token while evaluating the recorded observation. Loss masks identify which positions participate; a larger trainer must define how token contributions are reduced.
 
