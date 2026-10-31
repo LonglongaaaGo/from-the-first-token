@@ -20,15 +20,15 @@
   "teaching_data_manifest": "examples/data/manifest.json",
   "teaching_data_license": "PolyForm-Noncommercial-1.0.0",
   "distribution": "github-source",
-  "release_package_manifest_sha256": "6479030ee3c5019eea21d1d31c34d5c2ff9e223a49fbc18fbe3c62cc62f0fcbc",
+  "release_package_manifest_sha256": "2bd11b22ca0a956f33506375c6054cc9bd3c3d8e08203a5dd895a7b524b34ae8",
   "pdf_release_assets": {
     "book/en/book.pdf": {
-      "sha256": "5c863784b22e65fb8856ec66dd40066d30c5003532165442514ee9d32e488ec4",
-      "bytes": 17672195
+      "sha256": "8186cc6458bfb6a2747f1508fbe97d550a0c6c9179e7e2e3fcdf5a3478edf7f0",
+      "bytes": 17672843
     },
     "book/zh-CN/book.pdf": {
-      "sha256": "d64c9541cb305f2e4dd67fd0ac92c18ef71f086ee84f9fcbe7e6736d019b4a20",
-      "bytes": 35889975
+      "sha256": "dcbb6be30dc99ad58bbb88f9223c28c6c4a4b6dc22f21125ed30ec85cffb01c8",
+      "bytes": 35890421
     }
   },
   "files": {
@@ -1425,8 +1425,8 @@
       "bytes": 136951
     },
     "book/en/manuscript.md": {
-      "sha256": "fa4ddbf87e6fb84474b2cb8c0c7aab4d6b06d8d6ab59ef3270975a91e5ea403c",
-      "bytes": 1126028
+      "sha256": "5e8e9639d414752ac36c020d0c5118bda5a7b7e6cbd7701e9e6421ebc649365a",
+      "bytes": 1126675
     },
     "book/zh-CN/assets/01-01-eight-bit-range.zh-CN.png": {
       "sha256": "a2bb380db955db194ff579f2fdba55c3028b7a604558046ed1f3340f72dada26",
@@ -2797,8 +2797,8 @@
       "bytes": 313085
     },
     "book/zh-CN/manuscript.md": {
-      "sha256": "d319843027adc5c0a75c310aa5833e3e4341e4e44886e0311a54615c1c307ef2",
-      "bytes": 1000968
+      "sha256": "5a9ece04f38c8b502055b3fc3305fa729a65f5d6eb921b7ebb15ae01a4362056",
+      "bytes": 1001133
     },
     "examples/README.md": {
       "sha256": "734d5ca48237b3a71186aae25a13c29a327ac3bcef1343073a27cb661bf0ac60",
@@ -3146,11 +3146,11 @@
     }
   },
   "reader_revision": {
-    "kind": "narrative-flow-review",
+    "kind": "prose-spacing-review",
     "date": "2026-10-30",
     "source_manifests": {
-      "en": "de5666f06cd4c34e2fab4fc0fbe28c170abb6d94f7cd0df63aab76e08dd9cb1f",
-      "zh-CN": "ab740286077db5673d7f065d15e054da66d4b1072f1d2ca2e539caf7d12e119b"
+      "en": "485ead9d9295cacc29adc4fbb174d7cf52d6837f99c0d2a8c61a946ce22d9e30",
+      "zh-CN": "233e7326d86e1e1ced5650a8232fdc518c9dc57551ae45d90861e7d15ef42938"
     }
   }
 }
