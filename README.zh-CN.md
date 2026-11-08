@@ -2,6 +2,9 @@
 
 **[在线阅读](https://longlongaaago.github.io/book/from-the-first-token/?lang=zh#read-online)**
 
+[![GitHub Stars](https://img.shields.io/github/stars/LonglongaaaGo/from-the-first-token?style=social)](https://github.com/LonglongaaaGo/from-the-first-token/stargazers)
+[![Visitors](https://visitor-badge.laobi.icu/badge?page_id=LonglongaaaGo.from-the-first-token)](https://github.com/LonglongaaaGo/from-the-first-token)
+
 **作者：卢望龙（Wanglong Lu） · 公开阅读版**
 
 [English](README.md)

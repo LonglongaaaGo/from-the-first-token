@@ -2,6 +2,9 @@
 
 **[Read online](https://longlongaaago.github.io/book/from-the-first-token/?lang=en#read-online)**
 
+[![GitHub Stars](https://img.shields.io/github/stars/LonglongaaaGo/from-the-first-token?style=social)](https://github.com/LonglongaaaGo/from-the-first-token/stargazers)
+[![Visitors](https://visitor-badge.laobi.icu/badge?page_id=LonglongaaaGo.from-the-first-token)](https://github.com/LonglongaaaGo/from-the-first-token)
+
 **Building Language Models from Scratch · Wanglong Lu · Public reading edition**
 
 [简体中文](README.zh-CN.md)
