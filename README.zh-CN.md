@@ -1,5 +1,7 @@
 # 从第一个 Token 开始
 
+**[在线阅读](https://longlongaaago.github.io/book/from-the-first-token/?lang=zh#read-online)**
+
 **作者：卢望龙（Wanglong Lu） · 公开阅读版**
 
 [English](README.md)

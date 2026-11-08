@@ -1,5 +1,7 @@
 # From the First Token
 
+**[Read online](https://longlongaaago.github.io/book/from-the-first-token/?lang=en#read-online)**
+
 **Building Language Models from Scratch · Wanglong Lu · Public reading edition**
 
 [简体中文](README.zh-CN.md)
