@@ -8,7 +8,7 @@
   ],
   "chapters": 10,
   "sections": 71,
-  "figures_per_language": 171,
+  "figures_per_language": 173,
   "book_license": "CC-BY-NC-ND-4.0",
   "teaching_code_license": "PolyForm-Noncommercial-1.0.0",
   "exercise_count": 70,
@@ -20,15 +20,15 @@
   "teaching_data_manifest": "examples/data/manifest.json",
   "teaching_data_license": "PolyForm-Noncommercial-1.0.0",
   "distribution": "github-source",
-  "release_package_manifest_sha256": "652ffae63d67ba062fe7f7a85c3f1205522a362c84cb37ea2fbcafa0fe0de48d",
+  "release_package_manifest_sha256": "f8969ba632ac054c2f90e57d03449433c4b5d8b08babd7e56cde0184d930ac04",
   "pdf_release_assets": {
     "book/en/book.pdf": {
-      "sha256": "0f60f75e4b4090c04a18a4b45587c560d290e0097888e462b11d8265779d223f",
-      "bytes": 17313173
+      "sha256": "403a15aa06d20c7d2664321cb6c221e323145d208c5b75493e78ed4942a8e2c1",
+      "bytes": 17440219
     },
     "book/zh-CN/book.pdf": {
-      "sha256": "844c49c89d9a49657e49379defb7c8c9f2348ee88ef9cef9de72c68733ad9872",
-      "bytes": 34339377
+      "sha256": "5bea796e9acce2ea58c18f1a256f87445aaad82fb4ea3782bdb0d88006ee4038",
+      "bytes": 34492137
     }
   },
   "files": {
@@ -1376,13 +1376,29 @@
       "sha256": "330c07d32d092bdf4db69256d65b88cecce3eb0242c20d10631989de72c74357",
       "bytes": 101254
     },
+    "book/en/assets/09-04-attention-blocks.en.png": {
+      "sha256": "bd38826dd57b8cc9b56173da836e471be4a4c38dc31a09936679a3b2f240a727",
+      "bytes": 43479
+    },
+    "book/en/assets/09-04-attention-blocks.en.svg": {
+      "sha256": "ba9723d31f44c9a7b518dae5cb3b08d10010f16365345a570c44b5f770d2447f",
+      "bytes": 91701
+    },
+    "book/en/assets/09-04-cache-mask.en.png": {
+      "sha256": "b58072e98d51c740e96adb348b00a246c39cc9060dac6489d5657f7b1add9349",
+      "bytes": 51706
+    },
+    "book/en/assets/09-04-cache-mask.en.svg": {
+      "sha256": "29e1bde5cc55040165d14ae97c66280974795c00d4a4f72a820a25a9d82ae6be",
+      "bytes": 126225
+    },
     "book/en/assets/09-04-efficient-attention.en.png": {
-      "sha256": "17e059aeedd049552b6ce12954cceef1f6ef5261a5768b94e9edf5bf9cc87678",
-      "bytes": 59946
+      "sha256": "bfe4b81ce420c34e9b8160eac8b56e76715c04dff2f9e8741e54de395808aa56",
+      "bytes": 55477
     },
     "book/en/assets/09-04-efficient-attention.en.svg": {
-      "sha256": "a219ff58909847730e82b4e6cefb33dda9a7f0359e24320d5d62dfd1ccc5ebae",
-      "bytes": 129778
+      "sha256": "e2096e73d2fdf8dfe251a2ba32ff37c2ed732600cf6ff6f86b8bc4d8968d8a7e",
+      "bytes": 118730
     },
     "book/en/assets/09-05-distributed-recovery.en.png": {
       "sha256": "cdb9a428dbe50d6f454fd212f4456a1f0900358d49bd519e73c063a8b49d3558",
@@ -1425,8 +1441,8 @@
       "bytes": 136951
     },
     "book/en/manuscript.md": {
-      "sha256": "2c50675429ca0f11683f320e89a82765ac941fa34155c3f22fea4657bb7838e3",
-      "bytes": 1140516
+      "sha256": "72c67e854e250f954ddff54018add1002c43154c48c528fe579fd78116fe561a",
+      "bytes": 1141132
     },
     "book/zh-CN/assets/01-01-eight-bit-range.zh-CN.png": {
       "sha256": "a2bb380db955db194ff579f2fdba55c3028b7a604558046ed1f3340f72dada26",
@@ -2748,13 +2764,29 @@
       "sha256": "02fb378609b815da41a0eef85a2f3f0987525889fa40464b7f24ba3aef4f73f6",
       "bytes": 159868
     },
+    "book/zh-CN/assets/09-04-attention-blocks.zh-CN.png": {
+      "sha256": "84b1ba71ebcc7dfa0a09a0519c0d9393eb3105b27dc6a1d2dc0c86e5560e6e4f",
+      "bytes": 50900
+    },
+    "book/zh-CN/assets/09-04-attention-blocks.zh-CN.svg": {
+      "sha256": "4e3cc41bc9fdfd98637b465ab2def99bbba2e61dff475d121ecd01d50037f915",
+      "bytes": 138118
+    },
+    "book/zh-CN/assets/09-04-cache-mask.zh-CN.png": {
+      "sha256": "52d000cbdd87afdbfdfecf039f7164696b02160765ca4ff4fe2b4acb8096d917",
+      "bytes": 62797
+    },
+    "book/zh-CN/assets/09-04-cache-mask.zh-CN.svg": {
+      "sha256": "38f54bdb660d309b63ce231b69f38ea8b8a381e0723ea459a16fb42870204516",
+      "bytes": 231565
+    },
     "book/zh-CN/assets/09-04-efficient-attention.zh-CN.png": {
-      "sha256": "be48a5c34101a029d3e0d1d976012c29b34951c832830f683bfcea1d14263b7d",
-      "bytes": 68691
+      "sha256": "fd64dd35447da1c3044f39ed6d6710133f33a4b01bd6d44b30c5fc6be0c02c8d",
+      "bytes": 65827
     },
     "book/zh-CN/assets/09-04-efficient-attention.zh-CN.svg": {
-      "sha256": "371dad9bdd1039735cd5517934a2013a6182d89070ec4bd8faa857bdac943180",
-      "bytes": 198228
+      "sha256": "a71a429e4108ad8ab1ae977db92e7e15e6a370f602ac65fc114d3151d16d6463",
+      "bytes": 204385
     },
     "book/zh-CN/assets/09-05-distributed-recovery.zh-CN.png": {
       "sha256": "87dd55989f846ddef4729903560039a2908f56b72b9878103013ddd682ec914d",
@@ -2797,8 +2829,8 @@
       "bytes": 313085
     },
     "book/zh-CN/manuscript.md": {
-      "sha256": "72c41584e85460a5ba3a7801a61c42200d01364868b8b6b640765ccf6a7bfe86",
-      "bytes": 1023438
+      "sha256": "65853082e99f876e1cf22a492b2bab4385184c0cf669ca0ea139e7b10be21d82",
+      "bytes": 1023843
     },
     "examples/README.md": {
       "sha256": "734d5ca48237b3a71186aae25a13c29a327ac3bcef1343073a27cb661bf0ac60",
@@ -3146,11 +3178,11 @@
     }
   },
   "reader_revision": {
-    "kind": "efficient-attention-rewrite",
+    "kind": "attention-diagrams",
     "date": "2026-11-11",
     "source_manifests": {
-      "en": "d0d8896894543f47b48916f5e136696cadb8dd2cd1b50e3d7e2d884e74877d66",
-      "zh-CN": "a931d634c0548426f7e3a200b38bab8f521e6b3cfa50ce5d83d78681e109b378"
+      "en": "3a5d4c371a68895957717a18c363418fabfdb1cc419ac4d57980c2a927fefd25",
+      "zh-CN": "69fb0d00a02aa2b502a2d8a6866dea379db2517126728570d6b92545e70ec49b"
     }
   }
 }

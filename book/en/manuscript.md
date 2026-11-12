@@ -15533,7 +15533,11 @@ Change the scale in the separate clipping example while holding the true gradien
 
 ### One query, three keys
 
-Suppose the current token can look at three tokens. Its query $q$ scores each key $k_j$. Softmax turns those scores into weights, and the output $o$ is a weighted average of the values $v_j$. Follow one row of this calculation from scores to output.
+Suppose the current token can look at three tokens. Its query $q$ scores each key $k_j$. Those three scores form one row of the attention score matrix. Softmax turns the scores into weights, and the output $o$ is a weighted average of the values $v_j$.
+
+![One query reads the score row in two blocks](assets/09-04-attention-blocks.en.png){width=100%}
+
+Follow the three keys across the figure. In the tiled calculation, the first block covers keys 0 and 1. The second block covers key 2. Both blocks update the same three numbers for this query.
 
 Take scores $0,\ln 2,\ln 4$ and scalar values $2,4,8$. The logarithms are natural logs. Exponentiating the scores gives $1,2,4$. Divide by their sum, $7$, to get the weights $1/7,2/7,4/7$.
 
@@ -15545,15 +15549,17 @@ A straightforward implementation computes every query's row at once. With 8,192 
 
 ### Get the same answer in two blocks
 
-Split the keys into a block of two and a block of one. For each query, keep just the largest score seen, the sum of the exponential weights before normalization, and the sum of those weights times the values. Subtract the running maximum from every score before exponentiating. This keeps each exponential at most 1, and the shared factor cancels when we divide the two sums.
+As each block arrives, keep the largest score so far and two running sums. The **denominator** adds up the weights. The **numerator** adds up each weight times its value. After the last block, dividing the numerator by the denominator gives the weighted average. Scaling both sums by the same factor leaves that ratio unchanged.
 
-1. **Read the first two keys.** The largest score is $\ln 2$. Subtract it before exponentiating, so the two weights before normalization are $1/2$ and $1$. Their sum is $1.5$. The weighted sum of values is $0.5\cdot 2+1\cdot 4=5$.
-2. **Read the third key.** The largest score is now $\ln 4$. Every earlier exponent drops by $\ln 2$, so multiply both old sums by $e^{\ln 2-\ln 4}=1/2$. The new key has weight $e^{\ln 4-\ln 4}=1$. Add its contributions to get a weight sum of $1.5/2+1=1.75$ and a weighted value sum of $5/2+8=10.5$.
-3. **Divide once.** The output is $10.5/1.75=6$, the same result as before. Both blocks share one denominator. If we apply softmax to each block and simply average the two block outputs, we get $17/3$ instead of $6$.
+![How the second block updates the numerator and denominator](assets/09-04-efficient-attention.en.png){width=100%}
 
-![One query reads three keys in two blocks](assets/09-04-efficient-attention.en.png){width=100%}
+Follow the denominator along the upper path and the numerator along the lower path. The two paths meet at the final division.
 
-Read the figure from top to bottom. The first block contributes $1.5$ and $5$. When the maximum rises, both totals are halved before the last key is added. For vector values, the weighted sum is a vector and the denominator is still a single number per query.
+1. **Read keys 0 and 1.** Their original weights are $1$ and $2$. Divide both by the largest weight seen so far, $2$, to get $0.5$ and $1$. The denominator is $0.5+1=1.5$. The numerator is $0.5\cdot 2+1\cdot 4=5$.
+2. **Read key 2.** Its original weight is $4$. Now all weights need to be on the same scale, divided by $4$. The old sums already use division by $2$, so halve both. The new key contributes $4/4=1$ to the denominator and $1\cdot 8=8$ to the numerator.
+3. **Divide once.** The denominator is $0.75+1=1.75$ and the numerator is $2.5+8=10.5$. Their ratio is $10.5/1.75=6$. For vector values, the numerator is a vector and the denominator is still one number per query.
+
+In code, subtract the current maximum score before taking the exponential. This is equivalent to dividing every weight by the largest weight and keeps each exponential at most 1. When the maximum changes from $\ln 2$ to $\ln 4$, the old sums are multiplied by $e^{\ln 2-\ln 4}=1/2$.
 
 Updating the softmax totals as blocks arrive is called *online softmax*. FlashAttention uses tiling to reduce reads and writes between GPU memory and on-chip memory. It still computes the dot product for each visible query-key pair. [Dao et al., 2022, R15](https://arxiv.org/abs/2205.14135)
 
@@ -15568,6 +15574,10 @@ $$
 Use the same values $2,4,8$ in a separate example with all scores zero. In causal self-attention, a query at position $i$ can see keys through position $i$, including itself. The visible keys have equal weights, so the outputs at positions 0, 1 and 2 are $2$, $(2+4)/2=3$ and $(2+4+8)/3=14/3$.
 
 Now add a token at position 2 after caching positions 0 and 1. To compute its attention, use one query and three keys, including the new key. The query is row 0 of the new query tensor, but its position in the sequence is 2. Pass the explicit Boolean mask `[[True, True, True]]` to keep all three keys. If a mask treats that query as position 0, the output is $2$ instead of $14/3$. Both outputs have the same shape.
+
+![The same cached query can read three keys or just one, depending on the mask](assets/09-04-cache-mask.en.png){width=100%}
+
+In the top row, three `True` cells keep the values $2,4,8$. In the bottom row, only the first cell is `True`, so only $2$ enters the average.
 
 ### What to write in PyTorch
 
