@@ -334,8 +334,8 @@ f739786d0435c77707ee0d7527ccb2d789a45c4f7dc8426b0f9e76ee5d175d44  book/en/assets
 5375e7c1571326e85bd6c0a3894339841e092b776c70e16200ee9b2217a902fb  book/en/assets/09-02-gradient-accumulation.en.svg
 656b721a47f083a5a8b356bb1f8ec14d50629e10c50368a0f67f641646b3a3b9  book/en/assets/09-03-mixed-precision.en.png
 330c07d32d092bdf4db69256d65b88cecce3eb0242c20d10631989de72c74357  book/en/assets/09-03-mixed-precision.en.svg
-d2db704ef8826e0a31b7c26e33854c46b4e63c799a521253c2b03f1e17e3262c  book/en/assets/09-04-efficient-attention.en.png
-634482746f5b442b79545065fcc87af40b3a4c8fad9b67e24858ca2dc1595c21  book/en/assets/09-04-efficient-attention.en.svg
+17e059aeedd049552b6ce12954cceef1f6ef5261a5768b94e9edf5bf9cc87678  book/en/assets/09-04-efficient-attention.en.png
+a219ff58909847730e82b4e6cefb33dda9a7f0359e24320d5d62dfd1ccc5ebae  book/en/assets/09-04-efficient-attention.en.svg
 cdb9a428dbe50d6f454fd212f4456a1f0900358d49bd519e73c063a8b49d3558  book/en/assets/09-05-distributed-recovery.en.png
 d56a3240f0abe2140f1d5df4b895caf68c4dbc8e9d0adfdcffec64c2e061f1c7  book/en/assets/09-05-distributed-recovery.en.svg
 9c9c336983c5d5466247a914c9024ce3d9bc4c1dd2fcf688a7cb4e3f1d2d4b03  book/en/assets/10-01-experiment-provenance.en.png
@@ -346,7 +346,7 @@ b28ef9c6a7b2906574464e08134d7ebbceec190a742b5dd828bd49d3a78aaf9f  book/en/assets
 9da4287366e7ea281b67bffece74c22c9d71e707fe0e65283075ccaff633da92  book/en/assets/10-03-ablations-uncertainty.en.svg
 c2fbb3320679b281fc8d19e63acb39b29e57796009780d1a2267ad21ad3c13db  book/en/assets/book-learning-route.en.png
 f94d6e90dd17b5ed9f73b68460c7c79dd9a3a336a5427f247171d4f072f6627b  book/en/assets/book-learning-route.en.svg
-8479120b7de8651cdf0dd6ded2063b02adfddfb4b62186281990c9f240226ee1  book/en/manuscript.md
+2c50675429ca0f11683f320e89a82765ac941fa34155c3f22fea4657bb7838e3  book/en/manuscript.md
 a2bb380db955db194ff579f2fdba55c3028b7a604558046ed1f3340f72dada26  book/zh-CN/assets/01-01-eight-bit-range.zh-CN.png
 175521b841dd0b051894eee983e5067b035d554917c49e7abd6e7098ae42127e  book/zh-CN/assets/01-01-eight-bit-range.zh-CN.svg
 ac8e1a46d48bd558c8314c0bdc6edf842e3767bf35cb42e5cbb02572ee757eeb  book/zh-CN/assets/01-01-shifted-window.zh-CN.png
@@ -677,8 +677,8 @@ adb37cd5f5d27d1a38d992e61aac4b90e2908ab842a8040bdc84d90940a5b913  book/zh-CN/ass
 f1e64b21a1c538736b4aa993789067e4463288744f17382f7a29e2acb12726c2  book/zh-CN/assets/09-02-gradient-accumulation.zh-CN.svg
 613779edbc37ebdddc9446d8636b8d889756cce19ce18a8a0af470d2db7e01a3  book/zh-CN/assets/09-03-mixed-precision.zh-CN.png
 02fb378609b815da41a0eef85a2f3f0987525889fa40464b7f24ba3aef4f73f6  book/zh-CN/assets/09-03-mixed-precision.zh-CN.svg
-d23b144fa1276b54e1ede06dccb0d9b2c04ca964e6059c3f579946841bf0b7dc  book/zh-CN/assets/09-04-efficient-attention.zh-CN.png
-041f8697a9905ab753974b47185e11700d9753eeb2929fd033ed29dd9d054113  book/zh-CN/assets/09-04-efficient-attention.zh-CN.svg
+be48a5c34101a029d3e0d1d976012c29b34951c832830f683bfcea1d14263b7d  book/zh-CN/assets/09-04-efficient-attention.zh-CN.png
+371dad9bdd1039735cd5517934a2013a6182d89070ec4bd8faa857bdac943180  book/zh-CN/assets/09-04-efficient-attention.zh-CN.svg
 87dd55989f846ddef4729903560039a2908f56b72b9878103013ddd682ec914d  book/zh-CN/assets/09-05-distributed-recovery.zh-CN.png
 a89bc4258095bf76a3ba58c8720d7cc362970f3ec0b7a26979cfb7e786b97c2d  book/zh-CN/assets/09-05-distributed-recovery.zh-CN.svg
 6a1e342e37a45cbabde6c5f7f293ea5338473191c52f0015b8c7eb2cbc4c795c  book/zh-CN/assets/10-01-experiment-provenance.zh-CN.png
@@ -689,7 +689,7 @@ b5b39a6a94a78c6aff7945daf2282180be1e5af73d33c74ce49f85653eca1359  book/zh-CN/ass
 fea9dbe8e9697774afa395ae1c7b75f7d97201c67be86b1c424607f431c6dacc  book/zh-CN/assets/10-03-ablations-uncertainty.zh-CN.svg
 7503a8cd7a2485e5b4b988745dd899e70f56836afcd75c4e3e688d2296534148  book/zh-CN/assets/book-learning-route.zh-CN.png
 d5513248515b360865d93f12423fcc7205ca042ebd7f06ce2e8429403c6ab1ee  book/zh-CN/assets/book-learning-route.zh-CN.svg
-7fc921d489ba87ea86b74326bd340ae695fd3455e1362e8c8ce6e729656bf13e  book/zh-CN/manuscript.md
+72c41584e85460a5ba3a7801a61c42200d01364868b8b6b640765ccf6a7bfe86  book/zh-CN/manuscript.md
 734d5ca48237b3a71186aae25a13c29a327ac3bcef1343073a27cb661bf0ac60  examples/README.md
 58952be2c7b3fed17c5536f48679378c3ba678b5f5cda8896b45ebc6c18055bc  examples/README.zh-CN.md
 f009cdbb3d3c155b3b0b7538ac911c4f3533aa169c6579331cb1c9ed6445adcc  examples/data/DATA_LICENSE.md
@@ -776,4 +776,4 @@ eca6e818ca69b76aacadd15a9ea335a7291ef53b246d19b255eb3d55d1305aab  exercises/10_0
 c0ea4a896d2c8c394b29f9427589996db826cd501c512279ff0ed3ef48fabbe5  licenses/teaching-code-PolyForm-Noncommercial-1.0.0.md
 ad4012e6780ad2e8714e70b77533cd02743a3567c2c94b5a9c5425c6c081efc8  requirements.txt
 68680c4acce5084c2c05d635bf45c5d796a01a14d0bece5124027f9d4894388e  tools/check_package.py
-3c6a3545951467057d1820b8808058362c4a60b6a214daf36191e836b2e4346c  content-manifest.json
+a3b5012438fdc01419c9a3541da90feccbf0ec52b40b3e33c89e2aa052d9b25f  content-manifest.json

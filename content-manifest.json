@@ -20,15 +20,15 @@
   "teaching_data_manifest": "examples/data/manifest.json",
   "teaching_data_license": "PolyForm-Noncommercial-1.0.0",
   "distribution": "github-source",
-  "release_package_manifest_sha256": "3161991d528d0dd20e53f5c341ade5b7f24017513ddfb64672625192b829c49f",
+  "release_package_manifest_sha256": "652ffae63d67ba062fe7f7a85c3f1205522a362c84cb37ea2fbcafa0fe0de48d",
   "pdf_release_assets": {
     "book/en/book.pdf": {
-      "sha256": "c6114cbd877cc5f932ba3d989de3b524e23041a254a2ea3acc539838f327347f",
-      "bytes": 17323650
+      "sha256": "0f60f75e4b4090c04a18a4b45587c560d290e0097888e462b11d8265779d223f",
+      "bytes": 17313173
     },
     "book/zh-CN/book.pdf": {
-      "sha256": "a3e16aef2e5365388319fdbf4e0d72e30c674f145d2357dbf494619c7add500d",
-      "bytes": 34387314
+      "sha256": "844c49c89d9a49657e49379defb7c8c9f2348ee88ef9cef9de72c68733ad9872",
+      "bytes": 34339377
     }
   },
   "files": {
@@ -1377,12 +1377,12 @@
       "bytes": 101254
     },
     "book/en/assets/09-04-efficient-attention.en.png": {
-      "sha256": "d2db704ef8826e0a31b7c26e33854c46b4e63c799a521253c2b03f1e17e3262c",
-      "bytes": 55104
+      "sha256": "17e059aeedd049552b6ce12954cceef1f6ef5261a5768b94e9edf5bf9cc87678",
+      "bytes": 59946
     },
     "book/en/assets/09-04-efficient-attention.en.svg": {
-      "sha256": "634482746f5b442b79545065fcc87af40b3a4c8fad9b67e24858ca2dc1595c21",
-      "bytes": 112200
+      "sha256": "a219ff58909847730e82b4e6cefb33dda9a7f0359e24320d5d62dfd1ccc5ebae",
+      "bytes": 129778
     },
     "book/en/assets/09-05-distributed-recovery.en.png": {
       "sha256": "cdb9a428dbe50d6f454fd212f4456a1f0900358d49bd519e73c063a8b49d3558",
@@ -1425,8 +1425,8 @@
       "bytes": 136951
     },
     "book/en/manuscript.md": {
-      "sha256": "8479120b7de8651cdf0dd6ded2063b02adfddfb4b62186281990c9f240226ee1",
-      "bytes": 1140034
+      "sha256": "2c50675429ca0f11683f320e89a82765ac941fa34155c3f22fea4657bb7838e3",
+      "bytes": 1140516
     },
     "book/zh-CN/assets/01-01-eight-bit-range.zh-CN.png": {
       "sha256": "a2bb380db955db194ff579f2fdba55c3028b7a604558046ed1f3340f72dada26",
@@ -2749,12 +2749,12 @@
       "bytes": 159868
     },
     "book/zh-CN/assets/09-04-efficient-attention.zh-CN.png": {
-      "sha256": "d23b144fa1276b54e1ede06dccb0d9b2c04ca964e6059c3f579946841bf0b7dc",
-      "bytes": 60303
+      "sha256": "be48a5c34101a029d3e0d1d976012c29b34951c832830f683bfcea1d14263b7d",
+      "bytes": 68691
     },
     "book/zh-CN/assets/09-04-efficient-attention.zh-CN.svg": {
-      "sha256": "041f8697a9905ab753974b47185e11700d9753eeb2929fd033ed29dd9d054113",
-      "bytes": 168372
+      "sha256": "371dad9bdd1039735cd5517934a2013a6182d89070ec4bd8faa857bdac943180",
+      "bytes": 198228
     },
     "book/zh-CN/assets/09-05-distributed-recovery.zh-CN.png": {
       "sha256": "87dd55989f846ddef4729903560039a2908f56b72b9878103013ddd682ec914d",
@@ -2797,8 +2797,8 @@
       "bytes": 313085
     },
     "book/zh-CN/manuscript.md": {
-      "sha256": "7fc921d489ba87ea86b74326bd340ae695fd3455e1362e8c8ce6e729656bf13e",
-      "bytes": 1021945
+      "sha256": "72c41584e85460a5ba3a7801a61c42200d01364868b8b6b640765ccf6a7bfe86",
+      "bytes": 1023438
     },
     "examples/README.md": {
       "sha256": "734d5ca48237b3a71186aae25a13c29a327ac3bcef1343073a27cb661bf0ac60",
@@ -3146,11 +3146,11 @@
     }
   },
   "reader_revision": {
-    "kind": "whole-book-editorial",
-    "date": "2026-11-04",
+    "kind": "efficient-attention-rewrite",
+    "date": "2026-11-11",
     "source_manifests": {
-      "en": "d25dd09c051ef588ee9c7624335c2fe2737b3b14c133d1f152e7d8744e069a6e",
-      "zh-CN": "22f10a52cd33598c572184896aa1f949e4b432179bc67370df43dfcc8ebf907a"
+      "en": "d0d8896894543f47b48916f5e136696cadb8dd2cd1b50e3d7e2d884e74877d66",
+      "zh-CN": "a931d634c0548426f7e3a200b38bab8f521e6b3cfa50ce5d83d78681e109b378"
     }
   }
 }

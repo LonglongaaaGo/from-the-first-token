@@ -15531,86 +15531,88 @@ Change the scale in the separate clipping example while holding the true gradien
 
 ## 09.04 Efficient attention with equivalence checks {#section-09-04}
 
-### Method sources
+### One query, three keys
 
-The scaled dot-product attention formula is defined in [Vaswani et al., 2017; R04](https://arxiv.org/abs/1706.03762). FlashAttention [Dao et al., 2022; R15](https://arxiv.org/abs/2205.14135) studies how to compute this attention with less memory traffic.
+Suppose the current token can look at three tokens. Its query $q$ scores each key $k_j$. Softmax turns those scores into weights, and the output $o$ is a weighted average of the values $v_j$. Follow one row of this calculation from scores to output.
 
-### Purpose and prerequisites
-
-The reference implementation builds complete score and weight matrices for every query-key pair. With long sequences, those matrices can use much more memory than the final output. Efficient attention computes the same mathematical result while changing which intermediate values are saved and reused.
-
-PyTorch's `F.scaled_dot_product_attention`, or SDPA, chooses an implementation for scaled dot-product attention. Some implementations combine several operations so they can save less intermediate data. The allowed token positions stay the same. Before timing it, compare both outputs and gradients with the reference calculation. Use the same masks, scale and dropout settings in both.
-
-### Formulas and principles
-
-Let $Q$, $K$ and $V$ be the query, key and value tensors. Let $d$ be the query/key width, $M$ the additive mask and $O$ the attention output. The check uses the same scalar function $\ell(O)$ for both implementations: square all output entries and add them.
+Take scores $0,\ln 2,\ln 4$ and scalar values $2,4,8$. The logarithms are natural logs. Exponentiating the scores gives $1,2,4$. Divide by their sum, $7$, to get the weights $1/7,2/7,4/7$.
 
 $$
-\begin{aligned} O&=\operatorname{softmax}(QK^\top/\sqrt d+M)V,\qquad O_{\mathrm{fast}}\approx O_{\mathrm{ref}},\\ \nabla_{Q,K,V}\ell(O_{\mathrm{fast}})&\approx\nabla_{Q,K,V}\ell(O_{\mathrm{ref}}). \end{aligned}
+o=\frac{1\cdot 2+2\cdot 4+4\cdot 8}{1+2+4}=\frac{42}{7}=6.
 $$
 
-Queries and keys share a matching width $d$, while values may have a different width $d_v$. In this interface the common layout is $Q:[B,H,T_q,d]$, $K:[B,H,T_k,d]$, $V:[B,H,T_k,d_v]$, with output $[B,H,T_q,d_v]$. The causal default assumes aligned self-attention positions. In the equation, $M$ is an additive score mask: 0 for visible pairs and $-\infty$ for blocked pairs. It is the mathematical counterpart of the Boolean `allowed` argument, rather than that Boolean tensor added directly to the scores. The gradient comparison means applying the same scalar downstream loss to each output and comparing its gradients with respect to Q, K and V.
+A straightforward implementation computes every query's row at once. With 8,192 tokens, one score matrix for one head has $8192\times8192$ entries. At two bytes per entry, that one matrix alone takes 128 MiB. A tiled implementation works on small blocks of queries and keys and can avoid writing the full score and weight matrices to GPU memory.
 
-Attention can process keys in tiles. For each query, it updates the largest score seen so far, the exponential sum scaled around that maximum, and the weighted sum of values. It can then compute the output without saving the full probability matrix. It still performs the dense query-key calculations. Which implementation runs depends on shape, dtype and device. Calling SDPA alone does not show that a particular fast implementation was used.
+### Get the same answer in two blocks
 
-The Boolean mask in PyTorch SDPA uses `True` for **allowed** entries. Section 04.05's `masked_fill` example used `True` for blocked entries. The names refer to different conventions; negating the wrong one can silently expose future positions.
+Split the keys into a block of two and a block of one. For each query, keep just the largest score seen, the sum of the exponential weights before normalization, and the sum of those weights times the values. Subtract the running maximum from every score before exponentiating. This keeps each exponential at most 1, and the shared factor cancels when we divide the two sums.
 
-For a cache with $P$ past positions, a new query index $i$ has absolute position $P+i$. Its allowed keys satisfy $j\leq P+i$. A rectangular `is_causal=True` interpretation may align at the upper left instead; provide the explicit absolute-position mask for this exercise's cached case. Set dropout to zero for the deterministic equivalence check.
+1. **Read the first two keys.** The largest score is $\ln 2$. Subtract it before exponentiating, so the two weights before normalization are $1/2$ and $1$. Their sum is $1.5$. The weighted sum of values is $0.5\cdot 2+1\cdot 4=5$.
+2. **Read the third key.** The largest score is now $\ln 4$. Every earlier exponent drops by $\ln 2$, so multiply both old sums by $e^{\ln 2-\ln 4}=1/2$. The new key has weight $e^{\ln 4-\ln 4}=1$. Add its contributions to get a weight sum of $1.5/2+1=1.75$ and a weighted value sum of $5/2+8=10.5$.
+3. **Divide once.** The output is $10.5/1.75=6$, the same result as before. Both blocks share one denominator. If we apply softmax to each block and simply average the two block outputs, we get $17/3$ instead of $6$.
 
-![Efficient attention with equivalence checks：09.04](assets/09-04-efficient-attention.en.png){width=100%}
+![One query reads three keys in two blocks](assets/09-04-efficient-attention.en.png){width=100%}
 
-The left panel shows which keys each query can see in a three-position causal sequence. The right panel shows the cached case. One new query is at position 2, so all three keys are visible. Its zero scores give equal weights and output $14/3$.
+Read the figure from top to bottom. The first block contributes $1.5$ and $5$. When the maximum rises, both totals are halved before the last key is added. For vector values, the weighted sum is a vector and the denominator is still a single number per query.
 
-### Required inputs and returned attention output
+Updating the softmax totals as blocks arrive is called *online softmax*. FlashAttention uses tiling to reduce reads and writes between GPU memory and on-chip memory. It still computes the dot product for each visible query-key pair. [Dao et al., 2022, R15](https://arxiv.org/abs/2205.14135)
+
+### Which keys can a query see?
+
+For a batch of queries, write the same calculation in matrix form. $Q$, $K$ and $V$ collect the queries, keys and values. $d$ is the width shared by queries and keys. Each score is a query-key dot product divided by $\sqrt d$. The mask $M$ adds $0$ to visible scores and $-\infty$ to blocked ones, giving blocked keys zero weight. Softmax runs across the keys in each query row. [Vaswani et al., 2017, R04](https://arxiv.org/abs/1706.03762)
+
+$$
+O=\operatorname{softmax}_{\mathrm{keys}}\!\left(\frac{QK^\top}{\sqrt d}+M\right)V.
+$$
+
+Use the same values $2,4,8$ in a separate example with all scores zero. In causal self-attention, a query at position $i$ can see keys through position $i$, including itself. The visible keys have equal weights, so the outputs at positions 0, 1 and 2 are $2$, $(2+4)/2=3$ and $(2+4+8)/3=14/3$.
+
+Now add a token at position 2 after caching positions 0 and 1. To compute its attention, use one query and three keys, including the new key. The query is row 0 of the new query tensor, but its position in the sequence is 2. Pass the explicit Boolean mask `[[True, True, True]]` to keep all three keys. If a mask treats that query as position 0, the output is $2$ instead of $14/3$. Both outputs have the same shape.
+
+### What to write in PyTorch
+
+The exercise asks you to call `F.scaled_dot_product_attention` (SDPA). PyTorch selects the implementation for your input and device. The two-block example explains how an efficient implementation can work. For this exercise, you only need the two ways of passing the mask. [PyTorch SDPA documentation](https://docs.pytorch.org/docs/stable/generated/torch.nn.functional.scaled_dot_product_attention.html)
 
 ```python
 def efficient_attention(q: torch.Tensor, k: torch.Tensor, values: torch.Tensor, allowed: torch.Tensor | None = None) -> torch.Tensor:
 ```
 
-`q`: float `[B,H,Tq,d]`; `k`: float `[B,H,Tk,d]`; `values`: float `[B,H,Tk,dv]`. The causal default assumes aligned self-attention with `Tq=Tk`; an explicit Boolean `allowed` mask supports the documented rectangular case and uses True for visible keys. Return `[B,H,Tq,dv]`, with dropout 0 and the default inverse-square-root scale.
+All three data tensors contain floating-point numbers. $B$ is the batch size, $H$ is the number of heads, $T_q$ and $T_k$ count queries and keys, and $d_v$ is the value width.
 
-### A worked example
+| Argument | Shape | What it holds |
+|---|---|---|
+| `q` | $[B,H,T_q,d]$ | One query per output position |
+| `k` | $[B,H,T_k,d]$ | The keys each query can score |
+| `values` | $[B,H,T_k,d_v]$ | One value for each key |
+| `allowed` | Broadcastable to $[B,H,T_q,T_k]$ | Optional Boolean mask. `True` keeps the key. |
 
-Start with three queries and three keys, all zero vectors. Every query-key score is zero, so each query averages the values it can see. Let values be 2, 4 and 8, with shape `[1,1,3,1]`. Query/key matching width can independently be 2, giving their shape `[1,1,3,2]`.
+The function returns a tensor of shape $[B,H,T_q,d_v]$. A mask of shape $[T_q,T_k]$ applies to every batch item and head. In the cached example, the inputs have shapes `[1,1,1,2]`, `[1,1,3,2]` and `[1,1,3,1]`. The mask has shape `[1,3]` and the output has shape `[1,1,1,1]`.
 
-The three outputs are $2$, $(2+4)/2=3$, and $(2+4+8)/3=14/3$. The output shape is `[1,1,3,1]`, not the query/key shape. Equal scores produce uniform weights over the allowed keys, not all keys.
+Inside the marked exercise code region, follow these steps.
 
-Now suppose two positions are already cached and one new query has absolute position 2. It must see keys 0, 1, 2, so the explicit allowed mask `[True,True,True]` has shape `[1,3]`. Its output is $14/3$. A mistakenly upper-left mask would keep only key 0 and produce 2, even though the operation would still return a tensor of the expected shape.
+1. Start with `if allowed is None:`. Indent the first call under this branch. The default case is aligned self-attention with $T_q=T_k$. Set `is_causal=True` so PyTorch builds that mask.
+2. Align `else:` with `if`. Under `else:`, set `is_causal=False` and pass `allowed` as `attn_mask`. PyTorch SDPA keeps entries marked `True`. The `masked_fill` call in [Lesson 04.05](#section-04-05) used `True` for the entries it filled with $-\infty$.
+3. In both branches, set `dropout_p=0.0` for a repeatable check and keep PyTorch's default $1/\sqrt d$ scale. Return the output tensor from the call.
 
-### Guided implementation
+### What the checks actually compare
 
-Implement `efficient_attention` as a precise backend call, leaving the explicit reference in the supplied checks.
+**Forward.** The driver sends the same inputs through your function and the reference from Lesson 04.05. It compares their output values with a small tolerance for rounding. It also runs the one-query cached case and checks for $14/3$.
 
-1. Read the last two axes of each input and distinguish query length, key length, matching width and value width.
-2. When `allowed is None`, use the exercise's aligned causal self-attention default with `is_causal=True` and `dropout_p=0.0`.
-3. When an explicit `allowed` mask is supplied, pass it as `attn_mask` and set `is_causal=False`. Its True entries mean visible keys.
-4. Retain the backend's default inverse-square-root matching-width scale; do not divide scores a second time outside the call.
-5. Return the output tensor. An optimized implementation need not return the full weights matrix.
-6. Compare outputs and input gradients at a dtype-appropriate tolerance. Only then measure actual time and peak allocation on the intended backend.
+**Backward.** Training needs the gradients through attention. A call to `.detach()` on the output, for example, would leave all its numbers intact while breaking the gradient path. The driver takes each output $O$, squares its entries and adds them to make the same scalar loss $L(O)=\sum_i O_i^2$, where $i$ runs over all entries. It uses `torch.autograd.grad` to compare how this loss changes with respect to `q`, `k` and `values` in the two implementations.
 
-### Common pitfalls
+In the three-key worked example, $v_2=8$ has weight $4/7$ when we count keys from 0. Increasing that value by 1 increases $o$ by $4/7$. For the scalar loss $o^2$ at $o=6$, its gradient with respect to that value is $2\cdot 6\cdot (4/7)=48/7$.
 
-Different implementations can round results differently. Use a tolerance suited to the number format when comparing them. Keep the same explicit masks and dropout behavior in both implementations.
-
-### Run and check
+Run the supplied driver from the repository root after filling the learner region and completing the Lesson 04.05 reference exercise.
 
 ```bash
 python exercises/09_04_efficient_attention.py
 ```
 
-An unfinished prerequisite reports learner TODO, not an installation failure. Once implementation and prerequisites pass, expect:
-
 ```text
 Lesson 09.04 checks passed.
 ```
 
-The supplied checks compare the forward outputs and the Q/K/V gradients with the explicit reference, then test the one-query cached case. Together these checks distinguish the intended attention calculation from an implementation that merely returns the expected shape.
-
-### Further practice
-
-Why can correct output checks still miss a backward bug?
-
-Change the value width without changing the query/key matching width, and predict the output shape. Compare both outputs and Q/K/V gradients with the explicit reference. Then repeat the cached case with an explicit absolute-position mask to check that matching shapes alone do not establish matching visibility.
+A passing check shows that the tested outputs and gradients agree. To claim a speed or memory gain, measure execution time and peak allocated memory on the target device with matching inputs, and check which backend ran.
 
 ## 09.05 Distributed gradients and recovery {#section-09-05}
 
