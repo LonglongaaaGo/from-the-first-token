@@ -20,15 +20,15 @@
   "teaching_data_manifest": "examples/data/manifest.json",
   "teaching_data_license": "PolyForm-Noncommercial-1.0.0",
   "distribution": "github-source",
-  "release_package_manifest_sha256": "2f89719f4b016f16c6846c8d43af344829d5199a4fa5b6f2df1ee8276223fb63",
+  "release_package_manifest_sha256": "3ac98e1ecadf26f270d62dac34ec3923437a078093e8e55c02912b02ed6f7ec3",
   "pdf_release_assets": {
     "book/en/book.pdf": {
-      "sha256": "3cb30f4247ff129dbe93f20681bd5998c3ac58f620d89de77f24476362982615",
-      "bytes": 17483302
+      "sha256": "c64c04b398fd8bfc63740623de3ee01fcc0f1a37f08d16cd77de0b37528d849f",
+      "bytes": 17492483
     },
     "book/zh-CN/book.pdf": {
-      "sha256": "cd35b022a18d8e759949e8a9b96dc2ba1b82f5afc31818cb0aa69f1c4943bc24",
-      "bytes": 34403459
+      "sha256": "a2b9b9019058d9b6524c91f7665adfa4c3ab7138b6f37cf343027b9b0df48de6",
+      "bytes": 34412297
     }
   },
   "files": {
@@ -1409,12 +1409,12 @@
       "bytes": 113594
     },
     "book/en/assets/09-05-resume-checkpoint.en.png": {
-      "sha256": "1cd03a264b24fbb65b64df9ec04a668ea583bb49c53429870b023d9f978ffca9",
-      "bytes": 68181
+      "sha256": "e62b76919617fef12dddd8668291f4ccefaeb3f32baa9ee8eb9edf2f10d99f07",
+      "bytes": 64973
     },
     "book/en/assets/09-05-resume-checkpoint.en.svg": {
-      "sha256": "0b53e1572ce6689ccf60994d985facaf1f77bbab8a5db923b2832fe562d409a1",
-      "bytes": 118282
+      "sha256": "6369a1cd7e6ce786dd40e36badb2c1fb2e69e94633eaf3da17cee8595658a1f4",
+      "bytes": 121091
     },
     "book/en/assets/10-01-experiment-provenance.en.png": {
       "sha256": "9c9c336983c5d5466247a914c9024ce3d9bc4c1dd2fcf688a7cb4e3f1d2d4b03",
@@ -1449,8 +1449,8 @@
       "bytes": 136951
     },
     "book/en/manuscript.md": {
-      "sha256": "d43a9573027731a7f0f67ffbedf66e6c3f27867f51ef1cdc9ec5602c1a9edb8a",
-      "bytes": 1141325
+      "sha256": "9ffa91c4688b7b7bbc9b542bd2a8e9f25c933369ccbcc1413ae94d91b047755f",
+      "bytes": 1142416
     },
     "book/zh-CN/assets/01-01-eight-bit-range.zh-CN.png": {
       "sha256": "a2bb380db955db194ff579f2fdba55c3028b7a604558046ed1f3340f72dada26",
@@ -2805,12 +2805,12 @@
       "bytes": 179585
     },
     "book/zh-CN/assets/09-05-resume-checkpoint.zh-CN.png": {
-      "sha256": "80451afb692e9e1f10d6c4f127cc9163138cd515dd6e0a0e30b616ba7148d0f9",
-      "bytes": 80097
+      "sha256": "056c3b23e95a6d2f8e5894fc696229b38c145fbdbc32c531e89001556f6ea6b3",
+      "bytes": 77791
     },
     "book/zh-CN/assets/09-05-resume-checkpoint.zh-CN.svg": {
-      "sha256": "2de2c8e998c29225e3f673333926551c08fde4a8e774f380667e6faa744f8708",
-      "bytes": 231665
+      "sha256": "f5c2e69148757e2223d421a0f54ad3bd0cf939c53717bc39f11af10e6b7e01ca",
+      "bytes": 208788
     },
     "book/zh-CN/assets/10-01-experiment-provenance.zh-CN.png": {
       "sha256": "6a1e342e37a45cbabde6c5f7f293ea5338473191c52f0015b8c7eb2cbc4c795c",
@@ -2845,8 +2845,8 @@
       "bytes": 313085
     },
     "book/zh-CN/manuscript.md": {
-      "sha256": "e7cb81739738124941764da81ec74d53313866266f4151b55603e9800a7b7cf9",
-      "bytes": 1024840
+      "sha256": "0961fccbb018b911897702bd512382ccd5ebe9cfd5a060467867fe73cdc6a36c",
+      "bytes": 1025994
     },
     "examples/README.md": {
       "sha256": "734d5ca48237b3a71186aae25a13c29a327ac3bcef1343073a27cb661bf0ac60",
@@ -3194,11 +3194,11 @@
     }
   },
   "reader_revision": {
-    "kind": "distributed-recovery-rewrite",
+    "kind": "checkpoint-clarity",
     "date": "2026-11-12",
     "source_manifests": {
-      "en": "28d8c95e7c28e842bc10bed5f4a4b5e2d8f8c751be73a7d110844aef3f7f38d2",
-      "zh-CN": "7871e91fdac3e15e5d6716d59b9af2b68147cce650720020b2a45d027e3688e0"
+      "en": "8de1a10f9eb6d037ae510197cdf66440b4c49320d48776f5feef56158e95069c",
+      "zh-CN": "70f695a8fab05033bb3df6f67d49b681d5cb375eb8c716211fe4ea67ce92ab52"
     }
   }
 }

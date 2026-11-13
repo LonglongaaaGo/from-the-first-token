@@ -15644,33 +15644,46 @@ What if each worker takes its own mean first? Rank 0 gets 3 and rank 1 gets 9. A
 
 ### How PyTorch's rank average gives 5
 
-For the usual DDP gradient average, the two workers can get the right answer by scaling their **losses before backward**. Let $n_r$ be the number of valid targets on rank $r$, $g_r$ its mean gradient, $N=\sum_r n_r$ the total target count, and $R$ the number of ranks.
+The two ranks have mean gradients of 3 and 9. Rank 0 holds two of the three targets, so its mean should get weight $2/3$. Rank 1 holds one, so its mean should get weight $1/3$. The result we want is $(2/3)\cdot3+(1/3)\cdot9=5$.
+
+DDP adds the gradients and then divides by 2 because there are two ranks. We can account for that division in advance. Give rank 0 a multiplier of $2\cdot(2/3)=4/3$ and rank 1 a multiplier of $2\cdot(1/3)=2/3$. After DDP divides by 2, their effective weights are back to $2/3$ and $1/3$.
+
+In general, $r$ is a rank's index, $n_r$ is its valid target count, $N$ is the total valid target count for this update, and $R$ is the number of ranks. The multiplier $R\cdot(n_r/N)$ is the rank's share of valid targets times the number of ranks. If all ranks have equal counts, each share is $1/R$ and the multiplier is 1.
+
+Let $g_r$ be rank $r$'s mean gradient. The target-weighted mean is
 
 $$
 g_{\mathrm{global}}=\frac{\sum_r n_r g_r}{N}.
 $$
 
 1. Add the valid counts across ranks to get $N=3$. Each rank needs the same $N$.
-2. Multiply each local **mean** loss by $R n_r/N$. Backward scales the gradient by the same constant. Rank 0 multiplies by $2\cdot2/3=4/3$, so its gradient is $3\cdot4/3=4$. Rank 1 multiplies by $2\cdot1/3=2/3$, so its gradient is $9\cdot2/3=6$.
+2. Before backward, multiply each local **mean** loss by its multiplier. Multiplying a loss by a constant multiplies its gradient by that same constant. The gradients become $3\cdot(4/3)=4$ and $9\cdot(2/3)=6$.
 3. DDP averages those scaled gradients. Both ranks receive $(4+6)/2=5$ and can take the optimizer step.
 
-The factor $R$ cancels the division by $R$ in DDP's average. Use this scaling when your loss starts as a local mean and DDP averages gradients. Apply the normalization once. If you start with a local **sum** loss, the corresponding scale is $R/N$. If one update spans several microbatches, $N$ counts valid targets across all of those microbatches on all ranks.
+Apply the normalization once. With a local **sum** loss, the target count is already included, so the multiplier is $R/N$. If one update spans several microbatches, $N$ counts valid targets across all of those microbatches on all ranks.
 
 A **collective** is a communication operation the whole group calls together. Both ranks must call the count reduction and the gradient reductions in the same order. If a rank has zero valid targets, a local mean on that rank is undefined. In a real loop using summed losses, give that rank a differentiable zero loss connected to the model output and keep it in the backward pass when $N>0$. If $N=0$, all ranks skip the update together.
 
 ### Resume together after an interruption
 
-Suppose both ranks finish optimizer update 10. A checkpoint should let them begin update 11 with the same state they would have had without the interruption. The saved step number alone cannot do that.
+Each time the optimizer uses a gradient to update the model parameters, we count one update. In PyTorch, this usually happens in `optimizer.step()`. “Update 10” is the tenth such update. A checkpoint is a set of files that saves the training state so both ranks can continue from the same point.
 
-![Finish update 10, publish a complete checkpoint, then resume at update 11](assets/09-05-resume-checkpoint.en.png){width=100%}
+Suppose both ranks have a complete checkpoint from after update 9. A small file called `latest` tells the restart code which checkpoint to load. It currently points to 9. After update 10, the ranks write their new files under separate names and keep the files for 9 available.
 
-Save the model weights and optimizer state after update 10. For Adam, that includes the running estimates used by the update and the step counters. Save any learning-rate scheduler and gradient scaler in use. Each rank also saves its random number generator (RNG) state and the position of its next batch. For example, weights tell you where the model is, while the data position tells you which batch comes next.
+![Change latest from 9 to 10 after all step 10 files are saved](assets/09-05-resume-checkpoint.en.png){width=100%}
 
-You can see why optimizer state matters with SGD and momentum. Suppose update 10 leaves a weight at $0.8$ and its momentum buffer at $2$. Use learning rate $0.1$ and momentum $0.5$. Even if the next gradient is zero, the buffer becomes $0.5\cdot2+0=1$, so the next weight is $0.7$. A fresh optimizer starts with no momentum and leaves the weight at $0.8$ on that same zero gradient. [Lesson 05.07](#section-05-07) works through saving and restoring optimizer state.
+- **Rank 0 has finished saving, but rank 1 is still writing.** `latest` still points to 9. If training stops here, both ranks load the state saved after update 9 and redo update 10.
+- **Both ranks have finished saving and `latest` now points to 10.** If training stops here, both ranks load the state saved after update 10 and start update 11.
+
+Keep the old checkpoint intact while writing the new files. Once all the files for 10 are ready, write the new `latest` to a temporary file and replace the old one in a single operation on the same filesystem, for example with `os.replace`. This lets the restart code see a whole file that points to 9 or a whole file that points to 10. Power-loss recovery also requires making the data and directory changes durable.
+
+#### What goes into the checkpoint?
+
+Save the model weights and optimizer state. For Adam, that includes the running estimates used by the update and the step counters. Save any learning-rate scheduler and gradient scaler in use. Each rank also saves its random number generator (RNG) state and the position of its next batch. The weights tell you where the model is, and the data position tells you which batch comes next.
+
+You can see why optimizer state matters with SGD and momentum. Suppose that after the tenth optimizer step, one weight is $0.8$ and its momentum buffer is $2$. Use learning rate $0.1$ and momentum $0.5$. Even if the next gradient is zero, the buffer becomes $0.5\cdot2+0=1$, so the next weight is $0.7$. A fresh optimizer starts with no momentum and leaves the weight at $0.8$ on that same zero gradient. [Lesson 05.07](#section-05-07) works through saving and restoring optimizer state.
 
 For an ordinary replicated model, one saved copy of the shared model and optimizer state can serve all ranks. If state is **sharded**, different ranks hold different parts. The checkpoint needs all the required parts, together with each rank's own RNG state and data position. ZeRO is an example of how optimizer state can be split. [Rajbhandari et al., 2020, R34](https://arxiv.org/abs/1910.02054v3)
-
-Write the files for step 10 under new names. When all required files are ready, update a **manifest**, a small file that lists the files belonging to that completed step. Replace the manifest in one atomic operation on the same filesystem. If training stops before that replacement, restart from the previous manifest and its complete set of files. If the replacement succeeds, every rank loads its state from step 10 and starts update 11. For a power-loss test, also make the files and directory changes durable before relying on the new manifest.
 
 ### What to write in the exercise
 
