@@ -8,7 +8,7 @@ PURPOSE
 Data parallel ranks hold replicas and process distinct batches, then synchronize gradients. DDP usually averages rank gradients; unequal valid counts require scaling local objectives so the result equals a global target mean. Sharding splits optimizer/parameter storage and adds communication/checkpoint complexity. Restore model, optimizer, RNG and data cursor per rank at one shared update boundary.
 
 INPUTS AND RETURN
-local_gradients: nonempty same-shape float tensors, each a rank-local valid-target mean gradient; local_counts: matching positive target counts. Return global count-weighted mean gradient without modifying inputs. This CPU exercise models the reduction contract; supplied distributed_lab.py verifies actual DDP synchronization.
+local_gradients: nonempty same-shape float tensors, each a rank-local valid-target mean gradient; local_counts: matching positive target counts. Return global count-weighted mean gradient without modifying inputs. This CPU exercise checks the weighting rule with a list of gradients. The two-process comparison in the lesson is a separate extension.
 
 WORKED EXAMPLE
 Rank0 count2 gradient[1,3]; rank1 count4 gradient[4,0]. Global=(2*[1,3]+4*[4,0])/6=[3,1]. Naive rank mean=[2.5,1.5]. For R=2, scale local mean losses by2*2/6 and2*4/6 before DDP averages. Shuffled samples must be partitioned without unintended duplication; set epoch consistently.

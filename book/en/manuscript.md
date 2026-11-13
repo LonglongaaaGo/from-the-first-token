@@ -15626,88 +15626,80 @@ A passing check shows that the tested outputs and gradients agree. To claim a sp
 
 ## 09.05 Distributed gradients and recovery {#section-09-05}
 
-### Method sources
+### Two workers train one model
 
-For distributed data parallelism, see [Li et al., 2020; R33](https://arxiv.org/abs/2006.15704) and the design note [PyTorch, v2.0 DDP; R18](https://docs.pytorch.org/docs/2.0/notes/ddp.html). Optimizer-state partitioning is developed in ZeRO [Rajbhandari et al., 2020; R34](https://arxiv.org/abs/1910.02054v3).
+Suppose two GPUs each hold a copy of the same model. Each worker reads a different part of the training batch and computes a gradient. In PyTorch, each worker is a process, and its number in the group is its **rank**. In this example, rank 0 and rank 1 each use one GPU.
 
-### Purpose and prerequisites
+Before the optimizer step, DistributedDataParallel (DDP) combines the gradients and gives the result to both ranks. They start with the same weights and optimizer state, so applying the same gradient keeps the copies in step. [Li et al., 2020, R33](https://arxiv.org/abs/2006.15704) · [PyTorch DDP design note, R18](https://docs.pytorch.org/docs/2.0/notes/ddp.html)
 
-Data parallelism keeps a model replica in each participating process and gives the processes different data. A rank is a process's numbered identity within this communication group; distributed data parallelism is abbreviated DDP. Before a common optimizer update, their gradients are synchronized. If every rank sees the same number of valid targets, averaging local mean gradients recovers the global target mean. Unequal masks or final batches break that shortcut.
+### Give every valid target the same weight
 
-This section's CPU function combines a list of gradients using the required weights. It does not start processes or send data over a network. First check this calculation. A later extension can then give different data to separate processes and test how they communicate and resume together.
+Follow the gradient of one model parameter. Rank 0 has two valid targets. Their gradients are 2 and 4. Rank 1 has one valid target with gradient 9. A valid target is a token position included in the loss. For example, a padding position is skipped.
 
-### Formulas and principles
+![Two ranks combine three target gradients into one shared gradient](assets/09-05-distributed-recovery.en.png){width=100%}
 
-Let $r$ label a rank, $n_r$ count its valid targets and $g_r$ be its mean target gradient. $R$ is the number of ranks, $N$ is the total target count, and $g_{\mathrm{global}}$ is the mean gradient over all those targets.
+If one worker saw all three targets, it would add $2+4+9=15$ and divide by 3 to get **5**. The two workers can get the same answer. Rank 0 sends a sum of 6 and a count of 2. Rank 1 sends a sum of 9 and a count of 1. Add both sums and both counts, then divide once.
+
+What if each worker takes its own mean first? Rank 0 gets 3 and rank 1 gets 9. Averaging those two means gives $(3+9)/2=6$. The lone target on rank 1 then gets half the total weight, while each target on rank 0 gets a quarter. With a mean over all three targets, each gets one third. Equal local counts are the case where averaging the rank means gives the right result.
+
+### How PyTorch's rank average gives 5
+
+For the usual DDP gradient average, the two workers can get the right answer by scaling their **losses before backward**. Let $n_r$ be the number of valid targets on rank $r$, $g_r$ its mean gradient, $N=\sum_r n_r$ the total target count, and $R$ the number of ranks.
 
 $$
-g_{\mathrm{global}}=\frac{\sum_rn_rg_r}{\sum_rn_r};\quad\text{DDP mean reduction requires local loss scale }R n_r/N
+g_{\mathrm{global}}=\frac{\sum_r n_r g_r}{N}.
 $$
 
-Multiply each mean gradient by its target count to recover the gradient of that rank's loss sum. Add those gradients and divide once by the total target count. Section 09.02 applies the same rule to microbatches.
+1. Add the valid counts across ranks to get $N=3$. Each rank needs the same $N$.
+2. Multiply each local **mean** loss by $R n_r/N$. Backward scales the gradient by the same constant. Rank 0 multiplies by $2\cdot2/3=4/3$, so its gradient is $3\cdot4/3=4$. Rank 1 multiplies by $2\cdot1/3=2/3$, so its gradient is $9\cdot2/3=6$.
+3. DDP averages those scaled gradients. Both ranks receive $(4+6)/2=5$ and can take the optimizer step.
 
-Ordinary DDP averages gradients across $R$ ranks under the relevant default reduction behavior. To obtain the weighted global mean when local counts differ, a local mean loss can be scaled by $R n_r/N$, where $N=\sum_rn_r$. DDP's subsequent factor $1/R$ cancels that extra rank count. This is a derivation for the stated reduction convention, not a rule to apply again if the framework has already performed the normalization.
+The factor $R$ cancels the division by $R$ in DDP's average. Use this scaling when your loss starts as a local mean and DDP averages gradients. Apply the normalization once. If you start with a local **sum** loss, the corresponding scale is $R/N$. If one update spans several microbatches, $N$ counts valid targets across all of those microbatches on all ranks.
 
-Sharding changes where state is stored. Instead of every process holding a full copy, processes can hold different parts of weights, gradients or optimizer state. Saving and restoring a checkpoint must then handle all those parts. All ranks must resume from the same completed update. Restore the model and optimizer state for that update, along with each rank's own random-generator state and data position.
+A **collective** is a communication operation the whole group calls together. Both ranks must call the count reduction and the gradient reductions in the same order. If a rank has zero valid targets, a local mean on that rank is undefined. In a real loop using summed losses, give that rank a differentiable zero loss connected to the model output and keep it in the backward pass when $N>0$. If $N=0$, all ranks skip the update together.
 
-A collective is a communication step that all ranks in a group take part in. For example, a gradient reduction combines their gradient tensors. Every rank must call matching collectives in the same order. If one exits early, the others can wait forever for its gradient. A real system must therefore decide together how ranks handle validation, errors and batches with no selected targets.
+### Resume together after an interruption
 
-![Distributed gradients and recovery：09.05](assets/09-05-distributed-recovery.en.png){width=100%}
+Suppose both ranks finish optimizer update 10. A checkpoint should let them begin update 11 with the same state they would have had without the interruption. The saved step number alone cannot do that.
 
-The table lists different target counts and local gradients for two ranks, then multiplies each gradient by its count. Add the weighted numerators and divide once by the total count. The footer contrasts that result with the incorrect unweighted rank mean. The DDP scaling expression above explains how an averaging collective can realize the same result; the CPU exercise performs no communication.
+![Finish update 10, publish a complete checkpoint, then resume at update 11](assets/09-05-resume-checkpoint.en.png){width=100%}
 
-### Required gradient tensors and target counts
+Save the model weights and optimizer state after update 10. For Adam, that includes the running estimates used by the update and the step counters. Save any learning-rate scheduler and gradient scaler in use. Each rank also saves its random number generator (RNG) state and the position of its next batch. For example, weights tell you where the model is, while the data position tells you which batch comes next.
+
+You can see why optimizer state matters with SGD and momentum. Suppose update 10 leaves a weight at $0.8$ and its momentum buffer at $2$. Use learning rate $0.1$ and momentum $0.5$. Even if the next gradient is zero, the buffer becomes $0.5\cdot2+0=1$, so the next weight is $0.7$. A fresh optimizer starts with no momentum and leaves the weight at $0.8$ on that same zero gradient. [Lesson 05.07](#section-05-07) works through saving and restoring optimizer state.
+
+For an ordinary replicated model, one saved copy of the shared model and optimizer state can serve all ranks. If state is **sharded**, different ranks hold different parts. The checkpoint needs all the required parts, together with each rank's own RNG state and data position. ZeRO is an example of how optimizer state can be split. [Rajbhandari et al., 2020, R34](https://arxiv.org/abs/1910.02054v3)
+
+Write the files for step 10 under new names. When all required files are ready, update a **manifest**, a small file that lists the files belonging to that completed step. Replace the manifest in one atomic operation on the same filesystem. If training stops before that replacement, restart from the previous manifest and its complete set of files. If the replacement succeeds, every rank loads its state from step 10 and starts update 11. For a power-loss test, also make the files and directory changes durable before relying on the new manifest.
+
+### What to write in the exercise
 
 ```python
 def distributed_gradient(local_gradients: list[torch.Tensor], local_counts: list[int]) -> torch.Tensor:
 ```
 
-local_gradients is a nonempty list of floating tensors with matching shapes. Each tensor is one rank's mean gradient over its valid targets. local_counts gives the matching positive target counts in the same order. Return their target-count-weighted mean as a tensor. Keep all input tensors unchanged.
+The exercise gives you each rank's **mean** gradient as a floating-point tensor in `local_gradients`. The list is nonempty, and all tensors have the same shape. `local_counts` is a list of positive integers in the same order. Return the global mean gradient with the same shape. The exercise runs this calculation on one CPU process.
 
-### A worked example
+The supplied check uses two-parameter gradients. Rank 0 has mean `[1, 3]` over 2 targets, so its sum is `[2, 6]`. Rank 1 has mean `[4, 0]` over 4 targets, so its sum is `[16, 0]`. Add to get `[18, 6]`, then divide by 6 targets to get `[3, 1]`.
 
-Rank 0 has two targets and mean gradient `[1,3]`; rank 1 has four targets and mean gradient `[4,0]`. Multiply by counts to obtain `[2,6]` and `[16,0]`. Their sum is `[18,6]`, and division by six gives `[3,1]`.
+1. Use `sum(local_counts)` to get the denominator. It is 6 in the check above.
+2. Use `torch.zeros_like` on the first gradient to create a fresh zero tensor with the same shape, dtype and device.
+3. Use `zip(local_gradients, local_counts)` to pair each mean with its count. In the indented loop body, multiply the gradient by its count and add the result to the accumulator. The accumulator holds `[18, 6]` after both pairs. Keep the input tensors intact.
+4. After the loop, divide by the denominator and return the result.
 
-The unweighted rank mean is `[2.5,1.5]`, a different update direction. With $R=2$, scale the local mean losses by $2\times2/6=2/3$ and $2\times4/6=4/3$. Averaging the resulting gradients gives the intended `[3,1]`.
-
-With equal counts, the weighted calculation reduces to an ordinary mean; with one rank, it returns that rank's gradient. Both are useful boundary checks, and neither permits modifying an input gradient in place.
-
-### Guided implementation
-
-Implement `distributed_gradient` using the supplied lists, not a distributed runtime.
-
-1. Read each `local_gradients[r]` as a same-shape floating tensor and `local_counts[r]` as its positive selected count.
-2. Sum the counts for the global denominator.
-3. Create a fresh zero tensor with `torch.zeros_like` using the first gradient's shape, dtype and device.
-4. Iterate over matching gradient/count pairs with `zip`, accumulating each weighted numerator into the fresh result.
-5. Divide by the global count and return. Compare with `[3,1]` and the equal-count boundary.
-6. Check that all original gradients retain their values. The extension project below adds actual communication and interruption/recovery checks.
-
-### Common pitfalls
-
-All ranks must enter collectives in the same order. The CPU reduction checks only the weighting rule. Before scaling, build the two-process comparison below and test coordinated interruption and recovery, then measure throughput on the intended devices.
-
-### Run and check
+Run the supplied check after filling the learner region.
 
 ```bash
 python exercises/09_05_distributed_recovery.py
 ```
 
-An unfinished prerequisite reports learner TODO, not an installation failure. Once implementation and prerequisites pass, expect:
-
 ```text
 Lesson 09.05 checks passed.
 ```
 
-The supplied checks cover unequal counts, equal counts and a single rank, and verify that the input gradients retain their values. These cases connect the weighted formula to its ordinary-mean boundaries before the two-process extension project below.
+The check covers unequal counts, equal counts, one rank and input preservation. To test actual communication, compare one update from two CPU processes using Gloo with one update on the combined batch in a single process. To test recovery, compare the next batch and update after a restart with a run that continued from the same checkpoint step.
 
-### Further practice
-
-Why is averaging rank means wrong when padding yields unequal valid target counts?
-
-Build a separate project with two CPU processes using PyTorch’s Gloo communication backend. Give them identical starting weights and optimizer settings, but non-overlapping examples with unequal target counts. Scale each local mean loss by the rank/count factor above, then synchronize gradients and update once. Compare with one process updating on the combined examples. To accumulate with DDP, wrap both forward and backward for the intermediate microbatches in `no_sync`. Run the final microbatch outside it so the full accumulated gradient synchronizes before the update. Use the total valid-target count across all ranks and all microbatches for that update.
-
-Next test interruption and recovery. Have all ranks finish the same update before writing new state files. Keep every file named by the current manifest unchanged. After all required state files are complete, atomically replace the manifest with the new one on the same filesystem. Recovery then reads the old or new set as a unit. If the test includes abrupt power loss, make the files and directory changes durable as well. Keep real connection mappings in ignored local configuration.
+For a separate DDP accumulation test, put both the forward and backward passes for the intermediate microbatches inside `no_sync()`. Run the final microbatch outside that context so DDP synchronizes the accumulated gradients before the optimizer step.
 
 **Looking back.** Compare each optimization with a saved baseline. The final chapter uses this approach to record experiments, plan budgets, and test new ideas.
 

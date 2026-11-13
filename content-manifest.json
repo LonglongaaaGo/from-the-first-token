@@ -8,7 +8,7 @@
   ],
   "chapters": 10,
   "sections": 71,
-  "figures_per_language": 173,
+  "figures_per_language": 174,
   "book_license": "CC-BY-NC-ND-4.0",
   "teaching_code_license": "PolyForm-Noncommercial-1.0.0",
   "exercise_count": 70,
@@ -20,15 +20,15 @@
   "teaching_data_manifest": "examples/data/manifest.json",
   "teaching_data_license": "PolyForm-Noncommercial-1.0.0",
   "distribution": "github-source",
-  "release_package_manifest_sha256": "f8969ba632ac054c2f90e57d03449433c4b5d8b08babd7e56cde0184d930ac04",
+  "release_package_manifest_sha256": "2f89719f4b016f16c6846c8d43af344829d5199a4fa5b6f2df1ee8276223fb63",
   "pdf_release_assets": {
     "book/en/book.pdf": {
-      "sha256": "403a15aa06d20c7d2664321cb6c221e323145d208c5b75493e78ed4942a8e2c1",
-      "bytes": 17440219
+      "sha256": "3cb30f4247ff129dbe93f20681bd5998c3ac58f620d89de77f24476362982615",
+      "bytes": 17483302
     },
     "book/zh-CN/book.pdf": {
-      "sha256": "5bea796e9acce2ea58c18f1a256f87445aaad82fb4ea3782bdb0d88006ee4038",
-      "bytes": 34492137
+      "sha256": "cd35b022a18d8e759949e8a9b96dc2ba1b82f5afc31818cb0aa69f1c4943bc24",
+      "bytes": 34403459
     }
   },
   "files": {
@@ -1401,12 +1401,20 @@
       "bytes": 118730
     },
     "book/en/assets/09-05-distributed-recovery.en.png": {
-      "sha256": "cdb9a428dbe50d6f454fd212f4456a1f0900358d49bd519e73c063a8b49d3558",
-      "bytes": 43845
+      "sha256": "1e8944899d36b2ee23a1c9cf385ebc0cdc7ef1b9f1b87957fbae78047fb0173f",
+      "bytes": 59056
     },
     "book/en/assets/09-05-distributed-recovery.en.svg": {
-      "sha256": "d56a3240f0abe2140f1d5df4b895caf68c4dbc8e9d0adfdcffec64c2e061f1c7",
-      "bytes": 101446
+      "sha256": "b1792ce0ca57f9c9c7bf47b615c27d878991d2cefe44bf25a04e339f2e21f6ae",
+      "bytes": 113594
+    },
+    "book/en/assets/09-05-resume-checkpoint.en.png": {
+      "sha256": "1cd03a264b24fbb65b64df9ec04a668ea583bb49c53429870b023d9f978ffca9",
+      "bytes": 68181
+    },
+    "book/en/assets/09-05-resume-checkpoint.en.svg": {
+      "sha256": "0b53e1572ce6689ccf60994d985facaf1f77bbab8a5db923b2832fe562d409a1",
+      "bytes": 118282
     },
     "book/en/assets/10-01-experiment-provenance.en.png": {
       "sha256": "9c9c336983c5d5466247a914c9024ce3d9bc4c1dd2fcf688a7cb4e3f1d2d4b03",
@@ -1441,8 +1449,8 @@
       "bytes": 136951
     },
     "book/en/manuscript.md": {
-      "sha256": "72c67e854e250f954ddff54018add1002c43154c48c528fe579fd78116fe561a",
-      "bytes": 1141132
+      "sha256": "d43a9573027731a7f0f67ffbedf66e6c3f27867f51ef1cdc9ec5602c1a9edb8a",
+      "bytes": 1141325
     },
     "book/zh-CN/assets/01-01-eight-bit-range.zh-CN.png": {
       "sha256": "a2bb380db955db194ff579f2fdba55c3028b7a604558046ed1f3340f72dada26",
@@ -2789,12 +2797,20 @@
       "bytes": 204385
     },
     "book/zh-CN/assets/09-05-distributed-recovery.zh-CN.png": {
-      "sha256": "87dd55989f846ddef4729903560039a2908f56b72b9878103013ddd682ec914d",
-      "bytes": 47326
+      "sha256": "b98eb82126f3468198df9e49fb3dbce6f146375caebfd712020a87ad1369e424",
+      "bytes": 70025
     },
     "book/zh-CN/assets/09-05-distributed-recovery.zh-CN.svg": {
-      "sha256": "a89bc4258095bf76a3ba58c8720d7cc362970f3ec0b7a26979cfb7e786b97c2d",
-      "bytes": 155635
+      "sha256": "104faa92808f29c991e2c7f44fcdd0c2a2f1dc127f6e662ac6e0164a2cfe1b56",
+      "bytes": 179585
+    },
+    "book/zh-CN/assets/09-05-resume-checkpoint.zh-CN.png": {
+      "sha256": "80451afb692e9e1f10d6c4f127cc9163138cd515dd6e0a0e30b616ba7148d0f9",
+      "bytes": 80097
+    },
+    "book/zh-CN/assets/09-05-resume-checkpoint.zh-CN.svg": {
+      "sha256": "2de2c8e998c29225e3f673333926551c08fde4a8e774f380667e6faa744f8708",
+      "bytes": 231665
     },
     "book/zh-CN/assets/10-01-experiment-provenance.zh-CN.png": {
       "sha256": "6a1e342e37a45cbabde6c5f7f293ea5338473191c52f0015b8c7eb2cbc4c795c",
@@ -2829,8 +2845,8 @@
       "bytes": 313085
     },
     "book/zh-CN/manuscript.md": {
-      "sha256": "65853082e99f876e1cf22a492b2bab4385184c0cf669ca0ea139e7b10be21d82",
-      "bytes": 1023843
+      "sha256": "e7cb81739738124941764da81ec74d53313866266f4151b55603e9800a7b7cf9",
+      "bytes": 1024840
     },
     "examples/README.md": {
       "sha256": "734d5ca48237b3a71186aae25a13c29a327ac3bcef1343073a27cb661bf0ac60",
@@ -3133,8 +3149,8 @@
       "bytes": 3103
     },
     "exercises/09_05_distributed_recovery.py": {
-      "sha256": "4d22859fff271aacf418c7b9829bca95207245de1fa6d7a5dece03ec7fe0b36e",
-      "bytes": 2863
+      "sha256": "a40ca6aa011bdf721c476710723c72b8697f387b536ac150c948cb1967f2e9d7",
+      "bytes": 2885
     },
     "exercises/10_01_experiment_provenance.py": {
       "sha256": "334556dec5ad7bc44879bf99a57e9e78afe74c08c42126844a3a38ad53496150",
@@ -3178,11 +3194,11 @@
     }
   },
   "reader_revision": {
-    "kind": "attention-diagrams",
-    "date": "2026-11-11",
+    "kind": "distributed-recovery-rewrite",
+    "date": "2026-11-12",
     "source_manifests": {
-      "en": "3a5d4c371a68895957717a18c363418fabfdb1cc419ac4d57980c2a927fefd25",
-      "zh-CN": "69fb0d00a02aa2b502a2d8a6866dea379db2517126728570d6b92545e70ec49b"
+      "en": "28d8c95e7c28e842bc10bed5f4a4b5e2d8f8c751be73a7d110844aef3f7f38d2",
+      "zh-CN": "7871e91fdac3e15e5d6716d59b9af2b68147cce650720020b2a45d027e3688e0"
     }
   }
 }
