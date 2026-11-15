@@ -15918,25 +15918,37 @@ A new component can improve one run for several reasons: its mechanism may help,
 
 Pair a baseline run with a variant run when matching their seed and data order makes the comparison more useful. An ablation removes the proposed component and keeps the rest of the system. Also report failures and negative results: a favorable average can hide them. This final exercise calculates the paired loss differences and shows how much they vary, so we can compare the observed improvement with variation between runs.
 
-### Formulas and principles
+### Read the two panels from left to right
 
-Let $n$ be the number of original paired runs and $i$ index those pairs. $L_{\mathrm{base},i}$ and $L_{\mathrm{var},i}$ are their baseline and variant losses. A star marks a bootstrap resample, so $\overline d^*$ is one resampled mean difference. Here CI denotes the confidence interval estimated by this procedure, and $Q_q$ is the $q$ quantile of the bootstrap mean distribution: the value at fraction $q$ of its ordered mass.
+**Compare each pair in the left panel.** Within a pair, both runs use the same seed, training budget and evaluation. Subtract the variant loss from the baseline loss. A positive difference means the variant has lower loss.
+
+| Pair | Baseline loss | Variant loss | Baseline minus variant |
+| --- | --- | --- | --- |
+| 1 | 3 | 4 | $-1$ |
+| 2 | 4 | 4 | $0$ |
+| 3 | 5 | 4 | $+1$ |
+
+The three differences are $-1,0,+1$. Their mean is 0. The variant did worse in pair 1, tied in pair 2 and did better in pair 3.
+
+**Make a group of three draws for the right panel.** After each draw, put the selected difference back so it can be picked again. One possible group is $[-1,1,1]$. Its mean is $(-1+1+1)/3=1/3$. Each group adds one mean to the plot. This process is called the paired bootstrap because we sample whole pair differences. [Efron, 1979, R36](https://doi.org/10.1214/aos/1176344552)
+
+![Pair the runs, then resample the same three differences](assets/10-03-ablations-uncertainty.en.png){width=100%}
+
+There are 3 choices for each of 3 draws, so the right panel counts all $3^3=27$ equally likely ordered groups. The horizontal axis is the mean of a group. The height of a bar is how many groups have that mean. Picking three zeros gives mean 0, and the six orders of $-1,0,1$ also give mean 0. The bar at 0 therefore has height 7. Its probability is $7/27$, about 26 percent.
+
+### Turn the resampled means into an interval
+
+Let $n$ count the original pairs, and let $d_i$ be the loss difference in pair $i$. The observed mean difference is $\Delta$. The star in $\overline d^*$ marks a mean from one resampled group. Sort the resampled means and take their 2.5th and 97.5th percentiles to form the percentile confidence interval (CI). Here $Q_p$ denotes the percentile at fraction $p$.
 
 $$
-d_i=L_{\mathrm{base},i}-L_{\mathrm{var},i};\quad \Delta=\frac1n\sum_i d_i;\quad \mathrm{CI}=[Q_{.025}(\overline d^*),Q_{.975}(\overline d^*)]
+d_i=L_{\mathrm{base},i}-L_{\mathrm{var},i},\qquad
+\Delta=\frac1n\sum_i d_i,\qquad
+\mathrm{CI}=[Q_{.025}(\overline d^*),Q_{.975}(\overline d^*)].
 $$
 
-For pair $i$, define $d_i=L_{\mathrm{base},i}-L_{\mathrm{var},i}$. A positive difference means the variant has lower loss under this convention. The mean improvement is $\Delta=\sum_i d_i/n$. Pairing occurs before resampling: a bootstrap draw samples indices into the **differences**, keeping each baseline/variant pairing intact.
+For the exact distribution in the figure, each end bar holds $1/27$, about 3.7 percent of the total. The 2.5th and 97.5th percentiles therefore fall at $-1$ and $1$. The three pairs give no clear direction of improvement. The exercise estimates percentiles from a finite number of random groups, so the estimated endpoints can differ. A local generator with a fixed seed makes the calculation repeatable.
 
-For each bootstrap repeat, draw $n$ indices from the $n$ observed pairs. Draw with replacement: a pair can be chosen more than once, and another may be left out. Average the selected differences. Repeat this process to get a collection of means. Its quantiles 0.025 and 0.975 form the percentile interval. A local generator with a fixed seed makes this calculation repeatable without changing NumPy's global random state.
-
-The percentile interval estimates uncertainty from the variation among the observed pairs. Its interpretation assumes the pairs represent the runs of interest and can be resampled independently. A small set of runs can miss sources of variation such as changes in the data. Searching many models or selecting favorable benchmarks adds uncertainty outside this calculation. More bootstrap repeats reduce Monte Carlo noise in the estimated quantiles. More independent training pairs provide new evidence.
-
-Before a real comparison, define the primary metric, the fixed evaluation split and the budget-matching rule. Use validation to develop the method and reserve an independent final evaluation. Report all planned variants and seeds, rather than only the best-looking checkpoint or task.
-
-![Original ideas, ablations and uncertainty：10.03](assets/10-03-ablations-uncertainty.en.png){width=100%}
-
-Compare the two dots at each run index in the left panel. The three paired differences are `[1,1,1]`. The right panel uses the separate difference list `[-1,0,1]`. Each bar gives the fraction of the 27 ordered resamples with that mean.
+The interval reflects the variation in the observed pairs, assuming they represent the runs we care about and can be resampled independently. Drawing more groups improves the numerical estimate. Running more independent pairs adds new evidence. Before a real comparison, fix the primary metric, the evaluation split and the budget-matching rule. Report all planned variants and seeds.
 
 ### Required paired losses and returned interval
 
@@ -15946,13 +15958,9 @@ def paired_effect(baseline: list[float], variant: list[float], seed: int, bootst
 
 Pass nonempty lists of equal length as `baseline` and `variant`. Matching entries describe runs evaluated on the same held-out data with matched seeds and budgets. `seed` sets the local generator and `bootstrap` is the positive repeat count. Return `mean_improvement`, `ci_low`, `ci_high` and `count`. Improvement is baseline loss minus variant loss. The endpoints are the 2.5th and 97.5th percentiles of the resampled means.
 
-### A worked example
+### Check the case with identical differences
 
-Baseline losses `[3,4,5]` and variant losses `[2,3,4]` yield `[1,1,1]`. Their mean improvement is 1. Every resample also has mean 1, so the percentile interval is `[1,1]`. That degeneracy comes from the identical observed differences; it does not establish zero uncertainty about future runs.
-
-For differences `[-1,0,1]`, the observed mean is 0. Drawing three entries with replacement gives $3^3=27$ equally likely ordered resamples. The mean ranges from $-1$ to $1$, with both endpoints occurring once. The exact percentile interval therefore includes zero. The interval from a finite number of repeats can vary with the seed.
-
-The supplied finite-bootstrap calculation uses its explicit seed and replicate count. Its returned `count` remains the number of original paired runs, not the number of bootstrap replicates. If one run is excluded, report the reason and apply a predefined exclusion policy rather than choosing whichever removal produces a favorable interval.
+If all three observed differences are 1, every group has mean 1 and the interval is `[1, 1]`. More independent pairs are needed to check how future runs vary. The returned `count` is the original pair count, which is 3 here.
 
 ### Guided implementation
 

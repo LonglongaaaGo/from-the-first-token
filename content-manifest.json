@@ -20,15 +20,15 @@
   "teaching_data_manifest": "examples/data/manifest.json",
   "teaching_data_license": "PolyForm-Noncommercial-1.0.0",
   "distribution": "github-source",
-  "release_package_manifest_sha256": "db81d7ecf5b461be75750117c99109dbf535fbb279cc91ec6f7b318361caa45a",
+  "release_package_manifest_sha256": "64a1884c900d11d1abaeb739bc1227545d6dd2b9f9aab7e295a049dd6dbfc951",
   "pdf_release_assets": {
     "book/en/book.pdf": {
-      "sha256": "c2aaf0d2af17ee5aca3085672f45620f733d4f8dcb952974b7121289681ed521",
-      "bytes": 17485218
+      "sha256": "53559b020b9858b986cf191a8db01a763f564f89421ff3cd43e1fd3bd59d67c1",
+      "bytes": 17477652
     },
     "book/zh-CN/book.pdf": {
-      "sha256": "0710d76ca0bdd883ecaa84dae433a2cc3cc6b7ae2065408c5ff80051ab39c858",
-      "bytes": 34384447
+      "sha256": "3e394cf2ad429be708c6737b2516e855e76b844a061a36bfc6f6d413a5cd1cd2",
+      "bytes": 34359094
     }
   },
   "files": {
@@ -1433,12 +1433,12 @@
       "bytes": 141276
     },
     "book/en/assets/10-03-ablations-uncertainty.en.png": {
-      "sha256": "b28ef9c6a7b2906574464e08134d7ebbceec190a742b5dd828bd49d3a78aaf9f",
-      "bytes": 74550
+      "sha256": "11dc67d4bced91875d1cba4f49bf5daa023c63acbf7fe9a27a38f54098e948be",
+      "bytes": 67558
     },
     "book/en/assets/10-03-ablations-uncertainty.en.svg": {
-      "sha256": "9da4287366e7ea281b67bffece74c22c9d71e707fe0e65283075ccaff633da92",
-      "bytes": 130970
+      "sha256": "d168368c52ba95934dde7bbba6042a56ee10b58877268aeeff1b7d8b2669a756",
+      "bytes": 139292
     },
     "book/en/assets/book-learning-route.en.png": {
       "sha256": "c2fbb3320679b281fc8d19e63acb39b29e57796009780d1a2267ad21ad3c13db",
@@ -1449,8 +1449,8 @@
       "bytes": 136951
     },
     "book/en/manuscript.md": {
-      "sha256": "b31a6c9104704485c6b3c82d7bc43c1e8f6b4328d2b19cbb019eb27b34dad887",
-      "bytes": 1142785
+      "sha256": "e75b9e2d9fa37b01b45bc6ddebdc9e3472ec38bedeea8a4e01fd9a703838f658",
+      "bytes": 1142338
     },
     "book/zh-CN/assets/01-01-eight-bit-range.zh-CN.png": {
       "sha256": "a2bb380db955db194ff579f2fdba55c3028b7a604558046ed1f3340f72dada26",
@@ -2829,12 +2829,12 @@
       "bytes": 193719
     },
     "book/zh-CN/assets/10-03-ablations-uncertainty.zh-CN.png": {
-      "sha256": "b5b39a6a94a78c6aff7945daf2282180be1e5af73d33c74ce49f85653eca1359",
-      "bytes": 82163
+      "sha256": "99e82c2384178b6db13368abad2b51649441ad0d5929b752703353ab2e768d98",
+      "bytes": 79916
     },
     "book/zh-CN/assets/10-03-ablations-uncertainty.zh-CN.svg": {
-      "sha256": "fea9dbe8e9697774afa395ae1c7b75f7d97201c67be86b1c424607f431c6dacc",
-      "bytes": 213551
+      "sha256": "a806a199a23cda4cfbb4d72d688eadeb34a3f84f7bdbaa3cd1601d1e2bd6d8ae",
+      "bytes": 219893
     },
     "book/zh-CN/assets/book-learning-route.zh-CN.png": {
       "sha256": "7503a8cd7a2485e5b4b988745dd899e70f56836afcd75c4e3e688d2296534148",
@@ -2845,8 +2845,8 @@
       "bytes": 313085
     },
     "book/zh-CN/manuscript.md": {
-      "sha256": "11666436f0d618f0e71df9458168e8dab8d965124cffd8064ce2e7d7556deb4d",
-      "bytes": 1026895
+      "sha256": "c8390912497f7f0b84f9650d09bbeacb37f7e4150da921170254463e5fad30fe",
+      "bytes": 1026784
     },
     "examples/README.md": {
       "sha256": "734d5ca48237b3a71186aae25a13c29a327ac3bcef1343073a27cb661bf0ac60",
@@ -3194,11 +3194,11 @@
     }
   },
   "reader_revision": {
-    "kind": "scaling-fit-clarity",
+    "kind": "paired-bootstrap-clarity",
     "date": "2026-11-15",
     "source_manifests": {
-      "en": "4fd18d00542aeafe46786091dcb3435ad52b49c1ef4553b4580489c8e51eba7c",
-      "zh-CN": "5240ccf465cbf6e3501d26258247e74cab2488e2b27426d8ba0fc9f34b85d6e0"
+      "en": "5d0fc38db0e818d4d79832f0126e819cb1ce8543522d0fdfaeed4f4b225fcfe4",
+      "zh-CN": "c0234372f48d340168a9ebc2dd85be27a0cb2472d424dec2af6666c96ab80174"
     }
   }
 }
