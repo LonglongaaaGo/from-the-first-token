@@ -15809,35 +15809,55 @@ For each real run, write a record with the full code commit, data/tokenizer chec
 
 ## 10.02 Measured scaling and budget choices {#section-10-02}
 
-### Method sources
+### Three training runs, one question
 
-For empirical language-model scaling, see [Kaplan et al., 2020; R35](https://arxiv.org/abs/2001.08361). Compute-optimal data and parameter allocation is studied in [Hoffmann et al., 2022; R11](https://arxiv.org/abs/2203.15556).
+Suppose we train three small models with compute budgets of 1, 4 and 16 units. Use the same unit for every run, for example a fixed number of FLOPs. Evaluate all three models on the same held-out data with the same loss. In this toy example, the losses are 5, 3 and 2. What loss might we get at 64 units? A scaling law is an empirical model we can fit to answer that question. [Kaplan et al., 2020, R35](https://arxiv.org/abs/2001.08361)
 
-### Purpose and prerequisites
+### Subtract the assumed floor first
 
-A scaling curve can help choose the next training budget. Should we use more parameters, more tokens or a different split of the same compute? Fit the curve using runs with comparable data, tokenizers, training objectives and evaluation rules. If those conditions differ, a smooth line can hide those differences instead of showing the effect of more compute.
-
-We start with one input variable, compute. The caller supplies a loss floor, so this exercise does not fit it. We take logarithms and fit a straight line. This lets you see how the assumed floor changes predictions beyond the measured budgets. A few toy points are not enough to justify a large training run.
-
-### Formulas and principles
-
-For measured run $i$, let $C_i$ be its compute budget in one fixed unit and $L_i$ its comparable held-out loss. $L_\infty$ is the supplied `floor`, $a$ the fitted coefficient, and $b$ the fitted exponent. Define $x_i=\ln C_i$ and $y_i=\ln(L_i-L_\infty)$; the bars $\bar x$ and $\bar y$ denote arithmetic means over the observed runs.
+Let $C$ be the compute budget and $L(C)$ the predicted held-out loss. We model the loss as a fixed floor $L_\infty$ plus a gap that shrinks as compute grows.
 
 $$
-\log(L-L_\infty)=\log a-b\log C;\quad b=-\frac{\sum_i(x_i-\bar x)(y_i-\bar y)}{\sum_i(x_i-\bar x)^2}
+L(C)=L_\infty+aC^{-b}.
 $$
 
-Assume $L(C)=L_\infty+aC^{-b}$, with positive compute $C$ and $L(C)>L_\infty$. Subtract the supplied floor before taking logs. With $x=\ln C$ and $y=\ln(L-L_\infty)$, the relation becomes the straight line $y=\alpha+sx$, where $\alpha=\ln a$ and $s=-b$.
+For this exercise we **choose** $L_\infty=1$ before fitting. The three runs do not tell us what the true floor is. The gap $L-L_\infty$ tells us how far each measured loss is above our chosen floor. Here the gaps are $5-1=4$, $3-1=2$ and $2-1=1$. Each time compute is multiplied by 4, the gap is halved.
 
-Subtract each array’s mean from its values. Multiply corresponding centered $x$ and $y$ values and sum the products. Divide by the sum of squares of the centered $x$ values to obtain the least-squares slope $s$. At least two budgets must differ to give a nonzero denominator. Recover $a=e^\alpha$ and $b=-s$. A flat or rising fitted line gives a zero or negative $b$. Report that value as fitted.
+The number $a$ gives the size of the gap at $C=1$ in the chosen compute unit. The number $b$ controls how fast the gap shrinks. Multiplying compute by 4 multiplies the gap by $4^{-b}$. A positive $b$ means the fitted gap decreases as compute grows.
 
-An assumed floor can strongly change the fitted curve. If a loss is at or below that floor, its logarithm is not defined in this model. Even a mathematically valid fit can be wrong outside the observed range because data quality, reuse, optimization and system efficiency may change.
+### Why taking logs makes a line
 
-Large-model scaling studies also vary model size and training-token allocation. Here compute combines those choices into one variable, so this fit cannot choose their split by itself. When comparing allocations, record unique corpus tokens, repeated training exposures and actual achieved throughput separately.
+Logs turn a fixed multiplication into a fixed addition. Going from 1 to 4 to 16 adds $\ln 4$ to the log of compute at each step. Going from a gap of 4 to 2 to 1 subtracts $\ln 2$ from the log of the gap at each step. The same horizontal move gives the same vertical move, so these points lie on a straight line.
 
-![Measured scaling and budget choices：10.02](assets/10-02-scaling-fit.en.png){width=100%}
+| Compute $C$ | Loss $L$ | Gap $L-1$ | $x=\ln C$ | $y=\ln(L-1)$ |
+| --- | --- | --- | --- | --- |
+| 1 | 5 | 4 | $0$ | $\ln 4$ |
+| 4 | 3 | 2 | $\ln 4$ | $\ln 2$ |
+| 16 | 2 | 1 | $2\ln 4$ | $0$ |
 
-The left panel shows the three synthetic observations and fitted power law on logarithmic axes. The right panel plots the transformed coordinates and shows the slope $-0.5$. The hollow marker at $C=64$ shows the predicted loss $0.5$. A new measurement at that budget would test the prediction.
+Subtract the floor before taking logs. The log of a sum does not split, but the log of a product does. After subtraction, the gap is just the product $aC^{-b}$, and taking its log brings the exponent $-b$ down in front of $\ln C$.
+
+$$
+\ln(L-L_\infty)=\ln(aC^{-b})=\ln a-b\ln C.
+$$
+
+With $x=\ln C$ and $y=\ln(L-L_\infty)$, this is the line $y=\alpha+sx$. The intercept is $\alpha=\ln a$. The slope is $s=-b$. In our example, the slope is $-\ln 2/\ln 4=-1/2$. The line crosses $x=0$ at $y=\ln 4$, so $a=4$ and $b=1/2$.
+
+![The same three runs on the original and log-transformed axes](assets/10-02-scaling-fit.en.png){width=100%}
+
+The left panel shows compute and loss in their original units. The right panel transforms the same three solid dots. The hollow dot is the prediction at $C=64$. That budget is four times 16, so the fitted gap halves once more, from 1 to 0.5. Add back the floor to get the predicted loss $1+0.5=1.5$. A run at 64 would test that prediction.
+
+### Fit real points that do not line up exactly
+
+Use the same transformation for every measured pair $(C_i,L_i)$. Each budget must be positive, each loss must exceed the supplied floor, and at least two budgets must differ. Find the line that minimizes the sum of squared vertical errors in the log coordinates. Let $\bar x$ and $\bar y$ be the means of the transformed data.
+
+$$
+s=\frac{\sum_i(x_i-\bar x)(y_i-\bar y)}{\sum_i(x_i-\bar x)^2},\qquad \alpha=\bar y-s\bar x.
+$$
+
+The numerator pairs the deviations in $x$ and $y$. The denominator measures how spread out the $x$ values are. Convert the result back with $a=e^\alpha$ and $b=-s$. A flat or rising fit gives $b\leq 0$. In that case the fitted loss does not approach the assumed floor as compute increases.
+
+Changing the assumed floor changes the gaps and can change the answer. Keep data, tokenizer, objective and evaluation comparable across runs. This one-variable fit predicts held-out loss for a chosen training setup. Choosing how to split a budget between model size and training tokens takes comparisons across several allocations. [Hoffmann et al., 2022, R11](https://arxiv.org/abs/2203.15556)
 
 ### Required measurements and returned curve parameters
 
@@ -15847,19 +15867,9 @@ def fit_scaling(compute: list[float], losses: list[float], floor: float = 0.) ->
 
 Give `compute` positive budgets with at least two distinct values. Give `losses` one held-out loss per budget in matching order, each above `floor`. The caller fixes `floor` before fitting. Return a dictionary with `coefficient` for $a$ and `exponent` for $b$ in $L(C)\approx L_\infty+aC^{-b}$.
 
-### A worked example
+### Compare the two check cases
 
-Use compute `[1,4,16]`, losses `[4,2,1]`, and floor 0. Multiplying compute by 4 halves the loss. Therefore $4^{-b}=1/2$, giving $b=1/2$; the first point then gives $a=4$.
-
-| $C$ | $L$ | $\ln C$ | $\ln(L-L_\infty)$ |
-| --- | --- | --- | --- |
-|1 |4 |0 |1.386294 |
-|4 |2 |1.386294 |0.693147 |
-|16 |1 |2.772589 |0 |
-
-The slope is $-0.5$. Recover the intercept with $\alpha=\bar y-s\bar x=\ln 4$. At compute 64, the predicted loss is $4/\sqrt{64}=0.5$. Run at that budget to test the extrapolation.
-
-For the separate floor 1 fixture with losses `[5,3,2]`, subtracting 1 yields the same residual losses `[4,2,1]`. The fitted $a,b$ stay 4 and 0.5, but the compute 64 prediction is now 1.5. Adding the floor back is part of the model, not an optional reporting choice.
+The main example uses floor 1 and losses `[5, 3, 2]`. Another check uses floor 0 and losses `[4, 2, 1]`. Both have gaps `[4, 2, 1]` after subtracting their floors, so both give $a=4$ and $b=0.5$. At compute 64 both predict a gap of 0.5. Add back their respective floors to get losses of 1.5 and 0.5.
 
 ### Guided implementation
 
@@ -15882,7 +15892,7 @@ Comparing models with different data quality or tokenizers confounds the fit. An
 python exercises/10_02_scaling_fit.py
 ```
 
-An unfinished prerequisite reports learner TODO, not an installation failure. Once implementation and prerequisites pass, expect:
+Run the check after filling the learner region. A passing run prints this line.
 
 ```text
 Lesson 10.02 checks passed.

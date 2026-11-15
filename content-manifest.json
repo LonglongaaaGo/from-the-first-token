@@ -20,15 +20,15 @@
   "teaching_data_manifest": "examples/data/manifest.json",
   "teaching_data_license": "PolyForm-Noncommercial-1.0.0",
   "distribution": "github-source",
-  "release_package_manifest_sha256": "3ac98e1ecadf26f270d62dac34ec3923437a078093e8e55c02912b02ed6f7ec3",
+  "release_package_manifest_sha256": "db81d7ecf5b461be75750117c99109dbf535fbb279cc91ec6f7b318361caa45a",
   "pdf_release_assets": {
     "book/en/book.pdf": {
-      "sha256": "c64c04b398fd8bfc63740623de3ee01fcc0f1a37f08d16cd77de0b37528d849f",
-      "bytes": 17492483
+      "sha256": "c2aaf0d2af17ee5aca3085672f45620f733d4f8dcb952974b7121289681ed521",
+      "bytes": 17485218
     },
     "book/zh-CN/book.pdf": {
-      "sha256": "a2b9b9019058d9b6524c91f7665adfa4c3ab7138b6f37cf343027b9b0df48de6",
-      "bytes": 34412297
+      "sha256": "0710d76ca0bdd883ecaa84dae433a2cc3cc6b7ae2065408c5ff80051ab39c858",
+      "bytes": 34384447
     }
   },
   "files": {
@@ -49,8 +49,8 @@
       "bytes": 1164
     },
     "README.md": {
-      "sha256": "764fdd85da38e56e87b6cd7af749e2bb0c76a381519367f91b8b69b61efaea9a",
-      "bytes": 3392
+      "sha256": "1d9088c984768519b15d4ef97c7348d63f8b7975575b8555d066add050df0b3a",
+      "bytes": 3241
     },
     "README.zh-CN.md": {
       "sha256": "6bce43e95fcae55d90e7f35df818bad891aa84074dbad1b3c98a699476565ec1",
@@ -1425,12 +1425,12 @@
       "bytes": 121729
     },
     "book/en/assets/10-02-scaling-fit.en.png": {
-      "sha256": "8639bb159c039a8ac3f5c7d9b90de40495abe49140bd7ce8a5d6113db1e3d8f2",
-      "bytes": 69949
+      "sha256": "e0fbe96c2a9fb55ffc3ff5eddf71d1a56ec5fc98f48a67a37a2b386f2d29b5b9",
+      "bytes": 73859
     },
     "book/en/assets/10-02-scaling-fit.en.svg": {
-      "sha256": "c6c163f0b07008d991ca9bcdddfece06aafe15a151abf76be595c560d9f91329",
-      "bytes": 136154
+      "sha256": "2b0df3ca4e71a170f7873cd9aca6a0d8d1a040fc20503bd5c4ca0da28910a348",
+      "bytes": 141276
     },
     "book/en/assets/10-03-ablations-uncertainty.en.png": {
       "sha256": "b28ef9c6a7b2906574464e08134d7ebbceec190a742b5dd828bd49d3a78aaf9f",
@@ -1449,8 +1449,8 @@
       "bytes": 136951
     },
     "book/en/manuscript.md": {
-      "sha256": "9ffa91c4688b7b7bbc9b542bd2a8e9f25c933369ccbcc1413ae94d91b047755f",
-      "bytes": 1142416
+      "sha256": "b31a6c9104704485c6b3c82d7bc43c1e8f6b4328d2b19cbb019eb27b34dad887",
+      "bytes": 1142785
     },
     "book/zh-CN/assets/01-01-eight-bit-range.zh-CN.png": {
       "sha256": "a2bb380db955db194ff579f2fdba55c3028b7a604558046ed1f3340f72dada26",
@@ -2821,12 +2821,12 @@
       "bytes": 245596
     },
     "book/zh-CN/assets/10-02-scaling-fit.zh-CN.png": {
-      "sha256": "995f7891903fd6912d55df83ebba7fa453fed80fbf529d9dd3a1e99efbea233d",
-      "bytes": 76710
+      "sha256": "4c044cf4a741e9de6891fe2aaab12c3b28ee9ac9af2b275d59c72c7c8e5ca7c8",
+      "bytes": 78390
     },
     "book/zh-CN/assets/10-02-scaling-fit.zh-CN.svg": {
-      "sha256": "44a80396340bd1a664d28186d2ffce8e9f23c852da03183ce76729b6b27eecf2",
-      "bytes": 204985
+      "sha256": "cbc873ab1fc0ddd6da18d20a01b52c434284b64f6f39421be03e701298b9966b",
+      "bytes": 193719
     },
     "book/zh-CN/assets/10-03-ablations-uncertainty.zh-CN.png": {
       "sha256": "b5b39a6a94a78c6aff7945daf2282180be1e5af73d33c74ce49f85653eca1359",
@@ -2845,8 +2845,8 @@
       "bytes": 313085
     },
     "book/zh-CN/manuscript.md": {
-      "sha256": "0961fccbb018b911897702bd512382ccd5ebe9cfd5a060467867fe73cdc6a36c",
-      "bytes": 1025994
+      "sha256": "11666436f0d618f0e71df9458168e8dab8d965124cffd8064ce2e7d7556deb4d",
+      "bytes": 1026895
     },
     "examples/README.md": {
       "sha256": "734d5ca48237b3a71186aae25a13c29a327ac3bcef1343073a27cb661bf0ac60",
@@ -3194,11 +3194,11 @@
     }
   },
   "reader_revision": {
-    "kind": "checkpoint-clarity",
-    "date": "2026-11-12",
+    "kind": "scaling-fit-clarity",
+    "date": "2026-11-15",
     "source_manifests": {
-      "en": "8de1a10f9eb6d037ae510197cdf66440b4c49320d48776f5feef56158e95069c",
-      "zh-CN": "70f695a8fab05033bb3df6f67d49b681d5cb375eb8c716211fe4ea67ce92ab52"
+      "en": "4fd18d00542aeafe46786091dcb3435ad52b49c1ef4553b4580489c8e51eba7c",
+      "zh-CN": "5240ccf465cbf6e3501d26258247e74cab2488e2b27426d8ba0fc9f34b85d6e0"
     }
   }
 }
